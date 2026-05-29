@@ -286,9 +286,11 @@
 <script>
 // ── SGC University Grade Scale ──────────────────────────────
 function marksToGrade(marks) {
-  if (marks === '' || marks === null || isNaN(marks)) return null;
+  // Blank or empty = Absent
+  if (marks === '' || marks === null || marks === undefined) 
+    return { label: 'Ab', point: 0, cls: 'absent' };
   const m = parseFloat(marks);
-  if (m < 0 || m > 100) return null;
+  if (isNaN(m) || m < 0 || m > 100) return null;
   if (m >= 80) return { label: 'O',  point: 10, cls: 'pass'   };
   if (m >= 71) return { label: 'A+', point: 9,  cls: 'pass'   };
   if (m >= 66) return { label: 'A',  point: 8,  cls: 'pass'   };
@@ -354,9 +356,9 @@ function renderSubjects() {
   const c = document.getElementById('sgpa-subjects');
   c.innerHTML = subjects.map((s, i) => {
     const g = marksToGrade(s.marks);
-    const cls = g ? (g.point === 0 ? 'fail' : 'pass') : 'filled';
-    const label = g ? g.label : '–';
-    const chipCls = g ? (g.point === 0 ? 'fail' : 'pass') : '';
+    const cls = g ? g.cls : 'absent';
+    const label = g ? g.label : 'Ab';
+    const chipCls = g ? g.cls : 'absent';
     return `<div class="subject-row" id="row-${s.id}">
       <input class="input" type="text" placeholder="Subject ${i+1}"
         value="${s.name}" onchange="updateField('${s.id}','name',this.value)" />
@@ -374,14 +376,13 @@ function onMarksInput(id, val) {
   const s = subjects.find(x => x.id === id);
   if (!s) return;
   s.marks = val;
-  const g = marksToGrade(val);
-  s.gradePoint  = g ? g.point : '';
-  s.gradeLabel  = g ? g.label : '';
-  // Update just the grade chip — no full re-render (smooth UX)
+  const g = marksToGrade(val);  // blank returns Ab automatically
+  s.gradePoint = g ? g.point : 0;
+  s.gradeLabel = g ? g.label : 'Ab';
   const chip = document.getElementById('grade-' + id);
   if (chip) {
-    chip.textContent = g ? g.label : '–';
-    chip.className = 'auto-grade ' + (g ? (g.point === 0 ? 'fail' : 'pass') : '');
+    chip.textContent = g ? g.label : 'Ab';
+    chip.className = 'auto-grade ' + (g ? g.cls : 'absent');
   }
 }
 
@@ -410,16 +411,16 @@ function calcSGPA() {
     s.name    = inputs[0].value;
     s.marks   = inputs[1].value;
     s.credits = inputs[2].value;
-    const g = marksToGrade(s.marks);
-    s.gradePoint = g ? g.point : '';
-    s.gradeLabel = g ? g.label : '';
+    const g = marksToGrade(s.marks);  // blank = Ab automatically
+    s.gradePoint = g ? g.point : 0;
+    s.gradeLabel = g ? g.label : 'Ab';
   });
 
-  const valid = subjects.filter(s => s.credits && s.gradePoint !== '');
-  if (valid.length === 0) { alert('Please enter marks and credits for at least one subject.'); return; }
+  const valid = subjects.filter(s => s.credits);
+  if (valid.length === 0) { alert('Please enter credits for at least one subject.'); return; }
 
-  // Check for fails
-  const fails = valid.filter(s => s.gradePoint === 0);
+  const fails   = valid.filter(s => s.gradeLabel === 'F');
+  const absents = valid.filter(s => s.gradeLabel === 'Ab');
 
   const totalCr  = valid.reduce((a,s) => a + (parseFloat(s.credits)||0), 0);
   const totalPts = valid.reduce((a,s) => a + (parseFloat(s.credits)||0) * (parseFloat(s.gradePoint)||0), 0);
@@ -427,10 +428,11 @@ function calcSGPA() {
   const pct  = (sgpa * 9.5).toFixed(2);
   const col  = gradeColor(sgpa);
 
-  const failNote = fails.length > 0
-    ? `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--red);text-align:center;">
-        ⚠️ ${fails.length} subject(s) with F grade. Arrear required.
-       </div>` : '';
+  const failNote = (fails.length > 0 || absents.length > 0) ? `
+    <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+      ${fails.length > 0 ? `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--red);text-align:center;">⚠️ ${fails.length} subject(s) with F grade — Arrear required</div>` : ''}
+      ${absents.length > 0 ? `<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--yellow);text-align:center;">🚫 ${absents.length} subject(s) marked Absent (Ab)</div>` : ''}
+    </div>` : '';
 
   const resEl = document.getElementById('sgpa-result');
   resEl.style.display = 'block';
