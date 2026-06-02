@@ -286,19 +286,20 @@
 <script>
 // ── SGC University Grade Scale ──────────────────────────────
 function marksToGrade(marks) {
-  // Blank or empty = Absent
-  if (marks === '' || marks === null || marks === undefined) 
+  // Blank / empty / not entered = Absent
+  if (marks === '' || marks === null || marks === undefined || marks.toString().trim() === '')
     return { label: 'Ab', point: 0, cls: 'absent' };
   const m = parseFloat(marks);
-  if (isNaN(m) || m < 0 || m > 100) return null;
-  if (m >= 80) return { label: 'O',  point: 10, cls: 'pass'   };
-  if (m >= 71) return { label: 'A+', point: 9,  cls: 'pass'   };
-  if (m >= 66) return { label: 'A',  point: 8,  cls: 'pass'   };
-  if (m >= 61) return { label: 'B+', point: 7,  cls: 'pass'   };
-  if (m >= 56) return { label: 'B',  point: 6,  cls: 'pass'   };
-  if (m >= 50) return { label: 'C',  point: 5,  cls: 'pass'   };
-  if (m >= 40) return { label: 'P',  point: 4,  cls: 'pass'   };
-  return              { label: 'F',  point: 0,  cls: 'fail'   };
+  if (isNaN(m) || m < 0 || m > 100)
+    return { label: 'Ab', point: 0, cls: 'absent' };
+  if (m >= 80) return { label: 'O',  point: 10, cls: 'pass'  };
+  if (m >= 71) return { label: 'A+', point: 9,  cls: 'pass'  };
+  if (m >= 66) return { label: 'A',  point: 8,  cls: 'pass'  };
+  if (m >= 61) return { label: 'B+', point: 7,  cls: 'pass'  };
+  if (m >= 56) return { label: 'B',  point: 6,  cls: 'pass'  };
+  if (m >= 50) return { label: 'C',  point: 5,  cls: 'pass'  };
+  if (m >= 40) return { label: 'P',  point: 4,  cls: 'pass'  };
+  return             { label: 'F',  point: 0,  cls: 'fail'  };
 }
 
 function gradeColor(v) {
@@ -363,10 +364,10 @@ function renderSubjects() {
       <input class="input" type="text" placeholder="Subject ${i+1}"
         value="${s.name}" onchange="updateField('${s.id}','name',this.value)" />
       <input class="input" type="number" min="0" max="100" placeholder="0-100"
-        value="${s.marks}" oninput="onMarksInput('${s.id}',this.value)" />
+        value="${s.marks}" oninput="onMarksInput('${s.id}',this.value)" onchange="onMarksInput('${s.id}',this.value)" />
       <input class="input" type="number" min="1" max="6" placeholder="Cr"
-        value="${s.credits}" onchange="updateField('${s.id}','credits',this.value)" />
-      <div class="auto-grade ${g ? chipCls : ''}" id="grade-${s.id}">${label}</div>
+        value="${s.credits}" oninput="updateField('${s.id}','credits',this.value)" onchange="updateField('${s.id}','credits',this.value)" />
+      <div class="auto-grade ${chipCls}" id="grade-${s.id}">${label}</div>
       <button class="remove-btn" onclick="removeSubject('${s.id}')">×</button>
     </div>`;
   }).join('');
@@ -375,14 +376,16 @@ function renderSubjects() {
 function onMarksInput(id, val) {
   const s = subjects.find(x => x.id === id);
   if (!s) return;
-  s.marks = val;
-  const g = marksToGrade(val);  // blank returns Ab automatically
-  s.gradePoint = g ? g.point : 0;
-  s.gradeLabel = g ? g.label : 'Ab';
+  // Treat empty/null/undefined as absent
+  const cleaned = (val === null || val === undefined || val.toString().trim() === '') ? '' : val;
+  s.marks = cleaned;
+  const g = marksToGrade(cleaned);
+  s.gradePoint = g.point;
+  s.gradeLabel = g.label;
   const chip = document.getElementById('grade-' + id);
   if (chip) {
-    chip.textContent = g ? g.label : 'Ab';
-    chip.className = 'auto-grade ' + (g ? g.cls : 'absent');
+    chip.textContent = g.label;
+    chip.className = 'auto-grade ' + g.cls;
   }
 }
 
