@@ -8,7 +8,7 @@ A fast, offline-capable Progressive Web App (PWA) to calculate SGPA, CGPA and co
 
 ## 📱 Live App
 
-🔗 **[https://sgc-gradecalc.netlify.app](https://sgc-gradecalc.netlify.app)**
+🔗 **[https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/)**
 
 ---
 
