@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0A0F1E" />
-  <meta name="description" content="Calculate SGPA, CGPA and convert grades instantly. For SGC Students, Pondicherry." />
+  <meta name="description" content="Calculate SGPA, CGPA, convert grades, and predict What-If scenarios. For SGC Students, Pondicherry." />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GradeCalc – SGPA & CGPA Calculator</title>
+  <title>GradeCalc – SGPA & CGPA Calculator + What‑If</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -44,7 +44,6 @@
     .col-labels{display:grid;grid-template-columns:1fr 62px 58px 68px 34px;gap:6px;margin-bottom:8px}
     .col-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .subject-row{display:grid;grid-template-columns:1fr 62px 58px 68px 34px;gap:6px;align-items:center;margin-bottom:8px;animation:slideIn .2s ease}
-    /* Grade chip */
     .auto-grade{border-radius:9px;padding:9px 6px;font-size:12px;font-weight:800;text-align:center;font-family:var(--mono);border:1px solid var(--border);background:var(--bg);color:var(--muted);transition:all .3s}
     .auto-grade.absent{background:rgba(245,158,11,.12);color:var(--yellow);border-color:rgba(245,158,11,.35)}
     .auto-grade.pass  {background:rgba(16,185,129,.10);color:var(--green); border-color:rgba(16,185,129,.30)}
@@ -92,6 +91,11 @@
     .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(10,15,30,.97);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:8px 16px 14px;text-align:center;z-index:40}
     .footer-main{font-size:12px;color:var(--accent);font-weight:600}
     .footer-sub{font-size:10px;color:var(--muted);margin-top:2px}
+    .whatif-grid{display:flex;flex-direction:column;gap:12px}
+    .whatif-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .whatif-label{font-size:12px;font-weight:600;color:var(--muted)}
+    .whatif-value{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--teal)}
+    .whatif-note{font-size:11px;color:var(--muted);margin-top:4px;border-top:1px solid var(--border);padding-top:8px}
     @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
     @keyframes popIn{from{opacity:0;transform:scale(.90)}to{opacity:1;transform:scale(1)}}
     ::-webkit-scrollbar{width:3px}
@@ -109,7 +113,7 @@
         <div class="logo-icon">G</div>
         <div>
           <div class="logo-name">GradeCalc</div>
-          <div class="logo-sub">SGPA · CGPA · Convert</div>
+          <div class="logo-sub">SGPA · CGPA · What‑If</div>
         </div>
       </div>
       <button class="grade-btn" id="gradeToggle" onclick="toggleGradeEditor()">⚙ Grade Scale</button>
@@ -142,7 +146,7 @@
       </div>
     </div>
 
-    <!-- SGPA PANEL -->
+    <!-- SGPA PANEL + What-If Projector -->
     <div id="panel-sgpa" class="panel active">
       <div class="card">
         <div class="col-labels">
@@ -161,6 +165,25 @@
       </div>
       <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">✦ Grade fills automatically · Blank marks = Ab (Absent)</div>
       <div id="sgpa-result"></div>
+
+      <!-- 🎯 What-If Projector Card -->
+      <div class="card" style="margin-top:6px">
+        <div class="card-title">🎯 What‑If Projector</div>
+        <div class="whatif-grid">
+          <div class="whatif-row">
+            <span class="whatif-label">Target SGPA</span>
+            <input type="number" id="targetSgpa" min="0" max="10" step="0.1" value="8.5" style="width:100px" class="input" oninput="updateWhatIfProjection()" />
+          </div>
+          <div class="whatif-row">
+            <span class="whatif-label">Additional Credits (new subjects)</span>
+            <input type="number" id="additionalCredits" min="0.5" max="30" step="0.5" value="3" style="width:100px" class="input" oninput="updateWhatIfProjection()" />
+          </div>
+          <div id="whatifResult" class="whatif-note" style="margin-top:6px;border-top:1px solid var(--border);padding-top:8px">
+            <!-- dynamic result filled -->
+          </div>
+        </div>
+      </div>
+
       <div id="sgpa-breakdown" style="display:none">
         <div class="card">
           <div class="card-title">Subject Breakdown</div>
@@ -212,7 +235,7 @@
 
   <div class="bottom-nav">
     <div class="footer-main">Designed by SGC Student, Pondicherry</div>
-    <div class="footer-sub">GradeCalc · SGPA & CGPA Calculator</div>
+    <div class="footer-sub">GradeCalc · SGPA & CGPA Calculator + What‑If</div>
   </div>
 </div>
 
@@ -235,6 +258,17 @@ function marksToGrade(val) {
   if (m >= 50) return {label:'C',  point:5,  cls:'pass'};
   if (m >= 40) return {label:'P',  point:4,  cls:'pass'};
   return             {label:'F',  point:0,  cls:'fail'};
+}
+
+function pointsToGradeLetter(points) {
+  if (points >= 9.5) return 'O (10)';
+  if (points >= 8.5) return 'A+ (9)';
+  if (points >= 7.5) return 'A (8)';
+  if (points >= 6.5) return 'B+ (7)';
+  if (points >= 5.5) return 'B (6)';
+  if (points >= 4.5) return 'C (5)';
+  if (points >= 3.5) return 'P (4)';
+  return 'F (0) — Needs improvement';
 }
 
 function gradeColor(v) {
@@ -278,13 +312,36 @@ function toggleGradeEditor() {
   btn.classList.toggle('active', open);
 }
 
+// ── LOCALSTORAGE ─────────────────────────────────────────────────────────
+function saveSubjectsToLocalStorage() {
+  localStorage.setItem('gradecalc_subjects', JSON.stringify(subjects));
+}
+function saveSemestersToLocalStorage() {
+  localStorage.setItem('gradecalc_semesters', JSON.stringify(semesters));
+}
+function loadFromLocalStorage() {
+  var savedSubj = localStorage.getItem('gradecalc_subjects');
+  if (savedSubj) {
+    try {
+      subjects = JSON.parse(savedSubj);
+    } catch(e) {}
+  }
+  var savedSem = localStorage.getItem('gradecalc_semesters');
+  if (savedSem) {
+    try {
+      semesters = JSON.parse(savedSem);
+    } catch(e) {}
+  }
+}
+
 // ── SGPA ─────────────────────────────────────────────────────────────────
 var subjects = [];
 
 function initSubjects() {
-  subjects = [];
-  for (var i=0; i<4; i++) {
-    subjects.push({id:uid(), name:'', marks:'', credits:'', gradePoint:0, gradeLabel:'Ab'});
+  if (subjects.length === 0) {
+    for (var i=0; i<4; i++) {
+      subjects.push({id:uid(), name:'', marks:'', credits:'', gradePoint:0, gradeLabel:'Ab'});
+    }
   }
   renderSubjects();
 }
@@ -296,7 +353,7 @@ function renderSubjects() {
     var g = marksToGrade(s.marks);
     html += '<div class="subject-row" id="row-'+s.id+'">'
       + '<input class="input" type="text" placeholder="Subject '+(i+1)+'"'
-      + ' value="'+s.name+'" onchange="setName(\''+s.id+'\',this.value)" />'
+      + ' value="'+escapeHtml(s.name)+'" onchange="setName(\''+s.id+'\',this.value)" />'
       + '<input class="input" type="number" min="0" max="100" placeholder="0-100"'
       + ' value="'+s.marks+'"'
       + ' oninput="setMarks(\''+s.id+'\',this.value)"'
@@ -310,16 +367,24 @@ function renderSubjects() {
       + '</div>';
   }
   document.getElementById('sgpa-subjects').innerHTML = html;
+  saveSubjectsToLocalStorage();
+  updateWhatIfProjection();
 }
+
+function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 
 function setName(id, val) {
   var s = subjects.find(function(x){return x.id===id});
   if (s) s.name = val;
+  saveSubjectsToLocalStorage();
+  updateWhatIfProjection();
 }
 
 function setCredits(id, val) {
   var s = subjects.find(function(x){return x.id===id});
   if (s) s.credits = val;
+  saveSubjectsToLocalStorage();
+  updateWhatIfProjection();
 }
 
 function setMarks(id, val) {
@@ -334,6 +399,8 @@ function setMarks(id, val) {
     chip.textContent = g.label;
     chip.className = 'auto-grade ' + g.cls;
   }
+  saveSubjectsToLocalStorage();
+  updateWhatIfProjection();
 }
 
 function addSubject() {
@@ -345,6 +412,52 @@ function removeSubject(id) {
   if (subjects.length <= 1) return;
   subjects = subjects.filter(function(x){return x.id!==id});
   renderSubjects();
+}
+
+function getCurrentSubjectStats() {
+  var totalCredits = 0, totalPoints = 0;
+  for (var i=0; i<subjects.length; i++) {
+    var s = subjects[i];
+    var cr = parseFloat(s.credits);
+    if (isNaN(cr) || cr <= 0) continue;
+    var gp = parseFloat(s.gradePoint);
+    if (isNaN(gp)) gp = 0;
+    totalCredits += cr;
+    totalPoints += cr * gp;
+  }
+  return { totalCredits: totalCredits, totalPoints: totalPoints };
+}
+
+function updateWhatIfProjection() {
+  var targetSgpa = parseFloat(document.getElementById('targetSgpa').value);
+  var additionalCredits = parseFloat(document.getElementById('additionalCredits').value);
+  if (isNaN(targetSgpa) || isNaN(additionalCredits) || additionalCredits <= 0) {
+    document.getElementById('whatifResult').innerHTML = '⚠️ Enter valid target SGPA and additional credits (>0)';
+    return;
+  }
+  var stats = getCurrentSubjectStats();
+  var totalCredits = stats.totalCredits;
+  var currentPoints = stats.totalPoints;
+  if (totalCredits === 0) {
+    document.getElementById('whatifResult').innerHTML = '➕ Add at least one subject with credits to use projector.';
+    return;
+  }
+  var targetTotalPoints = targetSgpa * (totalCredits + additionalCredits);
+  var neededPoints = targetTotalPoints - currentPoints;
+  if (neededPoints <= 0) {
+    document.getElementById('whatifResult').innerHTML = '✅ You already meet or exceed target SGPA with current subjects!';
+    return;
+  }
+  var requiredAvgGPA = neededPoints / additionalCredits;
+  requiredAvgGPA = Math.min(10, Math.max(0, requiredAvgGPA));
+  var gradeNeeded = pointsToGradeLetter(requiredAvgGPA);
+  document.getElementById('whatifResult').innerHTML = 
+    `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+        <span>📊 Required GPA on new subjects:</span>
+        <span class="whatif-value">${requiredAvgGPA.toFixed(2)}/10</span>
+     </div>
+     <div style="margin-top:6px">🎓 Minimum grade needed: <strong style="color:var(--teal)">${gradeNeeded}</strong></div>
+     <div style="font-size:10px;margin-top:5px">Target: ${targetSgpa} | Current credits: ${totalCredits} | Current points: ${currentPoints.toFixed(2)}</div>`;
 }
 
 function calcSGPA() {
@@ -389,7 +502,6 @@ function calcSGPA() {
     + (warns ? '<div style="display:flex;flex-direction:column;gap:6px;width:100%">'+warns+'</div>' : '')
     + '</div>';
 
-  var glMap = {10:'O',9:'A+',8:'A',7:'B+',6:'B',5:'C',4:'P',0:'F/Ab'};
   var rows = '';
   for (var i=0; i<valid.length; i++) {
     var s = valid[i];
@@ -398,28 +510,36 @@ function calcSGPA() {
     var bc = gp===0 ? 'background:rgba(239,68,68,.1);color:var(--red)'
            : gp>=8  ? 'background:rgba(16,185,129,.1);color:var(--green)'
            : 'background:rgba(59,130,246,.1);color:var(--accent)';
-    rows += '<tr><td>'+(s.name||'Subject '+(i+1))+'</td>'
+    rows += '<tr>'
+      + '<td>'+(s.name||'Subject '+(i+1))+'</td>'
       + '<td>'+(s.marks||'—')+'</td>'
       + '<td><span class="grade-badge" style="'+bc+'">'+s.gradeLabel+'</span></td>'
       + '<td>'+gp+'</td><td>'+cr+'</td>'
-      + '<td class="weighted-val">'+(cr*gp).toFixed(1)+'</td></tr>';
+      + '<td class="weighted-val">'+(cr*gp).toFixed(1)+'</td>'
+      + '</tr>';
   }
   document.getElementById('breakdown-body').innerHTML = rows;
   document.getElementById('sgpa-breakdown').style.display = 'block';
+  saveSubjectsToLocalStorage();
 }
 
 function resetSGPA() {
+  subjects = [];
+  for (var i=0; i<4; i++) subjects.push({id:uid(), name:'', marks:'', credits:'', gradePoint:0, gradeLabel:'Ab'});
+  renderSubjects();
   document.getElementById('sgpa-result').innerHTML = '';
   document.getElementById('sgpa-breakdown').style.display = 'none';
-  initSubjects();
+  saveSubjectsToLocalStorage();
+  updateWhatIfProjection();
 }
 
 // ── CGPA ─────────────────────────────────────────────────────────────────
 var semesters = [];
 
 function initSems() {
-  semesters = [];
-  for (var i=0; i<4; i++) semesters.push({id:uid(), label:'Semester '+(i+1), sgpa:''});
+  if (semesters.length === 0) {
+    for (var i=0; i<4; i++) semesters.push({id:uid(), label:'Semester '+(i+1), sgpa:''});
+  }
   renderSems();
 }
 
@@ -435,9 +555,10 @@ function renderSems() {
       + '</div>';
   }
   document.getElementById('cgpa-sems').innerHTML = html;
+  saveSemestersToLocalStorage();
 }
 
-function updateSem(id, val) { var s=semesters.find(function(x){return x.id===id}); if(s) s.sgpa=val; }
+function updateSem(id, val) { var s=semesters.find(function(x){return x.id===id}); if(s) { s.sgpa=val; saveSemestersToLocalStorage(); } }
 
 function addSem() {
   semesters.push({id:uid(), label:'Semester '+(semesters.length+1), sgpa:''});
@@ -480,11 +601,15 @@ function calcCGPA() {
     + '</div></div>'
     + '<div class="progress-list">'+bars+'</div>'
     + '</div>';
+  saveSemestersToLocalStorage();
 }
 
 function resetCGPA() {
+  semesters = [];
+  for (var i=0; i<4; i++) semesters.push({id:uid(), label:'Semester '+(i+1), sgpa:''});
+  renderSems();
   document.getElementById('cgpa-result').innerHTML = '';
-  initSems();
+  saveSemestersToLocalStorage();
 }
 
 // ── Converter ─────────────────────────────────────────────────────────────
@@ -515,9 +640,11 @@ function doConvert() {
     +'</div>';
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
+// ── Init with local storage ──────────────────────────────────────────────
+loadFromLocalStorage();
 initSubjects();
 initSems();
+updateWhatIfProjection();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function(){});
