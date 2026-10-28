@@ -8,6 +8,7 @@ const CACHE_NAME = 'gradecalc-v2';
 const ASSETS = [
   '/',
   '/manifest.json',
+  '/js/target.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
