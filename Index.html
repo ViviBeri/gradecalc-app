@@ -152,6 +152,7 @@
     .projection-result{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:12px}
     .projection-value{font-size:30px;font-family:var(--mono);font-weight:800;color:var(--teal);margin:4px 0}
     .projection-note{font-size:11px;line-height:1.5;color:var(--muted)}
+    .projection-share-status{font-size:11px;line-height:1.5;color:var(--muted);margin:8px 0 0;overflow-wrap:anywhere}
     @media (max-width:360px){.projection-grid{grid-template-columns:1fr}.projection-value{font-size:26px}}
 
   </style>
@@ -280,8 +281,10 @@
         </div>
         <div class="target-actions">
           <button class="btn-primary" id="projection-calculate" type="button">Project CGPA</button>
+          <button class="btn-secondary" id="projection-share" type="button">Copy share link</button>
           <button class="btn-secondary" id="projection-reset" type="button">Reset</button>
         </div>
+        <p class="projection-share-status" id="projection-share-status" role="status" aria-live="polite"></p>
         <div id="projection-result" aria-live="polite" aria-atomic="true"></div>
         <p class="target-disclaimer">This projection uses an equal-semester average, matching GradeCalc's existing CGPA calculation. It assumes the planned SGPA is earned in every future semester.</p>
       </div>
@@ -828,8 +831,80 @@ function resetCgpaProjection() {
   document.getElementById('projection-future-sgpa').value = '';
   document.getElementById('projection-future-count').value = '2';
   document.getElementById('projection-result').innerHTML = '';
+  document.getElementById('projection-share-status').textContent = '';
 }
+
+function shareCgpaProjection() {
+  var status = document.getElementById('projection-share-status');
+  var futureRaw = document.getElementById('projection-future-sgpa').value.trim();
+  var countRaw = document.getElementById('projection-future-count').value.trim();
+  var futureSgpa = futureRaw === '' ? NaN : Number(futureRaw);
+  var futureCount = countRaw === '' ? NaN : Number(countRaw);
+  var completed = [];
+
+  for (var i = 0; i < semesters.length; i++) {
+    var row = document.getElementById('sem-' + semesters[i].id);
+    var input = row && row.querySelector('input');
+    var raw = input ? input.value.trim() : String(semesters[i].sgpa || '').trim();
+    if (raw === '') continue;
+    var value = Number(raw);
+    if (!Number.isFinite(value) || value < 0 || value > 10) {
+      status.textContent = 'Fix every entered semester SGPA before creating a share link.';
+      return;
+    }
+    completed.push(value);
+  }
+
+  var result = calculateProjectedCgpa(completed, futureSgpa, futureCount);
+  if (!result.valid) {
+    status.textContent = result.reason;
+    updateCgpaProjection();
+    return;
+  }
+
+  var shareUrl = new URL(window.location.href);
+  shareUrl.searchParams.set('gcgpa', completed.join(','));
+  shareUrl.searchParams.set('gfuture', String(futureSgpa));
+  shareUrl.searchParams.set('gcount', String(futureCount));
+  var link = shareUrl.toString();
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      status.textContent = 'Share link copied. Anyone opening it will see these CGPA projection values.';
+    }).catch(function() {
+      window.prompt('Copy this CGPA projection link:', link);
+      status.textContent = 'If the copy dialog opened, copy the link to share it.';
+    });
+  } else {
+    window.prompt('Copy this CGPA projection link:', link);
+    status.textContent = 'If the copy dialog opened, copy the link to share it.';
+  }
+}
+
+function applyCgpaProjectionFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var sgpaParam = params.get('gcgpa');
+  var futureParam = params.get('gfuture');
+  var countParam = params.get('gcount');
+  if (sgpaParam === null || futureParam === null || countParam === null || sgpaParam.trim() === '') return;
+
+  var values = sgpaParam.split(',').map(function(value) { return Number(value); });
+  var futureSgpa = Number(futureParam);
+  var futureCount = Number(countParam);
+  var validValues = values.length > 0 && values.length <= 100 && values.every(function(value) {
+    return Number.isFinite(value) && value >= 0 && value <= 10;
+  });
+  var validation = calculateProjectedCgpa(values, futureSgpa, futureCount);
+  if (!validValues || !validation.valid) return;
+
+  semesters = values.map(function(value) { return { id: uid(), sgpa: String(value) }; });
+  renderSems();
+  document.getElementById('projection-future-sgpa').value = String(futureSgpa);
+  document.getElementById('projection-future-count').value = String(futureCount);
+}
+
 document.getElementById('projection-calculate').addEventListener('click', updateCgpaProjection);
+document.getElementById('projection-share').addEventListener('click', shareCgpaProjection);
 document.getElementById('projection-reset').addEventListener('click', resetCgpaProjection);
 document.getElementById('projection-future-sgpa').addEventListener('input', updateCgpaProjection);
 document.getElementById('projection-future-count').addEventListener('input', updateCgpaProjection);
@@ -870,7 +945,9 @@ applyThemeMeta(document.documentElement.getAttribute('data-theme') || 'dark');
 loadFromLocalStorage();
 initSubjects();
 initSems();
+applyCgpaProjectionFromUrl();
 updateWhatIfProjection();
+updateCgpaProjection();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function(){});
