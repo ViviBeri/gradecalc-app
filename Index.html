@@ -832,6 +832,11 @@ function resetCgpaProjection() {
   document.getElementById('projection-future-count').value = '2';
   document.getElementById('projection-result').innerHTML = '';
   document.getElementById('projection-share-status').textContent = '';
+  var cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete('gcgpa');
+  cleanUrl.searchParams.delete('gfuture');
+  cleanUrl.searchParams.delete('gcount');
+  window.history.replaceState(null, '', cleanUrl.toString());
 }
 
 function shareCgpaProjection() {
@@ -901,6 +906,7 @@ function applyCgpaProjectionFromUrl() {
   renderSems();
   document.getElementById('projection-future-sgpa').value = String(futureSgpa);
   document.getElementById('projection-future-count').value = String(futureCount);
+  return true;
 }
 
 document.getElementById('projection-calculate').addEventListener('click', updateCgpaProjection);
@@ -945,9 +951,8 @@ applyThemeMeta(document.documentElement.getAttribute('data-theme') || 'dark');
 loadFromLocalStorage();
 initSubjects();
 initSems();
-applyCgpaProjectionFromUrl();
+if (applyCgpaProjectionFromUrl()) updateCgpaProjection();
 updateWhatIfProjection();
-updateCgpaProjection();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function(){});
