@@ -63,8 +63,8 @@ function formatRequired(result) {
 
 function statusFor(result) {
   if (result.requiredSgpa > MAX_GPA) return { label: "Not achievable with these credits", tone: "bad", icon: "⚠" };
-  if (result.requiredSgpa >= 9) return { label: "Stretch goal", tone: "warn", icon: "↗" };
   if (result.alreadyAboveTarget) return { label: "You're ahead of your target", tone: "good", icon: "✓" };
+  if (result.requiredSgpa >= 9) return { label: "Stretch goal", tone: "warn", icon: "↗" };
   return { label: "Achievable with a plan", tone: "good", icon: "✓" };
 }
 
@@ -125,10 +125,10 @@ function renderTarget() {
 }
 
 function resetTarget() {
-  document.getElementById("target-current-cgpa").value = "7.8";
-  document.getElementById("target-goal-cgpa").value = "8.5";
-  document.getElementById("target-earned-credits").value = "120";
-  document.getElementById("target-remaining-credits").value = "60";
+  document.getElementById("target-current-cgpa").value = "";
+  document.getElementById("target-goal-cgpa").value = "";
+  document.getElementById("target-earned-credits").value = "";
+  document.getElementById("target-remaining-credits").value = "";
   renderTarget();
 }
 
