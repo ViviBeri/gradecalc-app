@@ -626,10 +626,17 @@ function calcCGPA() {
   // Attach position-based labels (Semester 1, 2, ...) before filtering, so
   // a bar always shows the same semester number as the input row it came from.
   var indexed = semesters.map(function(s, idx){ return { sgpa: s.sgpa, label: 'Semester ' + (idx+1) }; });
-  var valid = indexed.filter(function(s){return s.sgpa!==''&&!isNaN(parseFloat(s.sgpa))});
-  if (valid.length===0) { alert('Please enter SGPA for at least one semester.'); return; }
-  var sum  = valid.reduce(function(a,s){return a+parseFloat(s.sgpa)}, 0);
-  var cgpa = (sum/valid.length).toFixed(2);
+  var invalid = indexed.filter(function(s) {
+    if (s.sgpa === '' || s.sgpa == null) return false;
+    var value = Number(s.sgpa);
+    return !Number.isFinite(value) || value < 0 || value > 10;
+  });
+  if (invalid.length > 0) { alert('Each entered SGPA must be between 0 and 10. Please correct the highlighted values.'); return; }
+  var calculation = calculateCGPA(indexed);
+  if (!calculation) { alert('Please enter SGPA for at least one semester.'); return; }
+  var valid = calculation.validSemesters;
+  var sum  = calculation.sum;
+  var cgpa = calculation.cgpa.toFixed(2);
   var pct  = (cgpa*9.5).toFixed(2);
   var col  = gradeColor(cgpa);
   var bars = '';
