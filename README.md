@@ -87,7 +87,7 @@ Percentage = SGPA × 9.5
 
 ```
 gradecalc-app/
-├── index.html        ← Complete app (HTML + CSS + JS in one file)
+├── Index.html        ← Complete app (HTML + CSS + JS in one file)
 ├── manifest.json     ← PWA configuration for Android
 ├── sw.js             ← Service Worker (offline support)
 ├── icon-72.png       ← App icon 72×72
@@ -103,6 +103,20 @@ gradecalc-app/
 
 ---
 
+## 🧪 Run Calculation Tests
+
+The SGPA/CGPA calculation logic is shared between the app and the automated tests.
+
+Requirements: Node.js 20 or later. No third-party test dependencies are needed.
+
+```bash
+node --test tests/*.test.cjs
+```
+
+The tests cover grade boundaries, absent/failed subjects, credit-weighted SGPA, empty or invalid credits, CGPA averaging, blank semesters, and semester labels. GitHub Actions runs this suite on pushes and pull requests.
+
+---
+
 ## 🚀 How to Deploy (for contributors)
 
 ### 1. Clone the repo
@@ -112,7 +126,7 @@ cd gradecalc-app
 ```
 
 ### 2. Open locally
-Just open `index.html` in any browser — no build tools needed!
+Just open `Index.html` in any browser — no build tools needed!
 
 ### 3. Deploy to Netlify
 - Push changes to `main` branch
