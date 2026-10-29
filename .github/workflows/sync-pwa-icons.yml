@@ -30,20 +30,16 @@ jobs:
 
           svg = Path("gradecalc-icon.svg").read_bytes()
           sizes = [72, 96, 128, 144, 152, 192, 384, 512]
+          Path("icons").mkdir(exist_ok=True)
           for size in sizes:
               png = cairosvg.svg2png(bytestring=svg, output_width=size, output_height=size)
-              path = Path(f"icon-{size}.png")
-              path.write_bytes(png)
-          for size in [192, 512]:
-              png = cairosvg.svg2png(bytestring=svg, output_width=size, output_height=size)
-              Path("icons").mkdir(exist_ok=True)
               Path(f"icons/icon-{size}.png").write_bytes(png)
           PY
       - name: Commit refreshed raster icons
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add icon-72.png icon-96.png icon-128.png icon-144.png icon-152.png icon-192.png icon-384.png icon-512.png icons/icon-192.png icons/icon-512.png
+          git add icons/icon-72.png icons/icon-96.png icons/icon-128.png icons/icon-144.png icons/icon-152.png icons/icon-192.png icons/icon-384.png icons/icon-512.png
           if git diff --cached --quiet; then
             echo "Icons already current."
           else
