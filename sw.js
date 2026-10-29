@@ -3,15 +3,15 @@
 // returning visitors), cache-first for static assets (fonts/icons) so the
 // app still works fully offline.
 
-const CACHE_NAME = 'gradecalc-v5';
+const CACHE_NAME = 'gradecalc-v6';
 
 const ASSETS = [
   '/',
   '/manifest.json',
-  '/gradecalc-icon.svg',
+  '/gradecalc-icon.svg?v=20261029-green',
   '/calc.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-192.png?v=20261029-green',
+  '/icons/icon-512.png?v=20261029-green'
 ];
 
 // ── Install: cache app shell + static assets ───────────────
