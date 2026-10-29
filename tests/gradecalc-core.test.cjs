@@ -108,3 +108,21 @@ test('weighted SGPA treats invalid grade points outside 0–10 as zero', () => {
   assert.equal(result.totalPoints, 16);
   assert.equal(result.sgpa, 2);
 });
+
+
+test('percentage converters fall back safely for unknown formula identifiers', () => {
+  const { convertGpaToPercentage, convertPercentageToGpa } = require('../calc.js');
+  assert.equal(convertGpaToPercentage(8, 'unknown-formula'), 76);
+  assert.equal(convertPercentageToGpa(76, 'unknown-formula'), 8);
+});
+
+test('all supported percentage formulas round-trip across representative GPA values', () => {
+  const { convertGpaToPercentage, convertPercentageToGpa } = require('../calc.js');
+  for (const formula of ['anna', 'vtu', 'jntuh_ktu_nit', 'mumbai']) {
+    for (const gpa of [0, 4, 6.75, 8, 10]) {
+      const percentage = convertGpaToPercentage(gpa, formula);
+      const recovered = convertPercentageToGpa(percentage, formula);
+      assert.ok(Math.abs(recovered - gpa) < 1e-12, formula + ' round-trip at ' + gpa);
+    }
+  }
+});
