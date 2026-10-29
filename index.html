@@ -20,7 +20,7 @@
     })();
   </script>
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="gradecalc-icon.svg?v=20261029-green" />
+  <link rel="icon" type="image/svg+xml" href="gradecalc-icon.svg?v=20261029-green-v2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -44,14 +44,14 @@
     .header{position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:14px 16px 10px;transition:background .2s}
     .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
     .logo{display:flex;align-items:center;gap:10px}
-    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;box-shadow:0 4px 14px rgba(59,130,246,.35)}
-    .logo-name{font-size:18px;font-weight:800;background:linear-gradient(90deg,#93C5FD,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;box-shadow:0 4px 14px rgba(34,197,94,.35)}
+    .logo-name{font-size:18px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .logo-sub{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.8px;text-transform:uppercase}
     .grade-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
-    .grade-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.1)}
+    .grade-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(34,197,94,.1)}
     .tab-bar{display:flex;background:rgba(17,24,39,.8);border:1px solid var(--border);border-radius:12px;padding:4px;gap:3px}
     .tab-btn{flex:1;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-    .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 3px 10px rgba(59,130,246,.3)}
+    .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 3px 10px rgba(34,197,94,.3)}
     .body{flex:1;padding:16px 16px 130px;overflow-y:auto}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
     .card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
@@ -69,7 +69,7 @@
     .remove-btn:active{transform:scale(.92)}
     .add-btn{width:100%;padding:10px;background:transparent;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
     .btn-row{display:flex;gap:10px;margin-top:14px}
-    .btn-primary{flex:1;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:white;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(59,130,246,.3);transition:opacity .2s,transform .1s}
+    .btn-primary{flex:1;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:white;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.3);transition:opacity .2s,transform .1s}
     .btn-primary:active{opacity:.88;transform:scale(.98)}
     .btn-secondary{flex:1;padding:13px 0;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
     .result-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 16px;margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:16px;animation:popIn .32s cubic-bezier(.34,1.56,.64,1)}
@@ -80,7 +80,7 @@
     #grade-editor.open{display:block}
     .scale-row{display:grid;grid-template-columns:80px 60px 1fr 50px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
     .scale-row:last-child{border-bottom:none}
-    .grade-chip{display:inline-block;padding:3px 10px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);border-radius:8px;color:var(--accent);font-size:13px;font-weight:800;font-family:var(--mono);text-align:center}
+    .grade-chip{display:inline-block;padding:3px 10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:8px;color:var(--accent);font-size:13px;font-weight:800;font-family:var(--mono);text-align:center}
     .grade-chip.fail-chip{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:var(--red)}
     .grade-chip.pass-chip{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:var(--green)}
     .grade-chip.absent-chip{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--yellow)}
@@ -115,15 +115,15 @@
     .whatif-value{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--teal)}
     .whatif-note{font-size:11px;color:var(--muted);margin-top:4px;border-top:1px solid var(--border);padding-top:8px}
     /* Subtle 3D depth: preserve the existing dark/light theme and keep motion lightweight. */
-    body{background-image:radial-gradient(ellipse at 12% 0%,rgba(59,130,246,.12),transparent 38%),radial-gradient(ellipse at 88% 18%,rgba(99,102,241,.10),transparent 34%)}
+    body{background-image:radial-gradient(ellipse at 12% 0%,rgba(34,197,94,.12),transparent 38%),radial-gradient(ellipse at 88% 18%,rgba(74,222,128,.10),transparent 34%)}
     .header{box-shadow:0 8px 28px rgba(0,0,0,.12)}
-    .logo-icon{transform:perspective(120px) rotateY(-12deg) rotateX(5deg);box-shadow:0 7px 0 rgba(30,64,175,.35),0 12px 24px rgba(59,130,246,.24);transition:transform .25s,box-shadow .25s}
+    .logo-icon{transform:perspective(120px) rotateY(-12deg) rotateX(5deg);box-shadow:0 7px 0 rgba(21,128,61,.35),0 12px 24px rgba(34,197,94,.24);transition:transform .25s,box-shadow .25s}
     .tab-bar{box-shadow:inset 0 2px 5px rgba(0,0,0,.16),0 5px 12px rgba(0,0,0,.08)}
-    .tab-btn.active{transform:translateY(-1px);box-shadow:0 4px 0 rgba(30,64,175,.38),0 8px 18px rgba(59,130,246,.22)}
+    .tab-btn.active{transform:translateY(-1px);box-shadow:0 4px 0 rgba(21,128,61,.38),0 8px 18px rgba(34,197,94,.22)}
     .card,.result-card,.convert-result{position:relative;transform:perspective(1000px) translateZ(0);box-shadow:0 8px 0 rgba(0,0,0,.10),0 16px 28px rgba(0,0,0,.12);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
     .card::before,.result-card::before,.convert-result::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:inherit;background:linear-gradient(90deg,transparent,rgba(255,255,255,.20),transparent);pointer-events:none}
-    .btn-primary{box-shadow:0 5px 0 rgba(30,64,175,.42),0 10px 20px rgba(59,130,246,.20)}
-    .btn-primary:active{transform:translateY(3px) scale(.99);box-shadow:0 2px 0 rgba(30,64,175,.42),0 4px 10px rgba(59,130,246,.16)}
+    .btn-primary{box-shadow:0 5px 0 rgba(21,128,61,.42),0 10px 20px rgba(34,197,94,.20)}
+    .btn-primary:active{transform:translateY(3px) scale(.99);box-shadow:0 2px 0 rgba(21,128,61,.42),0 4px 10px rgba(34,197,94,.16)}
     .btn-secondary,.add-btn,.grade-btn,.mode-pill{box-shadow:0 3px 0 rgba(0,0,0,.08);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
     .input{box-shadow:inset 0 2px 5px rgba(0,0,0,.08)}
     .auto-grade,.grade-chip{box-shadow:0 3px 0 rgba(0,0,0,.10),0 5px 10px rgba(0,0,0,.06)}
@@ -248,7 +248,7 @@
         <div class="card-title">Enter SGPA for each semester</div>
         <p style="font-size:11px;line-height:1.5;color:var(--muted);margin:-4px 0 12px">CGPA here is the unweighted average of entered semester SGPAs. Your institution may use a different rule.</p>
         <div id="cgpa-sems"></div>
-        <button class="add-btn" onclick="addSem()" style="border-color:rgba(99,102,241,.4);color:#818CF8">+ Add Semester</button>
+        <button class="add-btn" onclick="addSem()" style="border-color:rgba(74,222,128,.4);color:var(--accent2)">+ Add Semester</button>
         <div class="btn-row">
           <button class="btn-primary" onclick="calcCGPA()">Calculate CGPA</button>
           <button class="btn-secondary" onclick="resetCGPA()">Reset</button>
@@ -303,7 +303,7 @@
 // ── Theme (dark/light) ───────────────────────────────────────────────────
 function applyThemeMeta(theme) {
   var meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', theme === 'light' ? '#F8FAFC' : '#0A0F1E');
+  if (meta) meta.setAttribute('content', theme === 'light' ? '#F4FBF6' : '#050B07');
   var btn = document.getElementById('themeToggle');
   if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
 }
@@ -553,7 +553,7 @@ function calcSGPA() {
     var gp = parseFloat(s.gradePoint)||0;
     var bc = gp===0 ? 'background:rgba(239,68,68,.1);color:var(--red)'
            : gp>=8  ? 'background:rgba(16,185,129,.1);color:var(--green)'
-           : 'background:rgba(59,130,246,.1);color:var(--accent)';
+           : 'background:rgba(34,197,94,.1);color:var(--accent)';
     rows += '<tr>'
       + '<td>'+escapeHtml(s.name||'Subject '+(i+1))+'</td>'
       + '<td>'+(s.marks||'—')+'</td>'
