@@ -38,6 +38,23 @@
     });
     return { totalCredits: totalCredits, totalPoints: totalPoints, sgpa: totalCredits > 0 ? totalPoints / totalCredits : null };
   }
+  function calculateSGPA(subjects) {
+    var validSubjects = (subjects || []).filter(function (subject) {
+      var credits = Number(subject && subject.credits);
+      return subject && subject.credits !== '' && Number.isFinite(credits) && credits > 0;
+    }).map(function (subject) {
+      var grade = marksToGrade(subject.marks);
+      return Object.assign({}, subject, {
+        gradePoint: grade.point, gradeLabel: grade.label, gradeClass: grade.cls,
+        numericCredits: Number(subject.credits)
+      });
+    });
+    if (validSubjects.length === 0) return null;
+    var result = calculateWeightedSGPA(validSubjects.map(function (subject) {
+      return { credits: subject.numericCredits, gradePoint: subject.gradePoint };
+    }));
+    return { validSubjects: validSubjects, totalCredits: result.totalCredits, totalPoints: result.totalPoints, sgpa: result.sgpa };
+  }
   function calculateCGPA(semesters) {
     var validSemesters = [];
     (semesters || []).forEach(function (semester, index) {
@@ -68,12 +85,13 @@
   function convertPercentageToGpa(percentage, formula) {
     return reversePercentageFormulas[formula || 'anna'](Number(percentage));
   }
-  var api = { marksToGrade: marksToGrade, pointsToGradeLetter: pointsToGradeLetter, calculateWeightedSGPA: calculateWeightedSGPA, calculateCGPA: calculateCGPA, percentageFormulas: percentageFormulas, reversePercentageFormulas: reversePercentageFormulas, convertGpaToPercentage: convertGpaToPercentage, convertPercentageToGpa: convertPercentageToGpa };
+  var api = { marksToGrade: marksToGrade, pointsToGradeLetter: pointsToGradeLetter, calculateWeightedSGPA: calculateWeightedSGPA, calculateSGPA: calculateSGPA, calculateCGPA: calculateCGPA, percentageFormulas: percentageFormulas, reversePercentageFormulas: reversePercentageFormulas, convertGpaToPercentage: convertGpaToPercentage, convertPercentageToGpa: convertPercentageToGpa };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) {
     root.marksToGrade = marksToGrade;
     root.pointsToGradeLetter = pointsToGradeLetter;
     root.calculateWeightedSGPA = calculateWeightedSGPA;
+    root.calculateSGPA = calculateSGPA;
     root.calculateCGPA = calculateCGPA;
     root.gradeCalcPercentageFormulas = percentageFormulas;
     root.gradeCalcReversePercentageFormulas = reversePercentageFormulas;
