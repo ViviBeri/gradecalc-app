@@ -53,3 +53,13 @@ test('CGPA UI rejects values outside 0–10 and delegates calculation to shared 
   assert.match(html, /var calculation = calculateCGPA\(indexed\)/);
   assert.match(html, /var cgpa = calculation\.cgpa\.toFixed\(2\)/);
 });
+
+
+test('local storage failures and malformed saved data cannot prevent startup', () => {
+  const html = read('index.html');
+  assert.match(html, /function saveSubjectsToLocalStorage\(\)\s*\{\s*try\s*\{/);
+  assert.match(html, /function saveSemestersToLocalStorage\(\)\s*\{\s*try\s*\{/);
+  assert.match(html, /Array\.isArray\(parsedSubj\)/);
+  assert.match(html, /Array\.isArray\(parsedSem\)/);
+  assert.match(html, /function loadFromLocalStorage\(\)\s*\{/);
+});
