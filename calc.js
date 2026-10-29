@@ -32,7 +32,7 @@
       var credits = Number(row.credits);
       var points = Number(row.gradePoint != null ? row.gradePoint : row.points);
       if (!Number.isFinite(credits) || credits <= 0) return;
-      if (!Number.isFinite(points)) points = 0;
+      if (!Number.isFinite(points) || points < 0 || points > 10) points = 0;
       totalCredits += credits;
       totalPoints += credits * points;
     });
