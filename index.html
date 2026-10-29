@@ -361,23 +361,41 @@ function toggleGradeEditor() {
 
 // ── LOCALSTORAGE ─────────────────────────────────────────────────────────
 function saveSubjectsToLocalStorage() {
-  localStorage.setItem('gradecalc_subjects', JSON.stringify(subjects));
+  try {
+    localStorage.setItem('gradecalc_subjects', JSON.stringify(subjects));
+  } catch (e) {
+    // Storage can be unavailable or full; keep the current session usable.
+  }
 }
 function saveSemestersToLocalStorage() {
-  localStorage.setItem('gradecalc_semesters', JSON.stringify(semesters));
+  try {
+    localStorage.setItem('gradecalc_semesters', JSON.stringify(semesters));
+  } catch (e) {
+    // Storage can be unavailable or full; keep the current session usable.
+  }
 }
 function loadFromLocalStorage() {
-  var savedSubj = localStorage.getItem('gradecalc_subjects');
-  if (savedSubj) {
-    try {
-      subjects = JSON.parse(savedSubj);
-    } catch(e) {}
+  try {
+    var savedSubj = localStorage.getItem('gradecalc_subjects');
+    if (savedSubj) {
+      var parsedSubj = JSON.parse(savedSubj);
+      if (Array.isArray(parsedSubj) && parsedSubj.every(function (item) {
+        return item && typeof item === 'object' && !Array.isArray(item);
+      })) subjects = parsedSubj;
+    }
+  } catch (e) {
+    // Ignore inaccessible or malformed storage without stopping app startup.
   }
-  var savedSem = localStorage.getItem('gradecalc_semesters');
-  if (savedSem) {
-    try {
-      semesters = JSON.parse(savedSem);
-    } catch(e) {}
+  try {
+    var savedSem = localStorage.getItem('gradecalc_semesters');
+    if (savedSem) {
+      var parsedSem = JSON.parse(savedSem);
+      if (Array.isArray(parsedSem) && parsedSem.every(function (item) {
+        return item && typeof item === 'object' && !Array.isArray(item);
+      })) semesters = parsedSem;
+    }
+  } catch (e) {
+    // Ignore inaccessible or malformed storage without stopping app startup.
   }
 }
 
