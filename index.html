@@ -240,6 +240,13 @@
           <button class="mode-pill"        onclick="setConvMode('cgpa-pct',this)">CGPA → %</button>
           <button class="mode-pill"        onclick="setConvMode('pct-cgpa',this)">% → CGPA</button>
         </div>
+        <label for="conv-formula" style="display:block;font-size:12px;color:var(--muted);font-weight:600;margin:4px 0 6px">University formula</label>
+        <select class="input" id="conv-formula" onchange="doConvert()" style="margin-bottom:12px">
+          <option value="anna">Standard / Anna University (GPA × 9.5)</option>
+          <option value="vtu">VTU (GPA × 10 − 7.5)</option>
+          <option value="jntuh_ktu_nit">JNTUH / KTU / NIT (GPA × 10)</option>
+          <option value="mumbai">Mumbai University (GPA × 7.1 + 11)</option>
+        </select>
         <div id="conv-label" style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px">Enter SGPA (0–10)</div>
         <input class="input big-input" id="conv-input" type="number" step="0.01" placeholder="e.g. 8.42" oninput="doConvert()" />
         <div id="conv-result"></div>
@@ -430,17 +437,7 @@ function removeSubject(id) {
 }
 
 function getCurrentSubjectStats() {
-  var totalCredits = 0, totalPoints = 0;
-  for (var i=0; i<subjects.length; i++) {
-    var s = subjects[i];
-    var cr = parseFloat(s.credits);
-    if (isNaN(cr) || cr <= 0) continue;
-    var gp = parseFloat(s.gradePoint);
-    if (isNaN(gp)) gp = 0;
-    totalCredits += cr;
-    totalPoints += cr * gp;
-  }
-  return { totalCredits: totalCredits, totalPoints: totalPoints };
+  return calculateWeightedSGPA(subjects);
 }
 
 function updateWhatIfProjection() {
@@ -500,9 +497,11 @@ function calcSGPA() {
 
   var fails   = valid.filter(function(s){return s.gradeLabel==='F'});
   var absents = valid.filter(function(s){return s.gradeLabel==='Ab'});
-  var totalCr  = valid.reduce(function(a,s){return a+(parseFloat(s.credits)||0)}, 0);
-  var totalPts = valid.reduce(function(a,s){return a+(parseFloat(s.credits)||0)*(parseFloat(s.gradePoint)||0)}, 0);
-  var sgpa = (totalPts/totalCr).toFixed(2);
+  var weightedStats = calculateWeightedSGPA(valid);
+  var totalCr = weightedStats.totalCredits;
+  var totalPts = weightedStats.totalPoints;
+  if (totalCr <= 0 || weightedStats.sgpa === null) { alert('Please enter positive credits for at least one subject.'); return; }
+  var sgpa = weightedStats.sgpa.toFixed(2);
   var pct  = (sgpa*9.5).toFixed(2);
   var col  = gradeColor(sgpa);
 
@@ -654,11 +653,13 @@ function setConvMode(mode, btn) {
 function doConvert() {
   var v = parseFloat(document.getElementById('conv-input').value);
   var el = document.getElementById('conv-result');
-  if (isNaN(v)||v<0) { el.innerHTML=''; return; }
+  var formula = document.getElementById('conv-formula').value;
+  if (isNaN(v) || v < 0 || (convMode !== 'pct-cgpa' && v > 10) || (convMode === 'pct-cgpa' && v > 100)) { el.innerHTML=''; return; }
   var label, value, note;
-  if (convMode==='sgpa-pct') { label='Percentage'; value=(v*9.5).toFixed(2)+'%'; note='Formula: SGPA × 9.5'; }
-  else if (convMode==='cgpa-pct') { label='Percentage'; value=(v*9.5).toFixed(2)+'%'; note='Formula: CGPA × 9.5'; }
-  else { label='CGPA'; value=(v/9.5).toFixed(2); note='Formula: % ÷ 9.5'; }
+  var formulaNames = {anna:'Standard / Anna University',vtu:'VTU',jntuh_ktu_nit:'JNTUH / KTU / NIT',mumbai:'Mumbai University'};
+  if (convMode==='sgpa-pct') { label='Percentage'; value=convertGpaToPercentage(v, formula).toFixed(2)+'%'; note='Formula: '+formulaNames[formula]+' percentage conversion'; }
+  else if (convMode==='cgpa-pct') { label='Percentage'; value=convertGpaToPercentage(v, formula).toFixed(2)+'%'; note='Formula: '+formulaNames[formula]+' percentage conversion'; }
+  else { label='CGPA'; value=convertPercentageToGpa(v, formula).toFixed(2); note='Inverse formula: '+formulaNames[formula]; }
   el.innerHTML='<div class="convert-result">'
     +'<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+label+'</div>'
     +'<div style="font-size:40px;font-weight:800;color:var(--teal);font-family:var(--mono);line-height:1">'+value+'</div>'
