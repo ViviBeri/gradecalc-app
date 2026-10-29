@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible GradeCalc problem
+title: "[Bug]: "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open GradeCalc..."
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Browser / device
+  - type: textarea
+    id: checks
+    attributes:
+      label: Console errors or screenshots
+      description: Remove any personal data before sharing.

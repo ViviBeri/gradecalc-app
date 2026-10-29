@@ -1,71 +1,36 @@
-// GradeCalc Service Worker v2.0
-// Network-first for the app shell (so updates show up immediately for
-// returning visitors), cache-first for static assets (fonts/icons) so the
-// app still works fully offline.
+// GradeCalc service worker: network-first navigation with bounded wait and offline fallback.
+const CACHE_NAME = 'gradecalc-v3';
+const NAVIGATION_TIMEOUT_MS = 3000;
+const ASSETS = ['/', '/manifest.json', '/calc.js', '/icons/icon-192.png', '/icons/icon-512.png', '/offline.html'];
 
-const CACHE_NAME = 'gradecalc-v2';
-
-const ASSETS = [
-  '/',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
-
-// ── Install: cache app shell + static assets ───────────────
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
-
-// ── Activate: remove old caches (drops stale v1 cache) ─────
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
-
-// ── Fetch ────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  if (event.request.url.startsWith('chrome-extension')) return;
-
-  // App shell (page navigations): always try the network first, so any
-  // update you push is visible on the very next load. Only fall back to
-  // the cached copy when there's no connection.
+  if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension:')) return;
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+    event.respondWith((async () => {
+      let timer;
+      try {
+        const network = fetch(event.request).then(response => {
+          if (response && response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone())).catch(() => {});
           return response;
-        })
-        .catch(() => caches.match(event.request).then(r => r || caches.match('/')))
-    );
+        });
+        const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Navigation timed out')), NAVIGATION_TIMEOUT_MS); });
+        return await Promise.race([network, timeout]);
+      } catch (_) {
+        return (await caches.match(event.request)) || (await caches.match('/offline.html')) || (await caches.match('/')) || Response.error();
+      } finally { clearTimeout(timer); }
+    })());
     return;
   }
-
-  // Static assets (fonts, icons, manifest): cache-first for speed + offline.
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(event.request).then(response => {
-        if (
-          response.status === 200 &&
-          (event.request.url.startsWith(self.location.origin) ||
-           event.request.url.includes('fonts.googleapis.com') ||
-           event.request.url.includes('fonts.gstatic.com'))
-        ) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
-        }
-        return response;
-      }).catch(() => {});
-    })
-  );
+  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+    if (response && response.status === 200 && (event.request.url.startsWith(self.location.origin) || event.request.url.includes('fonts.googleapis.com') || event.request.url.includes('fonts.gstatic.com'))) {
+      caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone())).catch(() => {});
+    }
+    return response;
+  }).catch(() => Response.error())));
 });
