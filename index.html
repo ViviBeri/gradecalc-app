@@ -114,6 +114,30 @@
     .whatif-label{font-size:12px;font-weight:600;color:var(--muted)}
     .whatif-value{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--teal)}
     .whatif-note{font-size:11px;color:var(--muted);margin-top:4px;border-top:1px solid var(--border);padding-top:8px}
+    /* Subtle 3D depth: preserve the existing dark/light theme and keep motion lightweight. */
+    body{background-image:radial-gradient(ellipse at 12% 0%,rgba(59,130,246,.12),transparent 38%),radial-gradient(ellipse at 88% 18%,rgba(99,102,241,.10),transparent 34%)}
+    .header{box-shadow:0 8px 28px rgba(0,0,0,.12)}
+    .logo-icon{transform:perspective(120px) rotateY(-12deg) rotateX(5deg);box-shadow:0 7px 0 rgba(30,64,175,.35),0 12px 24px rgba(59,130,246,.24);transition:transform .25s,box-shadow .25s}
+    .tab-bar{box-shadow:inset 0 2px 5px rgba(0,0,0,.16),0 5px 12px rgba(0,0,0,.08)}
+    .tab-btn.active{transform:translateY(-1px);box-shadow:0 4px 0 rgba(30,64,175,.38),0 8px 18px rgba(59,130,246,.22)}
+    .card,.result-card,.convert-result{position:relative;transform:perspective(1000px) translateZ(0);box-shadow:0 8px 0 rgba(0,0,0,.10),0 16px 28px rgba(0,0,0,.12);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+    .card::before,.result-card::before,.convert-result::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:inherit;background:linear-gradient(90deg,transparent,rgba(255,255,255,.20),transparent);pointer-events:none}
+    .btn-primary{box-shadow:0 5px 0 rgba(30,64,175,.42),0 10px 20px rgba(59,130,246,.20)}
+    .btn-primary:active{transform:translateY(3px) scale(.99);box-shadow:0 2px 0 rgba(30,64,175,.42),0 4px 10px rgba(59,130,246,.16)}
+    .btn-secondary,.add-btn,.grade-btn,.mode-pill{box-shadow:0 3px 0 rgba(0,0,0,.08);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
+    .input{box-shadow:inset 0 2px 5px rgba(0,0,0,.08)}
+    .auto-grade,.grade-chip{box-shadow:0 3px 0 rgba(0,0,0,.10),0 5px 10px rgba(0,0,0,.06)}
+    .result-card{transform-origin:top center}
+    @media (hover:hover) and (pointer:fine){
+      .card:hover,.result-card:hover,.convert-result:hover{transform:perspective(1000px) rotateX(1deg) translateY(-2px);box-shadow:0 10px 0 rgba(0,0,0,.10),0 22px 34px rgba(0,0,0,.15)}
+      .logo:hover .logo-icon{transform:perspective(120px) rotateY(-20deg) rotateX(8deg) translateY(-2px)}
+      .btn-secondary:hover,.add-btn:hover,.grade-btn:hover,.mode-pill:hover{transform:translateY(-1px);box-shadow:0 4px 0 rgba(0,0,0,.08)}
+    }
+    [data-theme="light"] .card,[data-theme="light"] .result-card,[data-theme="light"] .convert-result{box-shadow:0 7px 0 rgba(15,23,42,.04),0 14px 28px rgba(15,23,42,.07)}
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+      .logo-icon,.card,.result-card,.convert-result,.tab-btn.active{transform:none}
+    }
     @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
     @keyframes popIn{from{opacity:0;transform:scale(.90)}to{opacity:1;transform:scale(1)}}
     ::-webkit-scrollbar{width:3px}
