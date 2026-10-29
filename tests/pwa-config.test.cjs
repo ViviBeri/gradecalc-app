@@ -79,3 +79,11 @@ test('restored subject and semester records receive safe default fields', () => 
   assert.match(html, /semesters = parsedSem\.map\(function \(item\)/);
   assert.match(html, /Object\.assign\(\{ id: uid\(\), sgpa: '' \}, item/);
 });
+
+
+test('subject-name HTML escaping protects quoted input attributes', () => {
+  const html = read('index.html');
+  assert.match(html, /function escapeHtml\(str\) \{ return String\(str == null \? '' : str\)\.replace\(\/\[&<>\\\"'\]\/g/);
+  assert.match(html, /&quot;/);
+  assert.match(html, /&#39;/);
+});
