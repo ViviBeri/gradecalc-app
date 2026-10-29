@@ -79,7 +79,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         }
         return response;
-      }).catch(() => caches.match('/offline.html').then(fallback => fallback || new Response('', { status: 504 }))).finally(() => clearTimeout(timeoutId));
+      }).catch(() => new Response('', { status: 504, statusText: 'Offline' })).finally(() => clearTimeout(timeoutId));
     })
   );
 });
