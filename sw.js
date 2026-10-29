@@ -3,7 +3,7 @@
 // returning visitors), cache-first for static assets (fonts/icons) so the
 // app still works fully offline.
 
-const CACHE_NAME = 'gradecalc-v3';
+const CACHE_NAME = 'gradecalc-v4';
 
 const ASSETS = [
   '/',
