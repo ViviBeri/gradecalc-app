@@ -1,71 +1,84 @@
-// GradeCalc Service Worker v2.0
-// Network-first for the app shell (so updates show up immediately for
-// returning visitors), cache-first for static assets (fonts/icons) so the
-// app still works fully offline.
+// GradeCalc Service Worker v3.0
+// Network-first for navigations with a short timeout; cached app shell and
+// a lightweight offline page keep the app responsive on unreliable networks.
 
-const CACHE_NAME = 'gradecalc-v2';
+const CACHE_NAME = 'gradecalc-v3';
+const NAVIGATION_TIMEOUT_MS = 3000;
 
 const ASSETS = [
   '/',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icon-192.png',
+  '/icon-512.png',
+  '/offline.html'
 ];
 
-// ── Install: cache app shell + static assets ───────────────
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// ── Activate: remove old caches (drops stale v1 cache) ─────
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ── Fetch ────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  if (event.request.url.startsWith('chrome-extension')) return;
+  if (event.request.url.startsWith('chrome-extension:')) return;
 
-  // App shell (page navigations): always try the network first, so any
-  // update you push is visible on the very next load. Only fall back to
-  // the cached copy when there's no connection.
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then(r => r || caches.match('/')))
-    );
+    event.respondWith((async () => {
+      const networkRequest = fetch(event.request).then(response => {
+        if (response && response.ok) {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseCopy)).catch(() => {});
+        }
+        return response;
+      });
+
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Navigation network timeout')), NAVIGATION_TIMEOUT_MS);
+      });
+
+      try {
+        return await Promise.race([networkRequest, timeout]);
+      } catch (_) {
+        return (await caches.match(event.request)) ||
+          (await caches.match('/offline.html')) ||
+          (await caches.match('/'));
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })());
     return;
   }
 
-  // Static assets (fonts, icons, manifest): cache-first for speed + offline.
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
 
       return fetch(event.request).then(response => {
         if (
-          response.status === 200 &&
+          response && response.status === 200 &&
           (event.request.url.startsWith(self.location.origin) ||
            event.request.url.includes('fonts.googleapis.com') ||
            event.request.url.includes('fonts.gstatic.com'))
         ) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseCopy)).catch(() => {});
         }
         return response;
-      }).catch(() => {});
+      }).catch(() => undefined);
     })
   );
 });
