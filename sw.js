@@ -1,7 +1,7 @@
 // GradeCalc service worker: network-first navigation with bounded wait and offline fallback.
 const CACHE_NAME = 'gradecalc-v3';
 const NAVIGATION_TIMEOUT_MS = 3000;
-const ASSETS = ['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/offline.html'];
+const ASSETS = ['/', '/manifest.json', '/calc.js', '/icons/icon-192.png', '/icons/icon-512.png', '/offline.html'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
