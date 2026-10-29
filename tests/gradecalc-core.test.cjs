@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { marksToGrade, calculateSGPA, calculateCGPA } = require('../gradecalc-core.js');
+const { marksToGrade, calculateSGPA, calculateCGPA } = require('../calc.js');
 
 test('marks map to the documented SGC grade-point boundaries', () => {
   const cases = [
