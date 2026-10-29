@@ -381,7 +381,18 @@ function loadFromLocalStorage() {
       var parsedSubj = JSON.parse(savedSubj);
       if (Array.isArray(parsedSubj) && parsedSubj.every(function (item) {
         return item && typeof item === 'object' && !Array.isArray(item);
-      })) subjects = parsedSubj;
+      })) {
+        subjects = parsedSubj.map(function (item) {
+          return Object.assign({
+            id: uid(), name: '', marks: '', credits: '', gradePoint: 0, gradeLabel: 'Ab'
+          }, item, {
+            id: typeof item.id === 'string' && item.id ? item.id : uid(),
+            name: item.name == null ? '' : String(item.name),
+            marks: item.marks == null ? '' : String(item.marks),
+            credits: item.credits == null ? '' : String(item.credits)
+          });
+        });
+      }
     }
   } catch (e) {
     // Ignore inaccessible or malformed storage without stopping app startup.
@@ -392,7 +403,14 @@ function loadFromLocalStorage() {
       var parsedSem = JSON.parse(savedSem);
       if (Array.isArray(parsedSem) && parsedSem.every(function (item) {
         return item && typeof item === 'object' && !Array.isArray(item);
-      })) semesters = parsedSem;
+      })) {
+        semesters = parsedSem.map(function (item) {
+          return Object.assign({ id: uid(), sgpa: '' }, item, {
+            id: typeof item.id === 'string' && item.id ? item.id : uid(),
+            sgpa: item.sgpa == null ? '' : String(item.sgpa)
+          });
+        });
+      }
     }
   } catch (e) {
     // Ignore inaccessible or malformed storage without stopping app startup.
