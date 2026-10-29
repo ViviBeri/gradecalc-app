@@ -1,1 +1,98 @@
-<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="t d"><title id="t">GradeCalc animated dimensional project artwork</title><desc id="d">Layered isometric student grade calculator with animated glowing grade tiles, light trails and floating depth panels.</desc><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#06111b"/><stop offset="1" stop-color="#102f3b"/></linearGradient><linearGradient id="mint"><stop stop-color="#6ee7b7"/><stop offset="1" stop-color="#22d3ee"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1c4856"/><stop offset="1" stop-color="#0b202e"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="shadow"><feGaussianBlur stdDeviation="15"/></filter><pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#67e8f9" stroke-opacity=".1"/></pattern></defs><style>text{font-family:Inter,Segoe UI,Arial,sans-serif}.float{animation:float 5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.float2{animation:float2 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.pulse{animation:pulse 2.8s ease-in-out infinite}.dash{stroke-dasharray:12 16;animation:dash 7s linear infinite}.orbit{animation:spin 14s linear infinite;transform-origin:900px 250px}@keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-13px) rotate(1deg)}}@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}@keyframes dash{to{stroke-dashoffset:-224}}@keyframes spin{to{transform:rotate(360deg)}}</style><rect width="1200" height="520" rx="28" fill="url(#bg)"/><rect width="1200" height="520" rx="28" fill="url(#grid)"/><circle cx="1000" cy="100" r="230" fill="#34d399" opacity=".1"/><circle cx="900" cy="360" r="240" fill="#22d3ee" opacity=".08"/><path d="M0 420L390 520H0Z" fill="#34d399" opacity=".12"/><path d="M690 0H1200V130Z" fill="#22d3ee" opacity=".07"/><rect x="56" y="52" width="7" height="408" rx="4" fill="url(#mint)"/><text x="88" y="91" fill="#6ee7b7" font-size="15" font-weight="700" letter-spacing="4">STUDENT PERFORMANCE WORKSPACE</text><text x="86" y="164" fill="#f8fafc" font-size="56" font-weight="800">GradeCalc</text><text x="89" y="207" fill="#c5e4e8" font-size="21">Calculate. Understand. Improve.</text><text x="89" y="257" fill="#89aeb9" font-size="15">SGPA / CGPA / GRADE CONVERSION</text><g transform="translate(88 286)"><rect width="122" height="36" rx="18" fill="#34d399" fill-opacity=".12" stroke="#6ee7b7" stroke-opacity=".8"/><text x="61" y="23" fill="#a7f3d0" text-anchor="middle" font-size="12" font-weight="700">LIVE PWA</text><rect x="135" width="140" height="36" rx="18" fill="#22d3ee" fill-opacity=".1" stroke="#67e8f9" stroke-opacity=".65"/><text x="205" y="23" fill="#a5f3fc" text-anchor="middle" font-size="12" font-weight="700">OFFLINE SHELL</text></g><text x="89" y="390" fill="#718e9c" font-size="13" letter-spacing="2">BUILT FOR EVERYDAY STUDENT NEEDS</text><text x="89" y="443" fill="#9bb9c3" font-size="13">BERNARD VIVIAN  /  PROJECT PORTFOLIO</text><ellipse cx="900" cy="432" rx="230" ry="32" fill="#000" opacity=".55" filter="url(#shadow)"/><g class="orbit" fill="none" stroke="#67e8f9" stroke-opacity=".35"><ellipse cx="900" cy="250" rx="225" ry="78" stroke-dasharray="3 14"/><ellipse cx="900" cy="250" rx="190" ry="112" stroke-dasharray="2 18"/></g><g class="float"><path d="M704 164L906 86L1110 165L908 247Z" fill="#245261" stroke="#6ee7b7" stroke-opacity=".8"/><path d="M704 164L908 247V413L704 330Z" fill="#123744" stroke="#285e6b"/><path d="M908 247L1110 165V330L908 413Z" fill="#0b2634" stroke="#285e6b"/><g transform="translate(770 174) skewY(-19)"><rect width="280" height="174" rx="13" fill="url(#glass)" stroke="#6ee7b7" stroke-width="2"/><rect x="13" y="13" width="254" height="43" rx="8" fill="#16414b"/><text x="28" y="31" fill="#9fbfc7" font-size="10">CURRENT SEMESTER</text><text x="28" y="48" fill="#a7f3d0" font-size="19" font-weight="800">SGPA  8.72</text><rect x="14" y="68" width="252" height="90" rx="8" fill="#0b2532"/><g class="pulse" filter="url(#glow)"><rect x="26" y="81" width="43" height="24" rx="5" fill="#34d399"/><rect x="78" y="81" width="43" height="24" rx="5" fill="#246273"/><rect x="130" y="81" width="43" height="24" rx="5" fill="#246273"/><rect x="182" y="81" width="43" height="24" rx="5" fill="#246273"/><rect x="26" y="116" width="43" height="24" rx="5" fill="#246273"/><rect x="78" y="116" width="43" height="24" rx="5" fill="#246273"/><rect x="130" y="116" width="43" height="24" rx="5" fill="#34d399"/><rect x="182" y="116" width="43" height="24" rx="5" fill="#246273"/></g></g></g><g class="float2"><rect x="1010" y="106" width="116" height="66" rx="12" fill="#102f3d" stroke="#67e8f9"/><text x="1068" y="132" fill="#a5f3fc" font-size="10" text-anchor="middle">GRADE POINTS</text><text x="1068" y="155" fill="#f0fdfa" font-size="20" font-weight="800" text-anchor="middle">+10</text></g><g fill="none" stroke="url(#mint)" stroke-width="2" filter="url(#glow)"><path class="dash" d="M680 190C625 135 670 95 720 118S780 135 803 112"/><path class="dash" d="M1020 360C1100 390 1145 340 1120 298"/></g><circle class="pulse" cx="720" cy="118" r="5" fill="#6ee7b7"/><circle class="pulse" cx="1120" cy="298" r="5" fill="#67e8f9"/></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">GradeCalc — Student learning and grade dashboard</title>
+  <desc id="desc">An animated student study desk with a notebook, calculator, graduation cap, SGPA and CGPA cards, and a rising progress chart.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101b3c"/><stop offset=".55" stop-color="#182e59"/><stop offset="1" stop-color="#253d71"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c4b5fd"/><stop offset="1" stop-color="#818cf8"/></linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8efff"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="12"/><feOffset dy="12"/><feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3" fill="#bfdbfe" opacity=".22"/></pattern>
+  </defs>
+  <style>
+    text{font-family:Inter,Segoe UI,Arial,sans-serif}
+    .float{animation:float 5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+    .float2{animation:float 6s ease-in-out -1.8s infinite;transform-box:fill-box;transform-origin:center}
+    .bob{animation:bob 4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+    .shine{animation:shine 2.8s ease-in-out infinite}
+    .draw{stroke-dasharray:180;stroke-dashoffset:180;animation:draw 3s ease-out .4s forwards}
+    @keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-11px) rotate(1deg)}}
+    @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+    @keyframes shine{0%,100%{opacity:.55}50%{opacity:1}}
+    @keyframes draw{to{stroke-dashoffset:0}}
+  </style>
+  <rect width="1200" height="520" rx="28" fill="url(#background)"/>
+  <rect width="1200" height="520" rx="28" fill="url(#dots)"/>
+  <circle cx="1000" cy="95" r="220" fill="#818cf8" opacity=".12"/>
+  <circle cx="850" cy="430" r="190" fill="#22d3ee" opacity=".09"/>
+  <path d="M0 425L330 520H0Z" fill="#67e8f9" opacity=".09"/>
+  <rect x="54" y="52" width="7" height="405" rx="4" fill="url(#cyan)"/>
+  <text x="86" y="88" fill="#a5f3fc" font-size="14" font-weight="700" letter-spacing="3.2">YOUR STUDY PROGRESS, MADE CLEAR</text>
+  <text x="82" y="158" fill="#fff" font-size="58" font-weight="800">GradeCalc</text>
+  <text x="86" y="201" fill="#dbeafe" font-size="21">Learn your grades. Plan your next goal.</text>
+  <text x="87" y="251" fill="#a5b4fc" font-size="14" font-weight="700" letter-spacing="1.8">SGPA  •  CGPA  •  WHAT-IF PLANNING</text>
+  <g transform="translate(87 279)">
+    <rect width="119" height="35" rx="17.5" fill="#34d399" fill-opacity=".13" stroke="#6ee7b7" stroke-opacity=".8"/>
+    <text x="59.5" y="22" fill="#a7f3d0" text-anchor="middle" font-size="12" font-weight="700">STUDENT FIRST</text>
+    <rect x="131" width="134" height="35" rx="17.5" fill="#818cf8" fill-opacity=".16" stroke="#c4b5fd" stroke-opacity=".8"/>
+    <text x="198" y="22" fill="#ddd6fe" text-anchor="middle" font-size="12" font-weight="700">INSTANT RESULTS</text>
+  </g>
+  <text x="87" y="389" fill="#b6c6e8" font-size="14">A simple companion for every semester.</text>
+  <text x="87" y="447" fill="#91a7d4" font-size="12" letter-spacing="1.8">BUILT FOR STUDENTS  /  BERNARD VIVIAN</text>
+
+  <!-- Student desk scene -->
+  <ellipse cx="894" cy="440" rx="240" ry="28" fill="#070d24" opacity=".48"/>
+  <g class="float" filter="url(#shadow)">
+    <!-- open notebook -->
+    <g transform="translate(734 242) rotate(-8)">
+      <path d="M0 30Q64 9 123 30V176Q62 154 0 176Z" fill="url(#paper)" stroke="#c7d2fe" stroke-width="2"/>
+      <path d="M123 30Q185 9 246 30V176Q185 154 123 176Z" fill="#f8faff" stroke="#c7d2fe" stroke-width="2"/>
+      <path d="M123 30V176" stroke="#a5b4fc" stroke-width="2"/>
+      <g stroke="#b8c8e8" stroke-width="2" stroke-linecap="round">
+        <path d="M17 53H103M17 72H103M17 91H103M17 110H103M17 129H93M140 53H225M140 72H225M140 91H225M140 110H225M140 129H214"/>
+      </g>
+      <path d="M17 148L38 138L58 143L78 120L101 112" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="101" cy="112" r="4" fill="#4f46e5"/>
+      <rect x="142" y="139" width="75" height="20" rx="6" fill="#dcfce7"/>
+      <text x="179" y="153" fill="#047857" font-size="10" text-anchor="middle" font-weight="700">KEEP GOING!</text>
+    </g>
+  </g>
+
+  <!-- floating grade summary -->
+  <g class="float2" filter="url(#shadow)">
+    <rect x="895" y="94" width="226" height="126" rx="18" fill="#fff" stroke="#c7d2fe" stroke-width="2"/>
+    <rect x="895" y="94" width="226" height="38" rx="18" fill="#eef2ff"/>
+    <path d="M895 115V132H1121V115" fill="#eef2ff"/>
+    <circle cx="914" cy="113" r="4" fill="#818cf8"/><circle cx="928" cy="113" r="4" fill="#38bdf8"/><circle cx="942" cy="113" r="4" fill="#34d399"/>
+    <text x="911" y="153" fill="#64748b" font-size="11" font-weight="700">SEMESTER PERFORMANCE</text>
+    <text x="911" y="185" fill="#172554" font-size="28" font-weight="800">SGPA 8.72</text>
+    <rect x="911" y="197" width="193" height="7" rx="3.5" fill="#e0e7ff"/>
+    <rect x="911" y="197" width="168" height="7" rx="3.5" fill="url(#violet)"/>
+  </g>
+
+  <!-- CGPA progress panel -->
+  <g class="bob" filter="url(#shadow)">
+    <rect x="978" y="260" width="151" height="125" rx="17" fill="#12234a" stroke="#67e8f9" stroke-opacity=".85" stroke-width="1.5"/>
+    <text x="994" y="284" fill="#a5f3fc" font-size="11" font-weight="700">CGPA GOAL</text>
+    <text x="994" y="311" fill="#fff" font-size="23" font-weight="800">9.0</text>
+    <text x="1033" y="310" fill="#9fb2d7" font-size="11">/ 10</text>
+    <path d="M994 356V338L1013 328L1031 339L1050 316L1068 323L1088 298L1110 304" fill="none" stroke="#67e8f9" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+    <path d="M994 356V338L1013 328L1031 339L1050 316L1068 323L1088 298L1110 304V356Z" fill="#22d3ee" opacity=".12"/>
+  </g>
+
+  <!-- graduation cap -->
+  <g class="float2" transform="translate(760 105)">
+    <path d="M0 24L62 0L124 24L62 49Z" fill="#818cf8" stroke="#c4b5fd" stroke-width="1.5"/>
+    <path d="M24 34V54Q62 78 100 54V34L62 49Z" fill="#4f46e5"/>
+    <path d="M124 24V54" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="124" cy="57" r="4" fill="#fbbf24"/>
+  </g>
+  <g fill="none" stroke="url(#cyan)" stroke-width="2" stroke-linecap="round">
+    <path class="draw" d="M700 190C664 156 694 128 723 145S756 159 773 143"/>
+    <path class="draw" d="M1080 407C1130 423 1150 390 1125 369"/>
+  </g>
+  <g class="shine" fill="#a5f3fc"><circle cx="700" cy="190" r="4"/><circle cx="1125" cy="369" r="4"/><path d="M1144 228l4 10 10 4-10 4-4 10-4-10-10-4 10-4Z"/></g>
+  <g class="shine" fill="#c4b5fd"><path d="M705 94l3 8 8 3-8 3-3 8-3-8-8-3 8-3Z"/><circle cx="1150" cy="156" r="3"/></g>
+</svg>
