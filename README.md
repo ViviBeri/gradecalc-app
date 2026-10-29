@@ -1,179 +1,85 @@
-# GradeCalc – SGPA & CGPA Calculator
+# GradeCalc — SGPA & CGPA Calculator
 
-> Built for **SGC Students, Pondicherry**
+> Built for SGC students in Puducherry.
 
-A fast, offline-capable Progressive Web App (PWA) to calculate SGPA, CGPA and convert grades — designed specifically for the SGC Pondicherry 10-point grading system.
+GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, converting grade percentages, and projecting a possible SGPA from current subject marks. The app is designed for the SGC 10-point grade scale.
 
----
+## Live app
 
-## 📱 Live App
+[https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/)
 
-🔗 **[https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/)**
+## Features
 
----
+- **SGPA calculator:** enter subjects, marks and credits; grades update automatically; blank marks are shown as Absent; weighted subject breakdown and arrear/absence warnings are displayed.
+- **CGPA calculator:** average the entered semester SGPAs and show progress bars. **The current SGC mode uses an unweighted arithmetic average of semester SGPAs**, not a credit-weighted cumulative calculation. Check your institution's official rule if it differs.
+- **What-If SGPA projector:** estimate the average grade points needed across additional credits to reach a target SGPA.
+- **Grade converter:** SGPA/CGPA to percentage and percentage to CGPA using the Standard/Anna University formula.
+- **University formula reference:** Anna/standard GPA × 9.5; VTU GPA × 10 − 7.5; JNTUH/KTU/NIT GPA × 10; Mumbai University GPA × 7.1 + 11. These formulas are institution-specific; choose the formula prescribed by your university. The live converter lets you select one of these formulas and defaults to Standard/Anna.
+- **PWA support:** installable on supported browsers, theme preference, and cached offline shell.
 
-## ✨ Features
+## SGC grade scale
 
-### 🎓 SGPA Calculator
-- Enter subject name, marks (0–100) and credits
-- Grade fills **automatically** based on marks entered
-- Leave marks blank → shows **Ab (Absent)** automatically
-- Calculates SGPA instantly
-- Shows subject-wise breakdown table
-- ⚠️ Arrear warning for F grades
-- 🚫 Absent warning for blank marks
+Marks use inclusive lower bounds. Decimal marks follow the same thresholds: for example, 70.5 is A (8 points), and 79.5 is A+ (9 points).
 
-### 📊 CGPA Calculator
-- Enter semester-wise SGPA
-- Calculates cumulative CGPA
-- Visual progress bars for each semester
-- Add/remove semesters dynamically
+| Marks | Grade | Points |
+|---|---:|---:|
+| 80 ≤ m ≤ 100 | O | 10 |
+| 71 ≤ m < 80 | A+ | 9 |
+| 66 ≤ m < 71 | A | 8 |
+| 61 ≤ m < 66 | B+ | 7 |
+| 56 ≤ m < 61 | B | 6 |
+| 50 ≤ m < 56 | C | 5 |
+| 40 ≤ m < 50 | P | 4 |
+| 0 ≤ m < 40 | F | 0 |
+| Blank | Ab | 0 |
 
-### 🔄 Grade Converter
-- SGPA → Percentage
-- CGPA → Percentage
-- Percentage → CGPA
-- University formula reference (Anna University, VTU, JNTUH, KTU, Mumbai)
+## Formulas
 
-### ⚙️ Grade Scale Reference
-- View your university's complete grade scale
-- Tap "Grade Scale" button in header
+- SGPA = Σ(credit × grade point) ÷ Σ credits
+- CGPA = Σ semester SGPA ÷ number of entered semesters (unweighted average in this app)
+- Standard/Anna percentage: GPA × 9.5
+- VTU percentage: GPA × 10 − 7.5
+- JNTUH/KTU/NIT percentage: GPA × 10
+- Mumbai University percentage: GPA × 7.1 + 11
 
----
+## Privacy
 
-## 🏫 SGC Pondicherry Grade Scale
+Calculation and preferences are handled in the browser; subject and semester values are stored in the browser's local storage. The app does not need an account or a backend for its calculations. The page loads Google Fonts from Google's servers when online, so a browser request is sent to that third-party font service. Avoid entering sensitive personal information.
 
-| Marks (%) | Grade | Description    | Points |
-|-----------|-------|----------------|--------|
-| 80 – 100  | O     | Outstanding    | 10     |
-| 71 – 79   | A+    | Excellent      | 9      |
-| 66 – 70   | A     | Very Good      | 8      |
-| 61 – 65   | B+    | Good           | 7      |
-| 56 – 60   | B     | Above Average  | 6      |
-| 50 – 55   | C     | Average        | 5      |
-| 40 – 49   | P     | Pass           | 4      |
-| Below 40  | F     | Fail           | 0      |
-| Absent    | Ab    | Absent         | 0      |
+## Development
 
----
+This is a no-build static app. Open index.html in a browser for basic UI inspection. To run calculation tests, install Node.js and run:
 
-## 📐 Formula Used
-
-```
-SGPA = Σ (Credit × Grade Point) ÷ Σ Credits
-CGPA = Σ SGPA ÷ Number of Semesters
-Percentage = SGPA × 9.5
+```sh
+node tests.js
 ```
 
----
+The GitHub Actions workflow runs the same test command on pushes and pull requests. Test service-worker behavior in a browser served over localhost or HTTPS; opening the HTML file directly does not exercise service workers.
 
-## 🛠️ Tech Stack
-
-| Technology      | Purpose                          |
-|-----------------|----------------------------------|
-| HTML5           | App structure & layout           |
-| CSS3            | Design, dark theme, animations   |
-| JavaScript (ES6)| Grade logic & calculations       |
-| PWA Manifest    | Makes it installable on Android  |
-| Service Worker  | Offline support                  |
-| GitHub          | Code hosting & version control   |
-| Netlify         | Free web hosting & auto-deploy   |
-| PWABuilder      | Android APK/AAB generation       |
-| Google Play     | App store publishing             |
-
----
-
-## 📁 Project Structure
+## Project structure
 
 ```
-gradecalc-app/
-├── Index.html        ← Complete app (HTML + CSS + JS in one file)
-├── manifest.json     ← PWA configuration for Android
-├── sw.js             ← Service Worker (offline support)
-├── icon-72.png       ← App icon 72×72
-├── icon-96.png       ← App icon 96×96
-├── icon-128.png      ← App icon 128×128
-├── icon-144.png      ← App icon 144×144
-├── icon-152.png      ← App icon 152×152
-├── icon-192.png      ← App icon 192×192 (home screen)
-├── icon-384.png      ← App icon 384×384
-├── icon-512.png      ← App icon 512×512 (Play Store)
-└── README.md         ← This file
+index.html       Main UI
+calc.js          Shared grade/conversion logic
+manifest.json    PWA metadata and icons
+sw.js            Service worker and offline caching
+offline.html     Offline navigation fallback
+icons/           Single lowercase directory containing all app icons
+tests.js         Node-based calculation tests
+.github/workflows/tests.yml  Calculation test workflow
+LICENSE          MIT license
 ```
 
----
+## Install on Android
 
-## 🧪 Run Calculation Tests
+1. Open the live app in Chrome.
+2. Use the browser's Add to Home screen or install option when available.
+3. Open the installed app once online before relying on offline caching.
 
-The SGPA/CGPA calculation logic is shared between the app and the automated tests.
+## License
 
-Requirements: Node.js 20 or later. No third-party test dependencies are needed.
-
-```bash
-node --test tests/*.test.cjs
-```
-
-The tests cover grade boundaries, absent/failed subjects, credit-weighted SGPA, empty or invalid credits, CGPA averaging, blank semesters, and semester labels. GitHub Actions runs this suite on pushes and pull requests.
+Licensed under the [MIT License](LICENSE).
 
 ---
 
-## 🚀 How to Deploy (for contributors)
-
-### 1. Clone the repo
-```bash
-git clone https://github.com/ViviBeri/gradecalc-app.git
-cd gradecalc-app
-```
-
-### 2. Open locally
-Just open `Index.html` in any browser — no build tools needed!
-
-### 3. Deploy to Netlify
-- Push changes to `main` branch
-- Netlify auto-deploys within 30 seconds ✅
-
----
-
-## 📲 How to Install on Android
-
-1. Open the live link in **Chrome** on your Android phone
-2. Tap the **"Add to Home Screen"** prompt
-3. App installs like a native app — works offline! ✅
-
-Or download from **Google Play Store** (search: GradeCalc SGC)
-
----
-
-## 🔄 Auto-Update System
-
-```
-You edit code → Push to GitHub → Netlify redeploys → 
-App updates for ALL users automatically (no reinstall needed)
-```
-
----
-
-## 📋 Roadmap (Future Updates)
-
-- [ ] Multiple university grade scale support
-- [ ] Save/load semester history
-- [ ] Share result as image
-- [ ] Tamil language support
-- [ ] Dark/Light theme toggle
-- [ ] Backlog/Arrear tracker
-
----
-
-## 👨‍💻 Developer
-
-**Designed by SGC Student, Pondicherry**
-
----
-
-## 📄 License
-
-This project is open source and free to use for educational purposes.
-
----
-
-*GradeCalc · SGPA & CGPA Calculator · SGC Pondicherry*
+*GradeCalc · SGPA & CGPA Calculator · SGC Puducherry*
