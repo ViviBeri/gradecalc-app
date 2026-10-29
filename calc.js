@@ -38,6 +38,18 @@
     });
     return { totalCredits: totalCredits, totalPoints: totalPoints, sgpa: totalCredits > 0 ? totalPoints / totalCredits : null };
   }
+  function calculateCGPA(semesters) {
+    var validSemesters = [];
+    (semesters || []).forEach(function (semester, index) {
+      if (!semester || semester.sgpa == null || String(semester.sgpa).trim() === '') return;
+      var value = Number(semester.sgpa);
+      if (!Number.isFinite(value) || value < 0 || value > 10) return;
+      validSemesters.push({ sgpa: semester.sgpa, label: semester.label || ('Semester ' + (index + 1)), numericSGPA: value });
+    });
+    if (validSemesters.length === 0) return null;
+    var sum = validSemesters.reduce(function (total, semester) { return total + semester.numericSGPA; }, 0);
+    return { validSemesters: validSemesters, sum: sum, cgpa: sum / validSemesters.length };
+  }
   var percentageFormulas = {
     anna: function (gpa) { return gpa * 9.5; },
     vtu: function (gpa) { return gpa * 10 - 7.5; },
@@ -56,12 +68,13 @@
   function convertPercentageToGpa(percentage, formula) {
     return reversePercentageFormulas[formula || 'anna'](Number(percentage));
   }
-  var api = { marksToGrade: marksToGrade, pointsToGradeLetter: pointsToGradeLetter, calculateWeightedSGPA: calculateWeightedSGPA, percentageFormulas: percentageFormulas, reversePercentageFormulas: reversePercentageFormulas, convertGpaToPercentage: convertGpaToPercentage, convertPercentageToGpa: convertPercentageToGpa };
+  var api = { marksToGrade: marksToGrade, pointsToGradeLetter: pointsToGradeLetter, calculateWeightedSGPA: calculateWeightedSGPA, calculateCGPA: calculateCGPA, percentageFormulas: percentageFormulas, reversePercentageFormulas: reversePercentageFormulas, convertGpaToPercentage: convertGpaToPercentage, convertPercentageToGpa: convertPercentageToGpa };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) {
     root.marksToGrade = marksToGrade;
     root.pointsToGradeLetter = pointsToGradeLetter;
     root.calculateWeightedSGPA = calculateWeightedSGPA;
+    root.calculateCGPA = calculateCGPA;
     root.gradeCalcPercentageFormulas = percentageFormulas;
     root.gradeCalcReversePercentageFormulas = reversePercentageFormulas;
     root.convertGpaToPercentage = convertGpaToPercentage;
