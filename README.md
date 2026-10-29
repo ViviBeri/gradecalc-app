@@ -60,14 +60,14 @@ The GitHub Actions workflow runs the same test command on pushes and pull reques
 
 ```
 index.html       Main UI
-calc.js          Shared grade/conversion logic
+calc.js          Single shared grade, SGPA/CGPA, and conversion logic
 manifest.json    PWA metadata and icons
 sw.js            Service worker and offline caching
 offline.html     Offline navigation fallback
-icons/           Single lowercase directory containing all app icons
+icons/           Canonical lowercase directory containing all app icons (72–512 px)
 tests.js         Node-based calculation tests
 .github/workflows/tests.yml  Calculation test workflow
-LICENSE          MIT license
+LICENSE          MIT license (Copyright © 2026 Bernard Vivian)
 ```
 
 ## Install on Android
@@ -76,9 +76,9 @@ LICENSE          MIT license
 2. Use the browser's Add to Home screen or install option when available.
 3. Open the installed app once online before relying on offline caching.
 
-## License
+## Attribution and license
 
-Licensed under the [MIT License](LICENSE).
+Made by **Bernard Vivian**. Copyright © 2026 Bernard Vivian. Licensed under the [MIT License](LICENSE).
 
 ---
 
