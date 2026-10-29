@@ -3,11 +3,12 @@
 // returning visitors), cache-first for static assets (fonts/icons) so the
 // app still works fully offline.
 
-const CACHE_NAME = 'gradecalc-v7';
+const CACHE_NAME = 'gradecalc-v8';
 
 const ASSETS = [
   '/',
   '/manifest.json',
+  '/offline.html',
   '/gradecalc-icon.svg?v=20261029-green-v2',
   '/calc.js',
   '/icons/icon-192.png?v=20261029-green-v2',
@@ -35,19 +36,28 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (event.request.url.startsWith('chrome-extension')) return;
 
-  // App shell (page navigations): always try the network first, so any
-  // update you push is visible on the very next load. Only fall back to
-  // the cached copy when there's no connection.
+  // App shell: cap network wait so dead-but-connected networks fall back quickly.
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then(r => r || caches.match('/')))
-    );
+    event.respondWith((async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      try {
+        const response = await fetch(event.request, { signal: controller.signal });
+        if (!response.ok) throw new Error('Navigation network response was not OK');
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(() => {});
+        return response;
+      } catch (_) {
+        return (await caches.match(event.request)) ||
+          (await caches.match('/offline.html')) ||
+          (await caches.match('/')) ||
+          new Response('You are offline. Reconnect and try again.', {
+            status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })());
     return;
   }
 
@@ -56,7 +66,9 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => {
       if (cached) return cached;
 
-      return fetch(event.request).then(response => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      return fetch(event.request, { signal: controller.signal }).then(response => {
         if (
           response.status === 200 &&
           (event.request.url.startsWith(self.location.origin) ||
@@ -67,7 +79,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         }
         return response;
-      }).catch(() => {});
+      }).catch(() => caches.match('/offline.html').then(fallback => fallback || new Response('', { status: 504 }))).finally(() => clearTimeout(timeoutId));
     })
   );
 });
