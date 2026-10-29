@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0A0F1E" />
   <meta name="description" content="Calculate SGPA, CGPA, convert grades, and predict What-If scenarios. For SGC Students, Pondicherry." />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>GradeCalc – SGPA & CGPA Calculator + What‑If</title>
+  <script src="calc.js"></script>
   <script>
     (function(){
       try {
@@ -19,7 +20,7 @@
     })();
   </script>
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -154,14 +155,14 @@
           <div class="col-label">Marks%</div><div class="col-label">Grade</div>
           <div class="col-label">Description</div><div class="col-label">Points</div>
         </div>
-        <div class="scale-row"><span>80–100</span><span class="grade-chip">O</span><span style="color:var(--muted)">Outstanding</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">10</span></div>
-        <div class="scale-row"><span>71–79</span><span class="grade-chip">A+</span><span style="color:var(--muted)">Excellent</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">9</span></div>
-        <div class="scale-row"><span>66–70</span><span class="grade-chip">A</span><span style="color:var(--muted)">Very Good</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">8</span></div>
-        <div class="scale-row"><span>61–65</span><span class="grade-chip">B+</span><span style="color:var(--muted)">Good</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">7</span></div>
-        <div class="scale-row"><span>56–60</span><span class="grade-chip">B</span><span style="color:var(--muted)">Above Avg</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">6</span></div>
-        <div class="scale-row"><span>50–55</span><span class="grade-chip">C</span><span style="color:var(--muted)">Average</span><span style="font-family:var(--mono);font-weight:700;color:var(--yellow)">5</span></div>
-        <div class="scale-row"><span>40–49</span><span class="grade-chip pass-chip">P</span><span style="color:var(--muted)">Pass</span><span style="font-family:var(--mono);font-weight:700;color:var(--yellow)">4</span></div>
-        <div class="scale-row"><span>Below 40</span><span class="grade-chip fail-chip">F</span><span style="color:var(--muted)">Fail</span><span style="font-family:var(--mono);font-weight:700;color:var(--red)">0</span></div>
+        <div class="scale-row"><span>80 ≤ m ≤ 100</span><span class="grade-chip">O</span><span style="color:var(--muted)">Outstanding</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">10</span></div>
+        <div class="scale-row"><span>71 ≤ m < 80</span><span class="grade-chip">A+</span><span style="color:var(--muted)">Excellent</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">9</span></div>
+        <div class="scale-row"><span>66 ≤ m < 71</span><span class="grade-chip">A</span><span style="color:var(--muted)">Very Good</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">8</span></div>
+        <div class="scale-row"><span>61 ≤ m < 66</span><span class="grade-chip">B+</span><span style="color:var(--muted)">Good</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">7</span></div>
+        <div class="scale-row"><span>56 ≤ m < 61</span><span class="grade-chip">B</span><span style="color:var(--muted)">Above Avg</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">6</span></div>
+        <div class="scale-row"><span>50 ≤ m < 56</span><span class="grade-chip">C</span><span style="color:var(--muted)">Average</span><span style="font-family:var(--mono);font-weight:700;color:var(--yellow)">5</span></div>
+        <div class="scale-row"><span>40 ≤ m < 50</span><span class="grade-chip pass-chip">P</span><span style="color:var(--muted)">Pass</span><span style="font-family:var(--mono);font-weight:700;color:var(--yellow)">4</span></div>
+        <div class="scale-row"><span>0 ≤ m < 40</span><span class="grade-chip fail-chip">F</span><span style="color:var(--muted)">Fail</span><span style="font-family:var(--mono);font-weight:700;color:var(--red)">0</span></div>
         <div class="scale-row"><span>Absent</span><span class="grade-chip absent-chip">Ab</span><span style="color:var(--muted)">Absent</span><span style="font-family:var(--mono);font-weight:700;color:var(--yellow)">0</span></div>
       </div>
     </div>
@@ -221,6 +222,7 @@
     <div id="panel-cgpa" class="panel">
       <div class="card">
         <div class="card-title">Enter SGPA for each semester</div>
+        <p style="font-size:11px;line-height:1.5;color:var(--muted);margin:-4px 0 12px">CGPA here is the unweighted average of entered semester SGPAs. Your institution may use a different rule.</p>
         <div id="cgpa-sems"></div>
         <button class="add-btn" onclick="addSem()" style="border-color:rgba(99,102,241,.4);color:#818CF8">+ Add Semester</button>
         <div class="btn-row">
@@ -239,6 +241,13 @@
           <button class="mode-pill"        onclick="setConvMode('cgpa-pct',this)">CGPA → %</button>
           <button class="mode-pill"        onclick="setConvMode('pct-cgpa',this)">% → CGPA</button>
         </div>
+        <label for="conv-formula" style="display:block;font-size:12px;color:var(--muted);font-weight:600;margin:4px 0 6px">University formula</label>
+        <select class="input" id="conv-formula" onchange="doConvert()" style="margin-bottom:12px">
+          <option value="anna">Standard / Anna University (GPA × 9.5)</option>
+          <option value="vtu">VTU (GPA × 10 − 7.5)</option>
+          <option value="jntuh_ktu_nit">JNTUH / KTU / NIT (GPA × 10)</option>
+          <option value="mumbai">Mumbai University (GPA × 7.1 + 11)</option>
+        </select>
         <div id="conv-label" style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px">Enter SGPA (0–10)</div>
         <input class="input big-input" id="conv-input" type="number" step="0.01" placeholder="e.g. 8.42" oninput="doConvert()" />
         <div id="conv-result"></div>
@@ -266,7 +275,6 @@
   </div>
 </div>
 
-<script src="gradecalc-core.js"></script>
 <script>
 // ── Theme (dark/light) ───────────────────────────────────────────────────
 function applyThemeMeta(theme) {
@@ -284,21 +292,7 @@ function toggleTheme() {
   applyThemeMeta(next);
 }
 
-// ── Grade Scale (SGC Pondicherry) ─────────────────────────────────────────
-function marksToGrade(val) {
-  return GradeCalcCore.marksToGrade(val);
-}
-
-function pointsToGradeLetter(points) {
-  if (points >= 9.5) return 'O (10)';
-  if (points >= 8.5) return 'A+ (9)';
-  if (points >= 7.5) return 'A (8)';
-  if (points >= 6.5) return 'B+ (7)';
-  if (points >= 5.5) return 'B (6)';
-  if (points >= 4.5) return 'C (5)';
-  if (points >= 3.5) return 'P (4)';
-  return 'F (0) — Needs improvement';
-}
+// Grade and conversion logic is shared with calc.js so it can be tested in Node.
 
 function gradeColor(v) {
   v = parseFloat(v);
@@ -444,17 +438,7 @@ function removeSubject(id) {
 }
 
 function getCurrentSubjectStats() {
-  var totalCredits = 0, totalPoints = 0;
-  for (var i=0; i<subjects.length; i++) {
-    var s = subjects[i];
-    var cr = parseFloat(s.credits);
-    if (isNaN(cr) || cr <= 0) continue;
-    var gp = parseFloat(s.gradePoint);
-    if (isNaN(gp)) gp = 0;
-    totalCredits += cr;
-    totalPoints += cr * gp;
-  }
-  return { totalCredits: totalCredits, totalPoints: totalPoints };
+  return calculateWeightedSGPA(subjects);
 }
 
 function updateWhatIfProjection() {
@@ -509,15 +493,16 @@ function calcSGPA() {
     s.gradeLabel = g.label;
   }
 
-  var calculation = GradeCalcCore.calculateSGPA(subjects);
-  if (!calculation) { alert('Please enter credits for at least one subject.'); return; }
+  var valid = subjects.filter(function(s){return s.credits && parseFloat(s.credits)>0});
+  if (valid.length === 0) { alert('Please enter credits for at least one subject.'); return; }
 
-  var valid = calculation.validSubjects;
   var fails   = valid.filter(function(s){return s.gradeLabel==='F'});
   var absents = valid.filter(function(s){return s.gradeLabel==='Ab'});
-  var totalCr  = calculation.totalCredits;
-  var totalPts = calculation.totalPoints;
-  var sgpa = calculation.sgpa.toFixed(2);
+  var weightedStats = calculateWeightedSGPA(valid);
+  var totalCr = weightedStats.totalCredits;
+  var totalPts = weightedStats.totalPoints;
+  if (totalCr <= 0 || weightedStats.sgpa === null) { alert('Please enter positive credits for at least one subject.'); return; }
+  var sgpa = weightedStats.sgpa.toFixed(2);
   var pct  = (sgpa*9.5).toFixed(2);
   var col  = gradeColor(sgpa);
 
@@ -614,11 +599,13 @@ function calcCGPA() {
     var row = document.getElementById('sem-'+semesters[i].id);
     if (row) semesters[i].sgpa = row.querySelector('input').value;
   }
-  // The shared pure function keeps the UI calculation and automated tests in sync.
-  var calculation = GradeCalcCore.calculateCGPA(semesters);
-  if (!calculation) { alert('Please enter SGPA for at least one semester.'); return; }
-  var valid = calculation.validSemesters;
-  var cgpa = calculation.cgpa.toFixed(2);
+  // Attach position-based labels (Semester 1, 2, ...) before filtering, so
+  // a bar always shows the same semester number as the input row it came from.
+  var indexed = semesters.map(function(s, idx){ return { sgpa: s.sgpa, label: 'Semester ' + (idx+1) }; });
+  var valid = indexed.filter(function(s){return s.sgpa!==''&&!isNaN(parseFloat(s.sgpa))});
+  if (valid.length===0) { alert('Please enter SGPA for at least one semester.'); return; }
+  var sum  = valid.reduce(function(a,s){return a+parseFloat(s.sgpa)}, 0);
+  var cgpa = (sum/valid.length).toFixed(2);
   var pct  = (cgpa*9.5).toFixed(2);
   var col  = gradeColor(cgpa);
   var bars = '';
@@ -667,11 +654,13 @@ function setConvMode(mode, btn) {
 function doConvert() {
   var v = parseFloat(document.getElementById('conv-input').value);
   var el = document.getElementById('conv-result');
-  if (isNaN(v)||v<0) { el.innerHTML=''; return; }
+  var formula = document.getElementById('conv-formula').value;
+  if (isNaN(v) || v < 0 || (convMode !== 'pct-cgpa' && v > 10) || (convMode === 'pct-cgpa' && v > 100)) { el.innerHTML=''; return; }
   var label, value, note;
-  if (convMode==='sgpa-pct') { label='Percentage'; value=(v*9.5).toFixed(2)+'%'; note='Formula: SGPA × 9.5'; }
-  else if (convMode==='cgpa-pct') { label='Percentage'; value=(v*9.5).toFixed(2)+'%'; note='Formula: CGPA × 9.5'; }
-  else { label='CGPA'; value=(v/9.5).toFixed(2); note='Formula: % ÷ 9.5'; }
+  var formulaNames = {anna:'Standard / Anna University',vtu:'VTU',jntuh_ktu_nit:'JNTUH / KTU / NIT',mumbai:'Mumbai University'};
+  if (convMode==='sgpa-pct') { label='Percentage'; value=convertGpaToPercentage(v, formula).toFixed(2)+'%'; note='Formula: '+formulaNames[formula]+' percentage conversion'; }
+  else if (convMode==='cgpa-pct') { label='Percentage'; value=convertGpaToPercentage(v, formula).toFixed(2)+'%'; note='Formula: '+formulaNames[formula]+' percentage conversion'; }
+  else { label='CGPA'; value=convertPercentageToGpa(v, formula).toFixed(2); note='Inverse formula: '+formulaNames[formula]; }
   el.innerHTML='<div class="convert-result">'
     +'<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+label+'</div>'
     +'<div style="font-size:40px;font-weight:800;color:var(--teal);font-family:var(--mono);line-height:1">'+value+'</div>'
