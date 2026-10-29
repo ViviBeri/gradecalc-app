@@ -18,7 +18,6 @@
     "education",
     "utilities"
   ],
-  "iarc_rating_id": "",
   "prefer_related_applications": false,
   "icons": [
     {
@@ -50,15 +49,6 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "icons/icon-512.png?v=20261029-green-v2",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "GradeCalc SGPA Calculator"
     }
   ],
   "shortcuts": [
@@ -106,5 +96,6 @@
   "protocol_handlers": [],
   "edge_side_panel": {
     "preferred_width": 480
-  }
+  },
+  "id": "/"
 }
