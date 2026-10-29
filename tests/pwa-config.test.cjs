@@ -70,3 +70,12 @@ test('destructive SGPA and CGPA resets require explicit confirmation', () => {
   assert.match(html, /function resetSGPA\(\)\s*\{\s*if \(!confirm\('Reset all saved SGPA subjects and marks\?/);
   assert.match(html, /function resetCGPA\(\)\s*\{\s*if \(!confirm\('Reset all saved semester SGPAs\?/);
 });
+
+
+test('restored subject and semester records receive safe default fields', () => {
+  const html = read('index.html');
+  assert.match(html, /subjects = parsedSubj\.map\(function \(item\)/);
+  assert.match(html, /id: uid\(\), name: '', marks: '', credits: '', gradePoint: 0, gradeLabel: 'Ab'/);
+  assert.match(html, /semesters = parsedSem\.map\(function \(item\)/);
+  assert.match(html, /Object\.assign\(\{ id: uid\(\), sgpa: '' \}, item/);
+});
