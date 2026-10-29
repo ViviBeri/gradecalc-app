@@ -8,6 +8,12 @@ GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, conv
   <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/readme-hero.svg" alt="GradeCalc animated 3D project banner" width="100%" />
 </p>
 
+<p align="center">
+  <a href="https://gradecalc-sgc.netlify.app/"><img src="https://img.shields.io/badge/Live_App-Open-16a34a?style=for-the-badge&logo=netlify&logoColor=white" alt="Open live app" /></a>
+  <a href="https://github.com/ViviBeri/gradecalc-app/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/ViviBeri/gradecalc-app/tests.yml?branch=main&label=Tests&style=for-the-badge&logo=githubactions&logoColor=white" alt="Calculation test workflow status" /></a>
+  <a href="https://github.com/ViviBeri/gradecalc-app/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT license" /></a>
+</p>
+
 ## Live app
 
 [https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/)
