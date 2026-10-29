@@ -61,6 +61,10 @@
   if (root) {
     root.marksToGrade = marksToGrade;
     root.pointsToGradeLetter = pointsToGradeLetter;
+    root.calculateWeightedSGPA = calculateWeightedSGPA;
     root.gradeCalcPercentageFormulas = percentageFormulas;
+    root.gradeCalcReversePercentageFormulas = reversePercentageFormulas;
+    root.convertGpaToPercentage = convertGpaToPercentage;
+    root.convertPercentageToGpa = convertPercentageToGpa;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
