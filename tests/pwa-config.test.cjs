@@ -46,3 +46,10 @@ test('main page links to the manifest and the current SVG icon version', () => {
   assert.ok(workerIcon, 'service worker should precache the SVG icon');
   assert.equal(htmlIcon[1].split('?v=')[1], workerIcon[1], 'favicon and service-worker icon versions must match');
 });
+
+test('CGPA UI rejects values outside 0–10 and delegates calculation to shared logic', () => {
+  const html = read('index.html');
+  assert.match(html, /Each entered SGPA must be between 0 and 10/);
+  assert.match(html, /var calculation = calculateCGPA\(indexed\)/);
+  assert.match(html, /var cgpa = calculation\.cgpa\.toFixed\(2\)/);
+});
