@@ -63,3 +63,10 @@ test('local storage failures and malformed saved data cannot prevent startup', (
   assert.match(html, /Array\.isArray\(parsedSem\)/);
   assert.match(html, /function loadFromLocalStorage\(\)\s*\{/);
 });
+
+
+test('destructive SGPA and CGPA resets require explicit confirmation', () => {
+  const html = read('index.html');
+  assert.match(html, /function resetSGPA\(\)\s*\{\s*if \(!confirm\('Reset all saved SGPA subjects and marks\?/);
+  assert.match(html, /function resetCGPA\(\)\s*\{\s*if \(!confirm\('Reset all saved semester SGPAs\?/);
+});
