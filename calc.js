@@ -80,10 +80,12 @@
     mumbai: function (pct) { return (pct - 11) / 7.1; }
   };
   function convertGpaToPercentage(gpa, formula) {
-    return percentageFormulas[formula || 'anna'](Number(gpa));
+    var selectedFormula = percentageFormulas[formula] || percentageFormulas.anna;
+    return selectedFormula(Number(gpa));
   }
   function convertPercentageToGpa(percentage, formula) {
-    return reversePercentageFormulas[formula || 'anna'](Number(percentage));
+    var selectedFormula = reversePercentageFormulas[formula] || reversePercentageFormulas.anna;
+    return selectedFormula(Number(percentage));
   }
   var api = { marksToGrade: marksToGrade, pointsToGradeLetter: pointsToGradeLetter, calculateWeightedSGPA: calculateWeightedSGPA, calculateSGPA: calculateSGPA, calculateCGPA: calculateCGPA, percentageFormulas: percentageFormulas, reversePercentageFormulas: reversePercentageFormulas, convertGpaToPercentage: convertGpaToPercentage, convertPercentageToGpa: convertPercentageToGpa };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
