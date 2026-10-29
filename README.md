@@ -4,6 +4,12 @@
 
 GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, converting grade percentages, and projecting a possible SGPA from current subject marks. The app is designed for the SGC 10-point grade scale.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/readme-hero.svg" alt="GradeCalc animated 3D project banner" width="100%" />
+</p>
+
+
+
 ## Live app
 
 [https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/)
