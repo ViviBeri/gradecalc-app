@@ -266,6 +266,7 @@
   </div>
 </div>
 
+<script src="gradecalc-core.js"></script>
 <script>
 // ── Theme (dark/light) ───────────────────────────────────────────────────
 function applyThemeMeta(theme) {
@@ -285,22 +286,7 @@ function toggleTheme() {
 
 // ── Grade Scale (SGC Pondicherry) ─────────────────────────────────────────
 function marksToGrade(val) {
-  var s = String(val).trim();
-  if (s === '' || s === 'null' || s === 'undefined') {
-    return {label:'Ab', point:0, cls:'absent'};
-  }
-  var m = parseFloat(s);
-  if (isNaN(m) || m < 0 || m > 100) {
-    return {label:'Ab', point:0, cls:'absent'};
-  }
-  if (m >= 80) return {label:'O',  point:10, cls:'pass'};
-  if (m >= 71) return {label:'A+', point:9,  cls:'pass'};
-  if (m >= 66) return {label:'A',  point:8,  cls:'pass'};
-  if (m >= 61) return {label:'B+', point:7,  cls:'pass'};
-  if (m >= 56) return {label:'B',  point:6,  cls:'pass'};
-  if (m >= 50) return {label:'C',  point:5,  cls:'pass'};
-  if (m >= 40) return {label:'P',  point:4,  cls:'pass'};
-  return             {label:'F',  point:0,  cls:'fail'};
+  return GradeCalcCore.marksToGrade(val);
 }
 
 function pointsToGradeLetter(points) {
@@ -523,14 +509,15 @@ function calcSGPA() {
     s.gradeLabel = g.label;
   }
 
-  var valid = subjects.filter(function(s){return s.credits && parseFloat(s.credits)>0});
-  if (valid.length === 0) { alert('Please enter credits for at least one subject.'); return; }
+  var calculation = GradeCalcCore.calculateSGPA(subjects);
+  if (!calculation) { alert('Please enter credits for at least one subject.'); return; }
 
+  var valid = calculation.validSubjects;
   var fails   = valid.filter(function(s){return s.gradeLabel==='F'});
   var absents = valid.filter(function(s){return s.gradeLabel==='Ab'});
-  var totalCr  = valid.reduce(function(a,s){return a+(parseFloat(s.credits)||0)}, 0);
-  var totalPts = valid.reduce(function(a,s){return a+(parseFloat(s.credits)||0)*(parseFloat(s.gradePoint)||0)}, 0);
-  var sgpa = (totalPts/totalCr).toFixed(2);
+  var totalCr  = calculation.totalCredits;
+  var totalPts = calculation.totalPoints;
+  var sgpa = calculation.sgpa.toFixed(2);
   var pct  = (sgpa*9.5).toFixed(2);
   var col  = gradeColor(sgpa);
 
@@ -627,13 +614,11 @@ function calcCGPA() {
     var row = document.getElementById('sem-'+semesters[i].id);
     if (row) semesters[i].sgpa = row.querySelector('input').value;
   }
-  // Attach position-based labels (Semester 1, 2, ...) before filtering, so
-  // a bar always shows the same semester number as the input row it came from.
-  var indexed = semesters.map(function(s, idx){ return { sgpa: s.sgpa, label: 'Semester ' + (idx+1) }; });
-  var valid = indexed.filter(function(s){return s.sgpa!==''&&!isNaN(parseFloat(s.sgpa))});
-  if (valid.length===0) { alert('Please enter SGPA for at least one semester.'); return; }
-  var sum  = valid.reduce(function(a,s){return a+parseFloat(s.sgpa)}, 0);
-  var cgpa = (sum/valid.length).toFixed(2);
+  // The shared pure function keeps the UI calculation and automated tests in sync.
+  var calculation = GradeCalcCore.calculateCGPA(semesters);
+  if (!calculation) { alert('Please enter SGPA for at least one semester.'); return; }
+  var valid = calculation.validSemesters;
+  var cgpa = calculation.cgpa.toFixed(2);
   var pct  = (cgpa*9.5).toFixed(2);
   var col  = gradeColor(cgpa);
   var bars = '';
