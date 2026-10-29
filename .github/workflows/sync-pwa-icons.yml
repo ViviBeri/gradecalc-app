@@ -44,5 +44,6 @@ jobs:
             echo "Icons already current."
           else
             git commit -m "Regenerate green-black PWA icon sizes"
+            git pull --rebase origin main
             git push
           fi
