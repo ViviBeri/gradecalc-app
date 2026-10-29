@@ -14,7 +14,7 @@ GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, conv
 - **CGPA calculator:** average the entered semester SGPAs and show progress bars. **The current SGC mode uses an unweighted arithmetic average of semester SGPAs**, not a credit-weighted cumulative calculation. Check your institution's official rule if it differs.
 - **What-If SGPA projector:** estimate the average grade points needed across additional credits to reach a target SGPA.
 - **Grade converter:** SGPA/CGPA to percentage and percentage to CGPA using the Standard/Anna University formula.
-- **University formula reference:** Anna/standard GPA × 9.5; VTU GPA × 10 − 7.5; JNTUH/KTU/NIT GPA × 10; Mumbai University GPA × 7.1 + 11. These formulas are institution-specific; choose the formula prescribed by your university. The live converter currently uses the Standard/Anna formula.
+- **University formula reference:** Anna/standard GPA × 9.5; VTU GPA × 10 − 7.5; JNTUH/KTU/NIT GPA × 10; Mumbai University GPA × 7.1 + 11. These formulas are institution-specific; choose the formula prescribed by your university. The live converter lets you select one of these formulas and defaults to Standard/Anna.
 - **PWA support:** installable on supported browsers, theme preference, and cached offline shell.
 
 ## SGC grade scale
