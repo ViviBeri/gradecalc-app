@@ -586,6 +586,7 @@ function calcSGPA() {
 }
 
 function resetSGPA() {
+  if (!confirm('Reset all saved SGPA subjects and marks? This cannot be undone.')) return;
   subjects = [];
   for (var i=0; i<4; i++) subjects.push({id:uid(), name:'', marks:'', credits:'', gradePoint:0, gradeLabel:'Ab'});
   renderSubjects();
@@ -680,6 +681,7 @@ function calcCGPA() {
 }
 
 function resetCGPA() {
+  if (!confirm('Reset all saved semester SGPAs? This cannot be undone.')) return;
   semesters = [];
   for (var i=0; i<4; i++) semesters.push({id:uid(), sgpa:''});
   renderSems();
