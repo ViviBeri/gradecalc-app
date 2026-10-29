@@ -95,3 +95,16 @@ test('CGPA includes zero and preserves original semester labels after blanks', (
 test('CGPA returns null when no semester has a numeric SGPA', () => {
   assert.equal(calculateCGPA([{ sgpa: '' }, { sgpa: 'x' }]), null);
 });
+
+
+test('weighted SGPA treats invalid grade points outside 0–10 as zero', () => {
+  const result = require('../calc.js').calculateWeightedSGPA([
+    { credits: 2, gradePoint: 12 },
+    { credits: 1, gradePoint: -1 },
+    { credits: 3, gradePoint: 'invalid' },
+    { credits: 2, gradePoint: 8 }
+  ]);
+  assert.equal(result.totalCredits, 8);
+  assert.equal(result.totalPoints, 16);
+  assert.equal(result.sgpa, 2);
+});
