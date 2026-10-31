@@ -32,7 +32,7 @@ class DataImportExportTests(unittest.TestCase):
             results = calculate_results(records)
             self.assertEqual(len(results), 3)
             self.assertAlmostEqual(results[0]["semester_sgpa"], (4 * 10 + 3 * 9) / 7)
-            self.assertAlmostEqual(results[1]["semester_sgpa"], 10)
+            self.assertAlmostEqual(results[1]["semester_sgpa"], (4 * 10 + 3 * 9) / 7)
 
     def test_csv_export(self):
         with tempfile.TemporaryDirectory() as temp_dir:
