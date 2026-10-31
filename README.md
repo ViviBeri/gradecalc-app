@@ -84,6 +84,16 @@ python report_generator.py example_semester.json sample-semester-report.pdf
 
 Use your own JSON file with `student_name`, `semester`, and a `subjects` array containing each subject's `name`, `marks`, and `credits`. Optional fields include `institution`, `register_number`, `programme`, and `academic_year`. The generated PDF is a student-created calculation report, not an official transcript.
 
+### CSV and Excel bulk tools
+
+Prepare a `.csv` or `.xlsx` file with one subject per row and these required columns: `student_name`, `semester`, `subject`, `marks`, and `credits`. `register_number` is optional. Then run:
+
+```sh
+python data_import_export.py example_records.csv calculated-results.xlsx
+```
+
+Use `.csv` as the output extension for a CSV export. Each exported subject row includes its grade, grade point, credit points, and the calculated SGPA for that student's semester. Excel support uses openpyxl; CSV support uses only the Python standard library.
+
 GitHub Actions runs the JavaScript and Python test suites. Test service-worker behavior in a browser served over localhost or HTTPS; opening the HTML file directly does not exercise service workers.
 
 ## Project structure
@@ -96,7 +106,7 @@ sw.js            Service worker and offline caching
 offline.html     Offline navigation fallback
 icons/           Canonical lowercase directory containing all app icons (72–512 px)
 tests.js         Node-based calculation tests
-python/          Python calculation mirror, PDF report generator, and tests
+python/          Python calculation mirror, PDF reports, CSV/Excel tools, and tests
 .github/workflows/tests.yml  JavaScript calculation test workflow
 .github/workflows/python-tests.yml  Python calculation and PDF test workflow
 LICENSE          MIT license (Copyright © 2026 Bernard Vivian)
