@@ -58,13 +58,33 @@ Calculation and preferences are handled in the browser; subject and semester val
 
 ## Development
 
-This is a no-build static app. Open index.html in a browser for basic UI inspection. To run calculation tests, install Node.js and run:
+This is a no-build static app. Open index.html in a browser for basic UI inspection. To run the browser calculation tests, install Node.js and run:
 
 ```sh
 node tests.js
 ```
 
-The GitHub Actions workflow runs the same test command on pushes and pull requests. Test service-worker behavior in a browser served over localhost or HTTPS; opening the HTML file directly does not exercise service workers.
+### Python tools
+
+Python is an optional development and report-generation layer. The browser PWA continues to run on JavaScript and does not require Python or a server.
+
+Install the PDF dependency and run the Python tests:
+
+```sh
+python -m pip install -r python/requirements.txt
+cd python
+python -m unittest -v test_gradecalc.py test_report_generator.py
+```
+
+Generate a sample semester report from the included JSON file:
+
+```sh
+python report_generator.py example_semester.json sample-semester-report.pdf
+```
+
+Use your own JSON file with `student_name`, `semester`, and a `subjects` array containing each subject's `name`, `marks`, and `credits`. Optional fields include `institution`, `register_number`, `programme`, and `academic_year`. The generated PDF is a student-created calculation report, not an official transcript.
+
+GitHub Actions runs the JavaScript and Python test suites. Test service-worker behavior in a browser served over localhost or HTTPS; opening the HTML file directly does not exercise service workers.
 
 ## Project structure
 
@@ -76,7 +96,9 @@ sw.js            Service worker and offline caching
 offline.html     Offline navigation fallback
 icons/           Canonical lowercase directory containing all app icons (72–512 px)
 tests.js         Node-based calculation tests
-.github/workflows/tests.yml  Calculation test workflow
+python/          Python calculation mirror, PDF report generator, and tests
+.github/workflows/tests.yml  JavaScript calculation test workflow
+.github/workflows/python-tests.yml  Python calculation and PDF test workflow
 LICENSE          MIT license (Copyright © 2026 Bernard Vivian)
 ```
 
