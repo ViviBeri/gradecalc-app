@@ -121,7 +121,7 @@ def calculate_results(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "grade": grade["gradeLabel"],
                 "grade_point": grade["gradePoint"],
                 "credits": item["credits"],
-                "credit_points": item["numericCredits"] * grade["gradePoint"],
+                "credit_points": grade["numericCredits"] * grade["gradePoint"],
                 "semester_sgpa": calculated["sgpa"],
             })
     return output
