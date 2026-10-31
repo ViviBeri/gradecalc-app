@@ -3,7 +3,7 @@ name: Deploy GradeCalc to GitHub Pages
 on:
   push:
     branches:
-      - pages/github-pages-migration
+      - main
   workflow_dispatch:
 
 permissions:
