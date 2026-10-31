@@ -1,0 +1,14 @@
+{
+  "institution": "Saradha Gangadharan College",
+  "student_name": "Sample Student",
+  "register_number": "SGC-DEMO-001",
+  "programme": "B.Sc. Computer Science",
+  "semester": "Semester 1",
+  "academic_year": "2026–2027",
+  "subjects": [
+    {"name": "Programming in C", "marks": 84, "credits": 4},
+    {"name": "Mathematics", "marks": 73, "credits": 4},
+    {"name": "Digital Fundamentals", "marks": 68, "credits": 3},
+    {"name": "English", "marks": 58, "credits": 2}
+  ]
+}
