@@ -25,6 +25,7 @@ GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, conv
 - **What-If SGPA projector:** estimate the average grade points needed across additional credits to reach a target SGPA.
 - **Grade converter:** SGPA/CGPA to percentage and percentage to CGPA using the Standard/Anna University formula.
 - **University formula reference:** Anna/standard GPA × 9.5; VTU GPA × 10 − 7.5; JNTUH/KTU/NIT GPA × 10; Mumbai University GPA × 7.1 + 11. These formulas are institution-specific; choose the formula prescribed by your university. The live converter lets you select one of these formulas and defaults to Standard/Anna.
+- **Academic analytics dashboard:** semester SGPA trend, semester average and best-semester metrics, current subject grade distribution, subject comparison, and CSV export. Analytics run locally from saved browser entries.
 - **PWA support:** installable on supported browsers, theme preference, and cached offline shell.
 
 ## SGC grade scale
@@ -101,6 +102,7 @@ GitHub Actions runs the JavaScript and Python test suites. Test service-worker b
 ```
 index.html       Main UI
 calc.js          Single shared grade, SGPA/CGPA, and conversion logic
+analytics.js     Local academic analytics dashboard and CSV export
 manifest.json    PWA metadata and icons
 sw.js            Service worker and offline caching
 offline.html     Offline navigation fallback
