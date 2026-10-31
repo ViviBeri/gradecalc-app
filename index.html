@@ -167,6 +167,7 @@
       <button class="tab-btn active" onclick="switchTab('sgpa',this)">SGPA</button>
       <button class="tab-btn"        onclick="switchTab('cgpa',this)">CGPA</button>
       <button class="tab-btn"        onclick="switchTab('convert',this)">Convert</button>
+      <button class="tab-btn" onclick="switchTab('analytics',this)">Analytics</button>
     </div>
   </div>
 
@@ -257,6 +258,11 @@
       <div id="cgpa-result" aria-live="polite" aria-atomic="true" role="status"></div>
     </div>
 
+    <!-- ANALYTICS PANEL -->
+    <div id="panel-analytics" class="panel">
+      <div id="analytics-content" aria-live="polite" aria-atomic="true"></div>
+    </div>
+
     <!-- CONVERT PANEL -->
     <div id="panel-convert" class="panel">
       <div class="card">
@@ -299,6 +305,7 @@
   </div>
 </div>
 
+<script src="analytics.js"></script>
 <script>
 // ── Theme (dark/light) ───────────────────────────────────────────────────
 function applyThemeMeta(theme) {
@@ -350,6 +357,7 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.getElementById('panel-'+tab).classList.add('active');
+  if (tab === 'analytics' && typeof renderAnalytics === 'function') renderAnalytics();
 }
 
 function toggleGradeEditor() {
