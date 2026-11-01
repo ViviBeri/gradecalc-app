@@ -211,6 +211,54 @@
   .arrear-remove{margin-top:8px;border:0;background:transparent;color:var(--muted);font-size:10px;text-decoration:underline;cursor:pointer}
   .arrear-policy{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
   @media(max-width:420px){.arrear-summary{gap:5px}.arrear-summary>div{padding:8px 6px}.arrear-summary strong{font-size:19px}.arrear-card-head{flex-direction:column}.arrear-attempt-form{grid-template-columns:1fr}}
+    /* Mobile layout hardening: keep subject controls usable at 320px and above. */
+    @media (max-width:420px){
+      .header{padding:12px 12px 9px}
+      .body{padding:12px 10px calc(132px + env(safe-area-inset-bottom))}
+      .card{padding:13px 11px;border-radius:13px}
+      .col-labels,.subject-row{
+        grid-template-columns:minmax(0,1fr) 50px 46px 50px 28px;
+        gap:4px;
+      }
+      .col-label{font-size:9px;letter-spacing:0}
+      .input{min-width:0;padding:9px 5px;font-size:12px}
+      .auto-grade{padding:9px 3px;font-size:11px}
+      .remove-btn{width:28px;height:36px}
+      .ring-row{gap:16px;flex-wrap:wrap}
+      .scale-row{grid-template-columns:64px 44px minmax(0,1fr) 36px;gap:6px;font-size:11px}
+      .scale-row .grade-chip{padding:3px 5px;font-size:11px}
+      .btn-row,.target-actions{gap:7px}
+      .btn-primary,.btn-secondary{min-width:0;padding:12px 7px;font-size:13px}
+      .bottom-nav{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+      .breakdown-table{font-size:11px}
+      .breakdown-table th,.breakdown-table td{padding:6px 5px}
+      .result-share-actions button{min-width:0;flex:1 1 140px}
+    }
+    @media (max-width:360px){
+      .header{padding-left:10px;padding-right:10px}
+      .logo{gap:7px}
+      .logo-name{font-size:16px}
+      .grade-btn{padding:7px 8px;font-size:11px}
+      .tab-btn{font-size:11px;padding:9px 2px}
+      .body{padding-left:8px;padding-right:8px}
+      .card{padding:11px 9px}
+      .col-labels,.subject-row{grid-template-columns:minmax(0,1fr) 46px 42px 46px 26px;gap:3px}
+      .input{padding:8px 4px;font-size:11px}
+      .remove-btn{width:26px}
+      .scale-row{grid-template-columns:58px 40px minmax(0,1fr) 32px;gap:4px;font-size:10px}
+      .arrear-summary strong{font-size:17px}
+    }
+    @media (max-width:320px){
+      .col-labels,.subject-row{grid-template-columns:minmax(0,1fr) 42px 38px 42px 24px;gap:2px}
+      .col-label{font-size:8px}
+      .input{font-size:10px;padding:8px 3px}
+      .auto-grade{font-size:10px}
+      .remove-btn{width:24px}
+      .tab-btn{font-size:10px}
+    }
+    @media (max-width:420px){
+      .breakdown-table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    }
   </style>
 </head>
 <body>
