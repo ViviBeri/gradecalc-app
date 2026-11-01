@@ -76,6 +76,9 @@
     .btn-primary:active{opacity:.88;transform:scale(.98)}
     .btn-secondary{flex:1;padding:13px 0;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
     .result-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 16px;margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:16px;animation:popIn .32s cubic-bezier(.34,1.56,.64,1)}
+    .result-share-actions{display:flex;flex-wrap:wrap;gap:8px;width:100%;justify-content:center}
+    .result-share-actions button{min-width:150px}
+    .result-share-status{width:100%;font-size:11px;line-height:1.5;color:var(--muted);text-align:center;overflow-wrap:anywhere}
     .ring-row{display:flex;gap:28px;align-items:center;justify-content:center}
     .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
     .ring-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px}
@@ -684,6 +687,38 @@ function updateWhatIfProjection() {
      <div style="font-size:10px;margin-top:5px">Target: ${targetSgpa} | Current credits: ${totalCredits} | Current points: ${currentPoints.toFixed(2)}</div>`;
 }
 
+var lastResultCardData = null;
+
+function shareResultCard(kind) {
+  var status = document.getElementById(kind + '-share-status');
+  if (!lastResultCardData || lastResultCardData.kind !== kind) { if (status) status.textContent = 'Calculate your result before exporting a card.'; return; }
+  if (status) status.textContent = 'Preparing your result card…';
+  var canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 630;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) { if (status) status.textContent = 'Image export is not available in this browser.'; return; }
+  ctx.fillStyle = '#071A0D'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#22C55E'; ctx.fillRect(0, 0, 18, canvas.height);
+  ctx.fillStyle = '#86EFAC'; ctx.font = '700 34px Arial, sans-serif'; ctx.fillText('GRADE CALC', 82, 92);
+  ctx.fillStyle = '#D1FAE5'; ctx.font = '600 27px Arial, sans-serif'; ctx.fillText('ACADEMIC RESULT SUMMARY', 82, 145);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = '700 42px Arial, sans-serif'; ctx.fillText(kind.toUpperCase(), 82, 250);
+  ctx.fillStyle = '#86EFAC'; ctx.font = '700 112px Arial, sans-serif'; ctx.fillText(lastResultCardData.value, 78, 385);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = '600 38px Arial, sans-serif'; ctx.fillText(lastResultCardData.percent + '%', 82, 465);
+  ctx.fillStyle = '#D1FAE5'; ctx.font = '400 26px Arial, sans-serif'; ctx.fillText(lastResultCardData.detail, 82, 535);
+  ctx.fillStyle = '#86EFAC'; ctx.font = '500 22px Arial, sans-serif'; ctx.fillText('Created with GradeCalc · No personal or subject details included', 82, 590);
+  canvas.toBlob(async function(blob) {
+    if (!blob) { if (status) status.textContent = 'Could not create the image in this browser.'; return; }
+    var fileName = 'gradecalc-' + kind + '-result.png'; var file = new File([blob], fileName, { type: 'image/png' });
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'GradeCalc ' + kind.toUpperCase() + ' result', text: 'Academic result summary created with GradeCalc.' });
+        if (status) status.textContent = 'Result card shared.'; return;
+      }
+    } catch (error) { if (error && error.name === 'AbortError') { if (status) status.textContent = 'Sharing cancelled.'; return; } }
+    var url = URL.createObjectURL(blob); var link = document.createElement('a'); link.href = url; link.download = fileName;
+    document.body.appendChild(link); link.click(); link.remove(); setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    if (status) status.textContent = 'PNG result card downloaded.';
+  }, 'image/png');
+}
 function calcSGPA() {
   // Sync all values from DOM
   for (var i=0; i<subjects.length; i++) {
@@ -711,6 +746,7 @@ function calcSGPA() {
   var sgpa = weightedStats.sgpa.toFixed(2);
   var pct  = (sgpa*9.5).toFixed(2);
   var col  = gradeColor(sgpa);
+  lastResultCardData = { kind: 'sgpa', value: sgpa + ' / 10', percent: pct, detail: totalCr + ' credits · ' + totalPts.toFixed(1) + ' weighted points' };
 
   var warns = '';
   if (fails.length > 0)   warns += '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--red);text-align:center">⚠️ '+fails.length+' subject(s) with F grade — Arrear required</div>';
@@ -726,6 +762,7 @@ function calcSGPA() {
     + '</div></div>'
     + '<div style="text-align:center;font-size:13px;color:var(--muted)">Total Credits: <span style="color:var(--text);font-weight:700">'+totalCr+'</span> &nbsp;·&nbsp; Weighted: <span style="color:var(--text);font-weight:700">'+totalPts.toFixed(1)+'</span></div>'
     + (warns ? '<div style="display:flex;flex-direction:column;gap:6px;width:100%">'+warns+'</div>' : '')
+    + '<div class="result-share-actions"><button class="btn-secondary" type="button" onclick="shareResultCard(\'sgpa\')">Share / Download PNG</button><p class="result-share-status" id="sgpa-share-status" role="status" aria-live="polite"></p></div>'
     + '</div>';
 
   var rows = '';
@@ -829,6 +866,7 @@ function calcCGPA() {
   var cgpa = calculation.cgpa.toFixed(2);
   var pct  = (cgpa*9.5).toFixed(2);
   var col  = gradeColor(cgpa);
+  lastResultCardData = { kind: 'cgpa', value: cgpa + ' / 10', percent: pct, detail: valid.length + ' completed semester' + (valid.length > 1 ? 's' : '') };
   var bars = '';
   for (var i=0; i<valid.length; i++) {
     var s = valid[i];
@@ -847,6 +885,7 @@ function calcCGPA() {
     + '<div style="font-size:11px;color:var(--muted);margin-top:6px">'+valid.length+' semester'+(valid.length>1?'s':'')+'</div>'
     + '</div></div>'
     + '<div class="progress-list">'+bars+'</div>'
+    + '<div class="result-share-actions"><button class="btn-secondary" type="button" onclick="shareResultCard(\'cgpa\')">Share / Download PNG</button><p class="result-share-status" id="cgpa-share-status" role="status" aria-live="polite"></p></div>'
     + '</div>';
   saveSemestersToLocalStorage();
 }
