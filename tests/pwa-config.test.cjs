@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -93,7 +94,17 @@ test('restored subject and semester records receive safe default fields', () => 
 
 test('subject-name HTML escaping protects quoted input attributes', () => {
   const html = read('index.html');
-  assert.match(html, /function escapeHtml\(str\) \{ return String\(str == null \? '' : str\)\.replace\(\/\[&<>\\\"'\]\/g/);
+  assert.match(html, /function escapeHtml\(str\) \{ return String\(str == null \? '' : str\)\.replace\(\/\[&<>[\"']\]\/g/);
   assert.match(html, /&quot;/);
   assert.match(html, /&#39;/);
+});
+
+
+test('all inline application scripts parse without JavaScript syntax errors', () => {
+  const html = read('index.html');
+  const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
+  assert.ok(scripts.length > 0, 'expected inline application scripts');
+  scripts.forEach((match, index) => {
+    assert.doesNotThrow(() => new vm.Script(match[1], { filename: 'index-inline-' + index + '.js' }));
+  });
 });
