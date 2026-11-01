@@ -102,7 +102,7 @@ test('subject-name HTML escaping protects quoted input attributes', () => {
 
 test('all inline application scripts parse without JavaScript syntax errors', () => {
   const html = read('index.html');
-  const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   assert.ok(scripts.length > 0, 'expected inline application scripts');
   scripts.forEach((match, index) => {
     assert.doesNotThrow(() => new vm.Script(match[1], { filename: 'index-inline-' + index + '.js' }));
