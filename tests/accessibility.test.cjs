@@ -71,10 +71,10 @@ test('dynamically generated subject and semester remove controls have descriptiv
 });
 
 test('subject and semester inputs have labels and numeric constraints', () => {
-  assert.match(html, /aria-label="Subject name '\+\(i\+1\)/);
-  assert.match(html, /aria-label="Marks for subject '\+\(i\+1\) out of 100" min="0" max="100"/);
-  assert.match(html, /aria-label="Credits for subject '\+\(i\+1\)" min="1" max="6"/);
-  assert.match(html, /aria-label="SGPA for '\+label\'" min="0" max="10"/);
+  assert.ok(html.includes("aria-label=\"Subject name '+(i+1)+'\""));
+  assert.ok(html.includes("aria-label=\"Marks for subject '+(i+1)+' out of 100\" min=\"0\" max=\"100\""));
+  assert.ok(html.includes("aria-label=\"Credits for subject '+(i+1)+'\" min=\"1\" max=\"6\""));
+  assert.ok(html.includes("aria-label=\"SGPA for '+label+'\" min=\"0\" max=\"10\""));
 });
 
 test('calculation outputs and arrear tracker announce dynamic status updates', () => {
