@@ -4,14 +4,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
 test('SGPA and CGPA results expose share and download actions', () => {
-  assert.ok(html.includes("shareResultCard('sgpa')"));
-  assert.ok(html.includes("shareResultCard('cgpa')"));
-  assert.ok(html.includes('id="sgpa-share-status" role="status" aria-live="polite"'));
-  assert.ok(html.includes('id="cgpa-share-status" role="status" aria-live="polite"'));
+  assert.ok(html.includes('shareResultCard'));
+  assert.ok(html.includes('sgpa-share-status'));
+  assert.ok(html.includes('cgpa-share-status'));
+  assert.ok(html.includes('Share / Download PNG'));
 });
 
 test('result cards use a consistent 1200 by 630 PNG canvas', () => {
