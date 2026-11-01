@@ -11,6 +11,7 @@ const ASSETS = [
   'gradecalc-icon.svg?v=20261029-green-v2',
   'calc.js',
   'analytics.js',
+  'js/target.js',
   'icons/icon-192.png?v=20261029-green-v2',
   'icons/icon-512.png?v=20261029-green-v2'
 ].map(path => BASE_PATH + path);
