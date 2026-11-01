@@ -1,0 +1,7 @@
+student_name,register_number,semester,subject,marks,credits
+Sample Student,SGC-DEMO-001,Semester 1,Programming in C,84,4
+Sample Student,SGC-DEMO-001,Semester 1,Mathematics,73,4
+Sample Student,SGC-DEMO-001,Semester 1,Digital Fundamentals,68,3
+Sample Student,SGC-DEMO-001,Semester 1,English,58,2
+Second Student,SGC-DEMO-002,Semester 1,Programming in C,91,4
+Second Student,SGC-DEMO-002,Semester 1,Mathematics,78,4

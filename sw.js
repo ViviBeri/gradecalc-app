@@ -1,72 +1,86 @@
-// GradeCalc Service Worker v2.0
-// Network-first for the app shell (so updates show up immediately for
-// returning visitors), cache-first for static assets (fonts/icons) so the
-// app still works fully offline.
+// GradeCalc Service Worker v2.1
+// Network-first app shell with a deployment-prefix-aware cache for GitHub Pages
+// (/<repository>/) and root-hosted deployments.
 
-const CACHE_NAME = 'gradecalc-v3';
-
+const BASE_PATH = new URL('.', self.registration.scope).pathname;
+const CACHE_NAME = 'gradecalc-v12';
 const ASSETS = [
-  '/',
-  '/manifest.json',
-  '/js/target.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+  '',
+  'manifest.json',
+  'offline.html',
+  'gradecalc-icon.svg?v=20261029-green-v2',
+  'calc.js',
+  'analytics.js',\n  'js/target.js',
+  'icons/icon-192.png?v=20261029-green-v2',
+  'icons/icon-512.png?v=20261029-green-v2'
+].map(path => BASE_PATH + path);
 
-// ── Install: cache app shell + static assets ───────────────
+const APP_ROOT = BASE_PATH;
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// ── Activate: remove old caches (drops stale v1 cache) ─────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
     ).then(() => self.clients.claim())
   );
 });
 
-// ── Fetch ────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  if (event.request.url.startsWith('chrome-extension')) return;
+  if (event.request.url.startsWith('chrome-extension:')) return;
 
-  // App shell (page navigations): always try the network first, so any
-  // update you push is visible on the very next load. Only fall back to
-  // the cached copy when there's no connection.
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then(r => r || caches.match('/')))
-    );
+    event.respondWith((async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      try {
+        const response = await fetch(event.request, { signal: controller.signal });
+        if (!response.ok) throw new Error('Navigation network response was not OK');
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(() => {});
+        return response;
+      } catch (_) {
+        return (await caches.match(event.request)) ||
+          (await caches.match(APP_ROOT + 'offline.html')) ||
+          (await caches.match(APP_ROOT)) ||
+          new Response('You are offline. Reconnect and try again.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })());
     return;
   }
 
-  // Static assets (fonts, icons, manifest): cache-first for speed + offline.
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
 
-      return fetch(event.request).then(response => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      return fetch(event.request, { signal: controller.signal }).then(response => {
         if (
           response.status === 200 &&
           (event.request.url.startsWith(self.location.origin) ||
            event.request.url.includes('fonts.googleapis.com') ||
            event.request.url.includes('fonts.gstatic.com'))
         ) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => {});
+      }).catch(() => new Response('', { status: 504, statusText: 'Offline' }))
+        .finally(() => clearTimeout(timeoutId));
     })
   );
 });

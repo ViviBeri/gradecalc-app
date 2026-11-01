@@ -1,0 +1,49 @@
+name: Sync GradeCalc PNG icons
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - gradecalc-icon.svg
+      - .github/workflows/sync-pwa-icons.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Render green-black icons
+        run: |
+          python -m pip install --quiet cairosvg pillow
+          python - <<'PY'
+          import cairosvg
+          from PIL import Image
+          from io import BytesIO
+          from pathlib import Path
+
+          svg = Path("gradecalc-icon.svg").read_bytes()
+          sizes = [72, 96, 128, 144, 152, 192, 384, 512]
+          Path("icons").mkdir(exist_ok=True)
+          for size in sizes:
+              png = cairosvg.svg2png(bytestring=svg, output_width=size, output_height=size)
+              Path(f"icons/icon-{size}.png").write_bytes(png)
+          PY
+      - name: Commit refreshed raster icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add icons/icon-72.png icons/icon-96.png icons/icon-128.png icons/icon-144.png icons/icon-152.png icons/icon-192.png icons/icon-384.png icons/icon-512.png
+          if git diff --cached --quiet; then
+            echo "Icons already current."
+          else
+            git commit -m "Regenerate green-black PWA icon sizes"
+            git pull --rebase origin main
+            git push
+          fi
