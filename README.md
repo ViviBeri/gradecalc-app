@@ -1,131 +1,179 @@
 # GradeCalc — SGPA & CGPA Calculator
 
-> Built for SGC students in Puducherry.
-
-GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, converting grade percentages, and projecting a possible SGPA from current subject marks. The app is designed for the SGC 10-point grade scale.
+A mobile-friendly, installable Progressive Web App for students to calculate semester grades, track cumulative performance, explore grade conversions, and review academic trends.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/readme-hero.svg?v=2" alt="GradeCalc animated 3D project banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/readme-hero.svg?v=2" alt="GradeCalc project banner" width="100%" />
 </p>
 
 <p align="center">
-  <a href="https://viviberi.github.io/gradecalc-app/"><img src="https://img.shields.io/badge/GitHub_Pages-Live_App-16a34a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Open live app on GitHub Pages" /></a>
-  <a href="https://github.com/ViviBeri/gradecalc-app/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/ViviBeri/gradecalc-app/tests.yml?branch=main&label=Tests&style=for-the-badge&logo=githubactions&logoColor=white" alt="Calculation test workflow status" /></a>
+  <a href="https://viviberi.github.io/gradecalc-app/"><img src="https://img.shields.io/badge/Launch-Live_App-16a34a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Launch GradeCalc" /></a>
+  <a href="https://github.com/ViviBeri/gradecalc-app/actions"><img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT license" /></a>
 </p>
 
-## Live app
+<p align="center">
+  <strong>Built for the SGC student community · Puducherry</strong>
+</p>
 
-**Primary:** [https://viviberi.github.io/gradecalc-app/](https://viviberi.github.io/gradecalc-app/)
+## Open the app
 
-**Fallback:** [https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/) (Netlify deployment retained as a backup.)
+- **Live app:** [viviberi.github.io/gradecalc-app](https://viviberi.github.io/gradecalc-app/)
+- **Backup deployment:** [gradecalc-sgc.netlify.app](https://gradecalc-sgc.netlify.app/)
 
 ## Features
 
-- **SGPA calculator:** enter subjects, marks and credits; grades update automatically; blank marks are shown as Absent; weighted subject breakdown and arrear/absence warnings are displayed.
-- **CGPA calculator:** average the entered semester SGPAs and show progress bars. **The current SGC mode uses an unweighted arithmetic average of semester SGPAs**, not a credit-weighted cumulative calculation. Check your institution's official rule if it differs.
-- **What-If SGPA projector:** estimate the average grade points needed across additional credits to reach a target SGPA.
-- **Grade converter:** SGPA/CGPA to percentage and percentage to CGPA using the Standard/Anna University formula.
-- **University formula reference:** Anna/standard GPA × 9.5; VTU GPA × 10 − 7.5; JNTUH/KTU/NIT GPA × 10; Mumbai University GPA × 7.1 + 11. These formulas are institution-specific; choose the formula prescribed by your university. The live converter lets you select one of these formulas and defaults to Standard/Anna.
-- **Academic analytics dashboard:** semester SGPA trend, semester average and best-semester metrics, current subject grade distribution, subject comparison, and CSV export. Analytics run locally from saved browser entries.
-- **PWA support:** installable on supported browsers, theme preference, and cached offline shell.
+| Tool | What it does |
+|---|---|
+| **SGPA calculator** | Calculates credit-weighted SGPA from subject marks and credits, with grade results and a subject-wise breakdown. |
+| **CGPA calculator** | Calculates the arithmetic average of entered semester SGPAs and visualizes semester progress. |
+| **What-If projector** | Estimates the average grade points needed across additional credits to reach a target SGPA. |
+| **Grade converter** | Converts SGPA/CGPA to percentage and percentage to CGPA using a selectable university formula. |
+| **Academic analytics** | Shows semester SGPA trends, average and best-semester metrics, subject grade distribution and subject comparisons; supports CSV export. |
+| **Installable PWA** | Supports installation on compatible browsers, saved theme preference and an offline application shell. |
+
+### Important calculation notes
+
+- The SGPA calculation is credit-weighted: **SGPA = Σ(credit × grade point) ÷ Σ credits**.
+- The current CGPA mode uses an **unweighted arithmetic average** of the entered semester SGPAs. It does not calculate a credit-weighted cumulative GPA. Confirm your institution's official method before using the result for formal submissions.
+- The What-If tool is an estimate based on the current subject/credit entries and the additional credits entered.
+- Conversion formulas vary by institution. Select the formula required by your university.
 
 ## SGC grade scale
 
-Marks use inclusive lower bounds. Decimal marks follow the same thresholds: for example, 70.5 is A (8 points), and 79.5 is A+ (9 points).
+The calculator uses the following marks-to-grade mapping. Lower bounds are inclusive.
 
-| Marks | Grade | Points |
-|---|---:|---:|
-| 80 ≤ m ≤ 100 | O | 10 |
-| 71 ≤ m < 80 | A+ | 9 |
-| 66 ≤ m < 71 | A | 8 |
-| 61 ≤ m < 66 | B+ | 7 |
-| 56 ≤ m < 61 | B | 6 |
-| 50 ≤ m < 56 | C | 5 |
-| 40 ≤ m < 50 | P | 4 |
-| 0 ≤ m < 40 | F | 0 |
-| Blank | Ab | 0 |
+| Marks | Grade | Grade points |
+|---:|:---:|---:|
+| 80–100 | O | 10 |
+| 71–less than 80 | A+ | 9 |
+| 66–less than 71 | A | 8 |
+| 61–less than 66 | B+ | 7 |
+| 56–less than 61 | B | 6 |
+| 50–less than 56 | C | 5 |
+| 40–less than 50 | P | 4 |
+| 0–less than 40 | F | 0 |
+| Blank / absent | Ab | 0 |
 
-## Formulas
+Decimal marks use the same thresholds. For example, 70.5 maps to A (8 points), while 79.5 maps to A+ (9 points).
 
-- SGPA = Σ(credit × grade point) ÷ Σ credits
-- CGPA = Σ semester SGPA ÷ number of entered semesters (unweighted average in this app)
-- Standard/Anna percentage: GPA × 9.5
-- VTU percentage: GPA × 10 − 7.5
-- JNTUH/KTU/NIT percentage: GPA × 10
-- Mumbai University percentage: GPA × 7.1 + 11
+## Calculation and conversion formulas
 
-## Privacy
+**SGPA**
 
-Calculation and preferences are handled in the browser; subject and semester values are stored in the browser's local storage. The app does not need an account or a backend for its calculations. The page loads Google Fonts from Google's servers when online, so a browser request is sent to that third-party font service. Avoid entering sensitive personal information.
+`SGPA = Σ(credit × grade point) ÷ Σ credits`
 
-## Development
+**CGPA in the current app**
 
-This is a no-build static app. Open index.html in a browser for basic UI inspection. To run the browser calculation tests, install Node.js and run:
+`CGPA = Σ(entered semester SGPA) ÷ number of entered semesters`
 
-```sh
-node tests.js
-```
+**Percentage conversion options**
 
-### Python tools
+| Formula option | Conversion |
+|---|---|
+| Standard / Anna University | GPA × 9.5 |
+| VTU | GPA × 10 − 7.5 |
+| JNTUH / KTU / NIT | GPA × 10 |
+| Mumbai University | GPA × 7.1 + 11 |
 
-Python is an optional development and report-generation layer. The browser PWA continues to run on JavaScript and does not require Python or a server.
+These are institution-specific conversion methods, not universal standards. Check the current regulations published by your institution.
 
-Install the PDF dependency and run the Python tests:
+## Privacy and data storage
 
-```sh
-python -m pip install -r python/requirements.txt
-cd python
-python -m unittest -v test_gradecalc.py test_report_generator.py
-```
-
-Generate a sample semester report from the included JSON file:
-
-```sh
-python report_generator.py example_semester.json sample-semester-report.pdf
-```
-
-Use your own JSON file with `student_name`, `semester`, and a `subjects` array containing each subject's `name`, `marks`, and `credits`. Optional fields include `institution`, `register_number`, `programme`, and `academic_year`. The generated PDF is a student-created calculation report, not an official transcript.
-
-### CSV and Excel bulk tools
-
-Prepare a `.csv` or `.xlsx` file with one subject per row and these required columns: `student_name`, `semester`, `subject`, `marks`, and `credits`. `register_number` is optional. Then run:
-
-```sh
-python data_import_export.py example_records.csv calculated-results.xlsx
-```
-
-Use `.csv` as the output extension for a CSV export. Each exported subject row includes its grade, grade point, credit points, and the calculated SGPA for that student's semester. Excel support uses openpyxl; CSV support uses only the Python standard library.
-
-GitHub Actions runs the JavaScript and Python test suites. Test service-worker behavior in a browser served over localhost or HTTPS; opening the HTML file directly does not exercise service workers.
-
-## Project structure
-
-```
-index.html       Main UI
-calc.js          Single shared grade, SGPA/CGPA, and conversion logic
-analytics.js     Local academic analytics dashboard and CSV export
-manifest.json    PWA metadata and icons
-sw.js            Service worker and offline caching
-offline.html     Offline navigation fallback
-icons/           Canonical lowercase directory containing all app icons (72–512 px)
-tests.js         Node-based calculation tests
-python/          Python calculation mirror, PDF reports, CSV/Excel tools, and tests
-.github/workflows/tests.yml  JavaScript calculation test workflow
-.github/workflows/python-tests.yml  Python calculation and PDF test workflow
-LICENSE          MIT license (Copyright © 2026 Bernard Vivian)
-```
+- Calculations run in the browser; the app does not require an account or application backend.
+- Subject and semester entries and preferences are stored in the browser's local storage on the device.
+- Clearing browser/site data can remove locally saved entries. Use the app's available export options when you need a separate copy of analytics data.
+- Google Fonts may be requested from Google's servers when the app is online.
+- Avoid entering sensitive personal information.
 
 ## Install on Android
 
-1. Open the live app in Chrome.
-2. Use the browser's Add to Home screen or install option when available.
-3. Open the installed app once online before relying on offline caching.
+1. Open the [live app](https://viviberi.github.io/gradecalc-app/) in Chrome.
+2. Open the browser menu and choose **Install app** or **Add to Home screen**, when offered.
+3. Launch GradeCalc once while online so the service worker can cache the application shell.
+4. Reopen the installed app to use the cached shell when offline. Some browser features and external resources may still require connectivity.
+
+## Development
+
+GradeCalc is a static, no-build web app. The main application runs with HTML, CSS and JavaScript; Python is an optional companion for reports and bulk data tools.
+
+### Run locally
+
+Clone the repository and open `index.html` in a browser for basic UI inspection. For service-worker and offline testing, serve the project through localhost or HTTPS; opening the file directly does not test PWA behavior.
+
+### JavaScript tests
+
+Requires Node.js 20 or newer.
+
+```sh
+node tests.js
+node --test tests/*.test.cjs
+```
+
+### Python tests
+
+```sh
+python -m pip install -r python/requirements.txt
+python -m unittest discover -s python -p "test_*.py" -v
+```
+
+### Generate a sample PDF report
+
+```sh
+cd python
+python report_generator.py example_semester.json sample-semester-report.pdf
+```
+
+The input JSON uses `student_name`, `semester` and a `subjects` array containing subject `name`, `marks` and `credits`. Optional fields include `institution`, `register_number`, `programme` and `academic_year`. The generated PDF is a student-created calculation report, not an official transcript.
+
+### CSV and Excel bulk processing
+
+The input CSV/XLSX file uses one subject per row with required columns `student_name`, `semester`, `subject`, `marks` and `credits`. `register_number` is optional.
+
+```sh
+python python/data_import_export.py python/example_records.csv calculated-results.xlsx
+```
+
+Use a `.csv` output extension for CSV export. Excel support uses openpyxl; CSV support uses the Python standard library.
+
+## Project structure
+
+```text
+index.html                         Main application UI and interactions
+calc.js                            Shared grade, SGPA/CGPA and conversion logic
+analytics.js                       Academic analytics and CSV export
+manifest.json                      PWA metadata
+sw.js                              Service worker and offline caching
+offline.html                       Offline fallback page
+icons/                             App icons (72–512 px)
+tests.js                           JavaScript calculation tests
+tests/                              Node test suites and regression checks
+python/                             Python calculations, PDF reports and bulk tools
+.github/workflows/                  Automated tests and GitHub Pages deployment
+CONTRIBUTING.md                     Contribution guidelines
+LICENSE                             MIT license
+```
+
+## Continuous integration and deployment
+
+GitHub Actions runs the JavaScript calculation/regression checks and Python test suite. A separate workflow deploys the static app to GitHub Pages when changes are pushed to `main).
+
+- [View workflow runs](https://github.com/ViviBeri/gradecalc-app/actions)
+- [Report a bug](https://github.com/ViviBeri/gradecalc-app/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/ViviBeri/gradecalc-app/issues/new?template=feature_request.yml)
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Include tests for calculation changes, check mobile usability, and clearly state what you verified.
 
 ## Attribution and license
 
-Made by **Bernard Vivian**. Copyright © 2026 Bernard Vivian. Licensed under the [MIT License](LICENSE).
+**Original creator:** M.G.K. Ganga Mariyaal
+
+The repository's [MIT License](LICENSE) contains the copyright notice **Copyright © 2026 Bernard Vivian**. The creator attribution in the application and this README is kept distinct from that license notice.
 
 ---
 
-*GradeCalc · SGPA & CGPA Calculator · SGC Puducherry*
+<p align="center">
+  <strong>GradeCalc · SGPA & CGPA Calculator · SGC Puducherry</strong>
+</p>
