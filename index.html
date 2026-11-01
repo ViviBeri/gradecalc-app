@@ -223,15 +223,15 @@
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <button class="grade-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle color theme" style="width:34px;padding:7px 0">🌙</button>
-        <button class="grade-btn" id="gradeToggle" onclick="toggleGradeEditor()">⚙ Grade Scale</button>
+        <button class="grade-btn" id="gradeToggle" aria-expanded="false" aria-controls="grade-editor" onclick="toggleGradeEditor()">⚙ Grade Scale</button>
       </div>
     </div>
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('sgpa',this)">SGPA</button>
-      <button class="tab-btn"        onclick="switchTab('cgpa',this)">CGPA</button>
-      <button class="tab-btn"        onclick="switchTab('convert',this)">Convert</button>
-      <button class="tab-btn" onclick="switchTab('analytics',this)">Analytics</button>
-      <button class="tab-btn" onclick="switchTab('target',this)">🎯 Target</button>
+      <button class="tab-btn active" id="tab-sgpa" role="tab" aria-selected="true" aria-controls="panel-sgpa" onclick="switchTab('sgpa',this)">SGPA</button>
+      <button class="tab-btn" id="tab-cgpa" role="tab" aria-selected="false" aria-controls="panel-cgpa" onclick="switchTab('cgpa',this)">CGPA</button>
+      <button class="tab-btn" id="tab-convert" role="tab" aria-selected="false" aria-controls="panel-convert" onclick="switchTab('convert',this)">Convert</button>
+      <button class="tab-btn" id="tab-analytics" role="tab" aria-selected="false" aria-controls="panel-analytics" onclick="switchTab('analytics',this)">Analytics</button>
+      <button class="tab-btn" id="tab-target" role="tab" aria-selected="false" aria-controls="panel-target" onclick="switchTab('target',this)">🎯 Target</button>
     </div>
   </div>
 
@@ -459,8 +459,9 @@ function svgRing(value, size) {
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
-  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false')});
   btn.classList.add('active');
+  btn.setAttribute('aria-selected','true');
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.getElementById('panel-'+tab).classList.add('active');
   if (tab === 'analytics' && typeof renderAnalytics === 'function') renderAnalytics();
@@ -471,6 +472,7 @@ function toggleGradeEditor() {
   var btn = document.getElementById('gradeToggle');
   var open = el.classList.toggle('open');
   btn.classList.toggle('active', open);
+  btn.setAttribute('aria-expanded', String(open));
 }
 
 // ── LOCALSTORAGE ─────────────────────────────────────────────────────────
@@ -560,7 +562,7 @@ function renderSubjects() {
       + ' oninput="setCredits(\''+s.id+'\',this.value)"'
       + ' onchange="setCredits(\''+s.id+'\',this.value)" />'
       + '<div class="auto-grade '+g.cls+'" id="grade-'+s.id+'">'+g.label+'</div>'
-      + '<button class="remove-btn" onclick="removeSubject(\''+s.id+'\')">×</button>'
+      + '<button class="remove-btn" type="button" aria-label="Remove subject '+(i+1)+'" onclick="removeSubject(\''+s.id+'\')">×</button>'
       + '</div>';
   }
   document.getElementById('sgpa-subjects').innerHTML = html;
@@ -760,7 +762,7 @@ function renderSems() {
       + '<div class="sem-label">'+label+'</div>'
       + '<input class="input" type="number" aria-label="SGPA for '+label+'" min="0" max="10" step="0.01" placeholder="e.g. 8.42"'
       + ' value="'+s.sgpa+'" onchange="updateSem(\''+s.id+'\',this.value)" />'
-      + '<button class="remove-btn" onclick="removeSem(\''+s.id+'\')">×</button>'
+      + '<button class="remove-btn" type="button" aria-label="Remove semester '+(i+1)+'" onclick="removeSem(\''+s.id+'\')">×</button>'
       + '</div>';
   }
   document.getElementById('cgpa-sems').innerHTML = html;
