@@ -9,14 +9,16 @@ GradeCalc is a static Progressive Web App (PWA) for calculating SGPA, CGPA, conv
 </p>
 
 <p align="center">
-  <a href="https://gradecalc-sgc.netlify.app/"><img src="https://img.shields.io/badge/Live_App-Open-16a34a?style=for-the-badge&logo=netlify&logoColor=white" alt="Open live app" /></a>
+  <a href="https://viviberi.github.io/gradecalc-app/"><img src="https://img.shields.io/badge/GitHub_Pages-Live_App-16a34a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Open live app on GitHub Pages" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/ViviBeri/gradecalc-app/tests.yml?branch=main&label=Tests&style=for-the-badge&logo=githubactions&logoColor=white" alt="Calculation test workflow status" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT license" /></a>
 </p>
 
 ## Live app
 
-[https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/)
+**Primary:** [https://viviberi.github.io/gradecalc-app/](https://viviberi.github.io/gradecalc-app/)
+
+**Fallback:** [https://gradecalc-sgc.netlify.app/](https://gradecalc-sgc.netlify.app/) (Netlify deployment retained as a backup.)
 
 ## Features
 
