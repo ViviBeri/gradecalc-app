@@ -41,7 +41,7 @@
     var attempts = item.attempts.filter(function (attempt) {
       if (!attempt || typeof attempt !== 'object') return false;
       var marks = Number(attempt.marks);
-      return typeof attempt.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(attempt.date) &&
+      return isValidDate(attempt.date) &&
         Number.isFinite(marks) && marks >= 0 && marks <= 100;
     }).map(function (attempt) {
       return {
@@ -67,7 +67,7 @@
   }
 
   function isValidDate(date) {
-    if (typeof date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return false;
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
     var parts = date.split('-').map(Number);
     var parsed = new Date(parts[0], parts[1] - 1, parts[2]);
     return parsed.getFullYear() === parts[0] && parsed.getMonth() === parts[1] - 1 && parsed.getDate() === parts[2];
@@ -142,7 +142,7 @@
       return {valid: false, reason: 'Enter a subject name in the SGPA subject list before recording an attempt.'};
     }
     var date = String(data && data.date || '').trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00'))) {
+    if (!isValidDate(date)) {
       return {valid: false, reason: 'Enter a valid attempt date.'};
     }
     var rawMarks = String(data && data.marks != null ? data.marks : '').trim();

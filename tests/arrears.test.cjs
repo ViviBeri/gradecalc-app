@@ -77,6 +77,10 @@ test('rejects missing subject names, invalid marks, invalid dates, duplicates an
   assert.equal(api.addAttempt(record.id, { date: '2026-11-02', marks: '', cleared: false }).valid, false);
   assert.equal(api.addAttempt(record.id, { date: '2026-11-02', marks: '101', cleared: false }).valid, false);
   assert.equal(api.addAttempt(record.id, { date: 'not-a-date', marks: '50', cleared: true }).valid, false);
+  assert.equal(api.addAttempt(record.id, { date: '2026-02-30', marks: '50', cleared: true }).valid, false);
+  assert.equal(api.addAttempt(record.id, { date: '2026-04-31', marks: '50', cleared: true }).valid, false);
+  assert.equal(api.addAttempt(record.id, { date: '2025-02-29', marks: '50', cleared: true }).valid, false);
+  assert.equal(api.addAttempt(record.id, { date: '2024-02-29', marks: '50', cleared: true }).valid, true);
   assert.equal(api.addAttempt(record.id, { date: '2026-11-02', marks: '39', cleared: true }).valid, false);
   assert.equal(api.addAttempt(record.id, { date: '2026-11-02', marks: '39', cleared: false }).valid, true);
   assert.equal(api.addAttempt(record.id, { date: '2026-11-02', marks: '39', cleared: false }).valid, false);
@@ -95,6 +99,17 @@ test('persists locally, reloads valid records and safely ignores malformed store
   const malformed = createTracker('{not-json');
   assert.doesNotThrow(() => malformed.api.load());
   assert.equal(malformed.api.getRecords().length, 0);
+  const invalidCalendar = createTracker(JSON.stringify([{
+    id: 'r1', subjectId: 'subject-1', subjectName: 'Mathematics',
+    original: { marks: '32', grade: 'F', credits: '4', detectedAt: '2026-11-01' },
+    attempts: [
+      { id: 'bad-date', date: '2026-02-30', marks: '55', cleared: true },
+      { id: 'good-leap-day', date: '2024-02-29', marks: '55', cleared: true }
+    ]
+  }]));
+  invalidCalendar.api.load();
+  assert.equal(invalidCalendar.api.getRecords()[0].attempts.length, 1);
+  assert.equal(invalidCalendar.api.getRecords()[0].attempts[0].date, '2024-02-29');
 });
 
 test('removing a record removes its attempt history from local storage', () => {
