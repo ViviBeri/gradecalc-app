@@ -47,8 +47,8 @@ test('detects F and Ab subjects with credits but ignores passed or invalid-credi
   ], '2026-11-01');
   const records = api.getRecords();
   assert.equal(records.length, 2);
-  assert.deepEqual(records.map(x => x.original.grade), ['F', 'Ab']);
-  assert.deepEqual(api.getSummary(), { pending: 2, cleared: 0, total: 2 });
+  assert.equal(JSON.stringify(Array.from(records, x => x.original.grade)), JSON.stringify(['F', 'Ab']));
+  assert.equal(JSON.stringify(api.getSummary()), JSON.stringify({ pending: 2, cleared: 0, total: 2 }));
 });
 
 test('records later attempts without replacing the original attempt and updates status', () => {
@@ -65,7 +65,7 @@ test('records later attempts without replacing the original attempt and updates 
   assert.equal(saved.original.marks, '32');
   assert.equal(saved.original.grade, 'F');
   assert.equal(saved.attempts.length, 2);
-  assert.deepEqual(api.getSummary(), { pending: 0, cleared: 1, total: 1 });
+  assert.equal(JSON.stringify(api.getSummary()), JSON.stringify({ pending: 0, cleared: 1, total: 1 }));
 });
 
 test('rejects missing subject names, invalid marks, invalid dates, duplicates and impossible cleared grades', () => {
