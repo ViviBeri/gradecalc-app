@@ -97,3 +97,17 @@ test('tab navigation exposes a tablist, tabpanels and keyboard navigation', () =
   assert.match(html, /event\.key === 'Home'/);
   assert.match(html, /event\.key === 'End'/);
 });
+
+
+test('focus indicators use theme-specific high-contrast colors and filled controls use dark text', () => {
+  assert.match(html, /--focus-ring:#86EFAC/);
+  assert.match(html, /--focus-ring:#166534/);
+  assert.match(html, /:focus-visible\\{outline:3px solid var\\(--focus-ring\\)/);
+  assert.match(html, /\\.tab-btn\\.active\\{[^}]*color:#052e16/);
+  assert.match(html, /\\.btn-primary\\{[^}]*color:#052e16/);
+});
+
+test('arrear record removal controls identify the affected subject', () => {
+  const arrears = fs.readFileSync(path.join(__dirname, '..', 'js', 'arrears.js'), 'utf8');
+  assert.match(arrears, /aria-label="Remove arrear record for ' \\+ escapeHtml\\(record\\.subjectName\\)/);
+});
