@@ -99,6 +99,11 @@ test('tab navigation exposes a tablist, tabpanels and keyboard navigation', () =
 });
 
 
+test('navigation tab bar uses the active theme surface for readable inactive tabs', () => {
+  assert.ok(html.includes('.tab-bar{display:flex;background:var(--surface2)'));
+  assert.ok(html.includes('.tab-btn{flex:1;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted)'));
+});
+
 test('focus indicators use theme-specific high-contrast colors and filled controls use dark text', () => {
   assert.ok(html.includes('--focus-ring:#86EFAC'));
   assert.ok(html.includes('--focus-ring:#166534'));
