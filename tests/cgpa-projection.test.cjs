@@ -15,7 +15,7 @@ function loadCalculator() {
     URL, URLSearchParams, navigator: {}, window: { location: { href: 'https://example.com/gradecalc-app/' } },
     console
   };
-  vm.runInNewContext(source, context, { filename: 'projection.js' });
+  vm.runInNewContext(source + '\\nglobalThis.GradeCalcProjection = { calculateProjectedCgpa: calculateProjectedCgpa };', context, { filename: 'projection.js' });
   return context.GradeCalcProjection.calculateProjectedCgpa;
 }
 
