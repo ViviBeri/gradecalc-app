@@ -145,6 +145,14 @@
     input[type=number]::-webkit-inner-spin-button{opacity:.4}
     .panel{display:none}
     .panel.active{display:block}
+    .projection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .projection-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted);min-width:0}
+    .projection-input{font-family:var(--mono);font-size:16px}
+    .projection-result{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:12px}
+    .projection-value{font-size:30px;font-family:var(--mono);font-weight:800;color:var(--teal);margin:4px 0}
+    .projection-note{font-size:11px;line-height:1.5;color:var(--muted)}
+    .projection-share-status{font-size:11px;line-height:1.5;color:var(--muted);margin:8px 0 0;overflow-wrap:anywhere}
+    @media (max-width:360px){.projection-grid{grid-template-columns:1fr}.projection-value{font-size:26px}}
     .target-intro{font-size:12px;line-height:1.55;color:var(--muted);margin:-3px 0 14px}
     .target-input-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
     .target-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted);min-width:0}
@@ -282,6 +290,29 @@
         </div>
       </div>
       <div id="cgpa-result" aria-live="polite" aria-atomic="true" role="status"></div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-title">🔮 What-If CGPA Projection</div>
+        <p class="target-intro">Estimate your final CGPA if you earn the same SGPA in each future semester. Enter completed semester SGPAs above first.</p>
+        <div class="projection-grid">
+          <label class="projection-field">
+            <span>Planned future SGPA (0–10)</span>
+            <input class="input projection-input" id="projection-future-sgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 9.00" inputmode="decimal" />
+          </label>
+          <label class="projection-field">
+            <span>Future semesters</span>
+            <input class="input projection-input" id="projection-future-count" type="number" min="1" max="20" step="1" value="2" inputmode="numeric" />
+          </label>
+        </div>
+        <div class="target-actions">
+          <button class="btn-primary" id="projection-calculate" type="button">Project CGPA</button>
+          <button class="btn-secondary" id="projection-share" type="button">Copy share link</button>
+          <button class="btn-secondary" id="projection-reset" type="button">Reset</button>
+        </div>
+        <p class="projection-share-status" id="projection-share-status" role="status" aria-live="polite"></p>
+        <div id="projection-result" aria-live="polite" aria-atomic="true"></div>
+        <p class="target-disclaimer">This projection uses an equal-semester average, matching GradeCalc's existing CGPA calculation. It assumes the planned SGPA is earned in every future semester.</p>
+      </div>
+
     </div>
 
     <!-- ANALYTICS PANEL -->
@@ -759,6 +790,153 @@ function resetCGPA() {
   saveSemestersToLocalStorage();
 }
 
+// ── What-If CGPA Projection ───────────────────────────────────────────────
+function calculateProjectedCgpa(completedSgpas, futureSgpa, futureCount) {
+  if (!Array.isArray(completedSgpas) || completedSgpas.length === 0) {
+    return { valid: false, reason: 'Enter at least one completed semester SGPA above.' };
+  }
+  if (!completedSgpas.every(function(value) {
+    return Number.isFinite(value) && value >= 0 && value <= 10;
+  })) {
+    return { valid: false, reason: 'Completed semester SGPAs must be between 0 and 10.' };
+  }
+  if (!Number.isFinite(futureSgpa) || futureSgpa < 0 || futureSgpa > 10) {
+    return { valid: false, reason: 'Enter a planned SGPA between 0 and 10.' };
+  }
+  if (!Number.isInteger(futureCount) || futureCount < 1 || futureCount > 20) {
+    return { valid: false, reason: 'Future semesters must be a whole number from 1 to 20.' };
+  }
+  var completedTotal = completedSgpas.reduce(function(total, value) { return total + value; }, 0);
+  var currentCgpa = completedTotal / completedSgpas.length;
+  var projectedCgpa = (completedTotal + futureSgpa * futureCount) /
+    (completedSgpas.length + futureCount);
+  return {
+    valid: true, currentCgpa: currentCgpa, projectedCgpa: projectedCgpa,
+    completedSemesters: completedSgpas.length, futureSemesters: futureCount,
+    totalSemesters: completedSgpas.length + futureCount, change: projectedCgpa - currentCgpa
+  };
+}
+
+function updateCgpaProjection() {
+  var futureInput = document.getElementById('projection-future-sgpa');
+  var countInput = document.getElementById('projection-future-count');
+  var resultEl = document.getElementById('projection-result');
+  var futureSgpa = futureInput.value.trim() === '' ? NaN : Number(futureInput.value);
+  var futureCount = countInput.value.trim() === '' ? NaN : Number(countInput.value);
+  var completed = [];
+  for (var i = 0; i < semesters.length; i++) {
+    var row = document.getElementById('sem-' + semesters[i].id);
+    var input = row && row.querySelector('input');
+    var raw = input ? input.value.trim() : String(semesters[i].sgpa || '').trim();
+    if (raw === '') continue;
+    var value = Number(raw);
+    if (!Number.isFinite(value) || value < 0 || value > 10) {
+      resultEl.innerHTML = '<div class="projection-result"><div class="target-error" role="alert">Every entered semester SGPA must be between 0 and 10.</div></div>';
+      return;
+    }
+    completed.push(value);
+  }
+  var result = calculateProjectedCgpa(completed, futureSgpa, futureCount);
+  if (!result.valid) {
+    resultEl.innerHTML = '<div class="projection-result"><div class="target-error" role="alert">' +
+      escapeHtml(result.reason) + '</div></div>';
+    return;
+  }
+  var direction = result.change > 0.005 ? 'increase' : result.change < -0.005 ? 'decrease' : 'stay about the same';
+  var changeText = Math.abs(result.change) < 0.005 ? 'No meaningful change' :
+    (result.change > 0 ? '+' : '') + result.change.toFixed(2) + ' CGPA points';
+  resultEl.innerHTML = '<div class="projection-result">' +
+    '<div class="projection-note">Estimated CGPA after ' + result.totalSemesters + ' semesters</div>' +
+    '<div class="projection-value">' + result.projectedCgpa.toFixed(2) + ' / 10</div>' +
+    '<div class="projection-note">Current average: <strong>' + result.currentCgpa.toFixed(2) +
+    '</strong> · Planned SGPA: <strong>' + futureSgpa.toFixed(2) + '</strong> for ' +
+    futureCount + ' future semester(s).</div>' +
+    '<div class="projection-note" style="margin-top:6px">' + changeText + ' — your CGPA will ' + direction + '.</div>' +
+    '</div>';
+}
+
+function resetCgpaProjection() {
+  document.getElementById('projection-future-sgpa').value = '';
+  document.getElementById('projection-future-count').value = '2';
+  document.getElementById('projection-result').innerHTML = '';
+  document.getElementById('projection-share-status').textContent = '';
+  var cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete('gcgpa');
+  cleanUrl.searchParams.delete('gfuture');
+  cleanUrl.searchParams.delete('gcount');
+  window.history.replaceState(null, '', cleanUrl.toString());
+}
+
+function shareCgpaProjection() {
+  var status = document.getElementById('projection-share-status');
+  var futureRaw = document.getElementById('projection-future-sgpa').value.trim();
+  var countRaw = document.getElementById('projection-future-count').value.trim();
+  var futureSgpa = futureRaw === '' ? NaN : Number(futureRaw);
+  var futureCount = countRaw === '' ? NaN : Number(countRaw);
+  var completed = [];
+
+  for (var i = 0; i < semesters.length; i++) {
+    var row = document.getElementById('sem-' + semesters[i].id);
+    var input = row && row.querySelector('input');
+    var raw = input ? input.value.trim() : String(semesters[i].sgpa || '').trim();
+    if (raw === '') continue;
+    var value = Number(raw);
+    if (!Number.isFinite(value) || value < 0 || value > 10) {
+      status.textContent = 'Fix every entered semester SGPA before creating a share link.';
+      return;
+    }
+    completed.push(value);
+  }
+
+  var result = calculateProjectedCgpa(completed, futureSgpa, futureCount);
+  if (!result.valid) {
+    status.textContent = result.reason;
+    updateCgpaProjection();
+    return;
+  }
+
+  var shareUrl = new URL(window.location.href);
+  shareUrl.searchParams.set('gcgpa', completed.join(','));
+  shareUrl.searchParams.set('gfuture', String(futureSgpa));
+  shareUrl.searchParams.set('gcount', String(futureCount));
+  var link = shareUrl.toString();
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      status.textContent = 'Share link copied. Anyone opening it will see these CGPA projection values.';
+    }).catch(function() {
+      window.prompt('Copy this CGPA projection link:', link);
+      status.textContent = 'If the copy dialog opened, copy the link to share it.';
+    });
+  } else {
+    window.prompt('Copy this CGPA projection link:', link);
+    status.textContent = 'If the copy dialog opened, copy the link to share it.';
+  }
+}
+
+function applyCgpaProjectionFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var sgpaParam = params.get('gcgpa');
+  var futureParam = params.get('gfuture');
+  var countParam = params.get('gcount');
+  if (sgpaParam === null || futureParam === null || countParam === null || sgpaParam.trim() === '') return;
+
+  var values = sgpaParam.split(',').map(function(value) { return Number(value); });
+  var futureSgpa = Number(futureParam);
+  var futureCount = Number(countParam);
+  var validValues = values.length > 0 && values.length <= 100 && values.every(function(value) {
+    return Number.isFinite(value) && value >= 0 && value <= 10;
+  });
+  var validation = calculateProjectedCgpa(values, futureSgpa, futureCount);
+  if (!validValues || !validation.valid) return;
+
+  semesters = values.map(function(value) { return { id: uid(), sgpa: String(value) }; });
+  renderSems();
+  document.getElementById('projection-future-sgpa').value = String(futureSgpa);
+  document.getElementById('projection-future-count').value = String(futureCount);
+  return true;
+}
+
 // ── Converter ─────────────────────────────────────────────────────────────
 var convMode = 'sgpa-pct';
 
@@ -794,11 +972,24 @@ applyThemeMeta(document.documentElement.getAttribute('data-theme') || 'dark');
 loadFromLocalStorage();
 initSubjects();
 initSems();
+if (applyCgpaProjectionFromUrl()) updateCgpaProjection();
 updateWhatIfProjection();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function(){});
 }
+document.getElementById('projection-calculate').addEventListener('click', updateCgpaProjection);
+document.getElementById('projection-share').addEventListener('click', shareCgpaProjection);
+document.getElementById('projection-reset').addEventListener('click', resetCgpaProjection);
+document.getElementById('projection-future-sgpa').addEventListener('input', updateCgpaProjection);
+document.getElementById('projection-future-count').addEventListener('input', updateCgpaProjection);
+if (typeof globalThis !== 'undefined') {
+  globalThis.GradeCalcProjection = { calculateProjectedCgpa: calculateProjectedCgpa };
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.GradeCalcProjection = { calculateProjectedCgpa: calculateProjectedCgpa };
+}
+
 </script>
 <script type="module" src="js/target.js"></script>
 </body>
