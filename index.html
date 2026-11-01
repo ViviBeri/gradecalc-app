@@ -26,20 +26,20 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:#050B07; --surface:#0B1510; --surface2:#102319; --border:#1D3B29;
+      --bg:#050B07; --surface:#0B1510; --surface2:#102319; --border:#1D3B29; --focus-ring:#86EFAC;
       --accent:#22C55E; --accent2:#86EFAC; --green:#4ADE80; --yellow:#FACC15;
       --red:#F87171; --teal:#34D399; --text:#ECFDF3; --muted:#8BA997;
       --header-bg:rgba(5,11,7,0.95); --nav-bg:rgba(5,11,7,.97);
       --mono:'DM Mono',monospace; --sans:'Outfit',sans-serif;
     }
     [data-theme="light"] {
-      --bg:#F4FBF6; --surface:#FFFFFF; --surface2:#E8F5EC; --border:#C7E4D0;
+      --bg:#F4FBF6; --surface:#FFFFFF; --surface2:#E8F5EC; --border:#C7E4D0; --focus-ring:#166534;
       --accent:#15803D; --accent2:#22C55E; --green:#16A34A; --yellow:#A16207;
       --red:#B91C1C; --teal:#047857; --text:#071A0D; --muted:#52705D;
       --header-bg:rgba(244,251,246,0.94); --nav-bg:rgba(244,251,246,0.97);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:3px solid var(--accent2);outline-offset:3px;border-radius:4px}
+    :where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px;border-radius:4px}
     @media (forced-colors:active){:where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:3px solid Highlight;outline-offset:3px}}
     @media (prefers-contrast:more){:root{--border:#6B8B75;--muted:#B5C9BB}[data-theme="light"]{--border:#526B59;--muted:#344D3A}}
     html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -54,7 +54,7 @@
     .grade-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(34,197,94,.1)}
     .tab-bar{display:flex;background:rgba(17,24,39,.8);border:1px solid var(--border);border-radius:12px;padding:4px;gap:3px}
     .tab-btn{flex:1;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-    .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 3px 10px rgba(34,197,94,.3)}
+    .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#052e16;box-shadow:0 3px 10px rgba(34,197,94,.3)}
     .body{flex:1;padding:16px 16px 130px;overflow-y:auto}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
     .card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
@@ -72,7 +72,7 @@
     .remove-btn:active{transform:scale(.92)}
     .add-btn{width:100%;padding:10px;background:transparent;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
     .btn-row{display:flex;gap:10px;margin-top:14px}
-    .btn-primary{flex:1;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:white;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.3);transition:opacity .2s,transform .1s}
+    .btn-primary{flex:1;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#052e16;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.3);transition:opacity .2s,transform .1s}
     .btn-primary:active{opacity:.88;transform:scale(.98)}
     .btn-secondary{flex:1;padding:13px 0;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
     .result-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 16px;margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:16px;animation:popIn .32s cubic-bezier(.34,1.56,.64,1)}

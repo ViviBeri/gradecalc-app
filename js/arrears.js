@@ -192,7 +192,7 @@
           '<label class="arrear-check"><input type="checkbox" name="cleared" /> Mark this attempt as cleared</label>' +
           '<button class="btn-secondary" type="submit">Save attempt</button><p class="arrear-form-message" aria-live="polite"></p></form>' :
           '<p class="arrear-empty">Add a subject name in the SGPA list to record a later attempt.</p>') +
-        '<button class="arrear-remove" type="button" data-remove-arrear="' + escapeHtml(record.id) + '">Remove record</button></article>';
+        '<button class="arrear-remove" type="button" aria-label="Remove arrear record for ' + escapeHtml(record.subjectName) + '" data-remove-arrear="' + escapeHtml(record.id) + '">Remove record</button></article>';
     }).join('');
     mount.innerHTML = '<div class="card arrear-tracker-card"><div class="arrear-title-row"><div><div class="card-title">Backlog &amp; arrear tracker</div>' +
       '<p class="arrear-intro">F and Ab subjects are listed here automatically. Later attempts are stored only in this browser.</p></div></div>' +
