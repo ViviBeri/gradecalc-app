@@ -83,3 +83,17 @@ test('calculation outputs and arrear tracker announce dynamic status updates', (
   assert.match(html, /id="arrears-tracker"[^>]*aria-live="polite"/);
   assert.match(html, /aria-live="polite"/);
 });
+
+test('tab navigation exposes a tablist, tabpanels and keyboard navigation', () => {
+  assert.match(html, /class="tab-bar" role="tablist" aria-label="Grade calculators"/);
+  for (const tab of ['sgpa', 'cgpa', 'convert', 'analytics', 'target']) {
+    assert.match(html, new RegExp('id="panel-' + tab + '"[^>]*role="tabpanel"'));
+    assert.match(html, new RegExp('id="panel-' + tab + '"[^>]*aria-labelledby="tab-' + tab + '"'));
+    assert.match(html, new RegExp('id="panel-' + tab + '"[^>]*tabindex="0"'));
+  }
+  assert.match(html, /function handleTabKeydown\(event\)/);
+  assert.match(html, /event\.key === 'ArrowRight'/);
+  assert.match(html, /event\.key === 'ArrowLeft'/);
+  assert.match(html, /event\.key === 'Home'/);
+  assert.match(html, /event\.key === 'End'/);
+});
