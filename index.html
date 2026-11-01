@@ -181,6 +181,33 @@
     @media (max-width:360px){.target-input-grid{grid-template-columns:1fr}.target-result-number{font-size:30px}}
     @media (prefers-reduced-motion:reduce){.target-result-card,.target-scenario{animation:none}}
 
+  .arrear-tracker-card{margin-top:14px}
+  .arrear-intro,.arrear-policy,.arrear-empty{font-size:11px;line-height:1.55;color:var(--muted)}
+  .arrear-intro{margin-top:-5px;margin-bottom:12px}
+  .arrear-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+  .arrear-summary>div{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;min-width:0}
+  .arrear-summary strong{display:block;font:700 22px var(--mono);color:var(--teal)}
+  .arrear-summary span{display:block;font-size:10px;color:var(--muted);line-height:1.35}
+  .arrear-card{border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0;background:var(--surface)}
+  .arrear-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .arrear-card-head h4{font-size:14px;margin-bottom:4px;overflow-wrap:anywhere}
+  .arrear-card-head p{font-size:11px;color:var(--muted);line-height:1.45}
+  .arrear-status{font-size:10px;font-weight:700;padding:5px 8px;border-radius:999px;white-space:normal;text-align:center;background:var(--surface2);color:var(--yellow)}
+  .arrear-status.is-cleared{color:var(--green)}
+  .arrear-history{padding-left:20px;margin:10px 0}
+  .arrear-history-item{font-size:11px;line-height:1.5;padding:5px 0;color:var(--text)}
+  .arrear-history-item strong{display:block;color:var(--muted);font-size:10px}
+  .arrear-attempt-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .arrear-attempt-form label{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;min-width:0}
+  .arrear-attempt-form input[type=date],.arrear-attempt-form input[type=number]{width:100%;min-width:0}
+  .arrear-attempt-form .arrear-check{grid-column:1/-1;flex-direction:row;align-items:center;color:var(--text)}
+  .arrear-attempt-form .arrear-check input{width:18px;height:18px}
+  .arrear-attempt-form button{grid-column:1/-1;justify-self:start}
+  .arrear-form-message{grid-column:1/-1;font-size:11px;color:var(--muted)}
+  .arrear-form-message.is-error{color:var(--red)} .arrear-form-message.is-success{color:var(--green)}
+  .arrear-remove{margin-top:8px;border:0;background:transparent;color:var(--muted);font-size:10px;text-decoration:underline;cursor:pointer}
+  .arrear-policy{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+  @media(max-width:420px){.arrear-summary{gap:5px}.arrear-summary>div{padding:8px 6px}.arrear-summary strong{font-size:19px}.arrear-card-head{flex-direction:column}.arrear-attempt-form{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -248,6 +275,7 @@
       </div>
       <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">✦ Grade fills automatically · Blank marks = Ab (Absent)</div>
       <div id="sgpa-result" aria-live="polite" aria-atomic="true" role="status"></div>
+      <div id="arrears-tracker" aria-live="polite" aria-atomic="false"></div>
 
       <!-- 🎯 What-If Projector Card -->
       <div class="card" style="margin-top:6px">
@@ -538,6 +566,7 @@ function renderSubjects() {
   document.getElementById('sgpa-subjects').innerHTML = html;
   saveSubjectsToLocalStorage();
   updateWhatIfProjection();
+  if (window.GradeCalcArrears) { window.GradeCalcArrears.syncSubjects(subjects); window.GradeCalcArrears.render(); }
 }
 
 function escapeHtml(str) { return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
@@ -547,6 +576,7 @@ function setName(id, val) {
   if (s) s.name = val;
   saveSubjectsToLocalStorage();
   updateWhatIfProjection();
+  if (window.GradeCalcArrears) { window.GradeCalcArrears.syncSubjects(subjects); window.GradeCalcArrears.render(); }
 }
 
 function setCredits(id, val) {
@@ -554,6 +584,7 @@ function setCredits(id, val) {
   if (s) s.credits = val;
   saveSubjectsToLocalStorage();
   updateWhatIfProjection();
+  if (window.GradeCalcArrears) { window.GradeCalcArrears.syncSubjects(subjects); window.GradeCalcArrears.render(); }
 }
 
 function setMarks(id, val) {
@@ -570,6 +601,7 @@ function setMarks(id, val) {
   }
   saveSubjectsToLocalStorage();
   updateWhatIfProjection();
+  if (window.GradeCalcArrears) { window.GradeCalcArrears.syncSubjects(subjects); window.GradeCalcArrears.render(); }
 }
 
 function addSubject() {
@@ -1009,5 +1041,6 @@ if (typeof globalThis !== 'undefined') {
 
 </script>
 <script type="module" src="js/target.js"></script>
+<script src="js/arrears.js"></script>
 </body>
 </html>
