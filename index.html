@@ -462,7 +462,7 @@ function renderSubjects() {
   updateWhatIfProjection();
 }
 
-function escapeHtml(str) { return String(str == null ? '' : str).replace(/[&<>\"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[m]; }); }
+function escapeHtml(str) { return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 
 function setName(id, val) {
   var s = subjects.find(function(x){return x.id===id});
