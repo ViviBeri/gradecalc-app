@@ -39,6 +39,9 @@
       --header-bg:rgba(244,251,246,0.94); --nav-bg:rgba(244,251,246,0.97);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:3px solid var(--accent2);outline-offset:3px;border-radius:4px}
+    @media (forced-colors:active){:where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:3px solid Highlight;outline-offset:3px}}
+    @media (prefers-contrast:more){:root{--border:#6B8B75;--muted:#B5C9BB}[data-theme="light"]{--border:#526B59;--muted:#344D3A}}
     html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
     #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
     .header{position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:14px 16px 10px;transition:background .2s}
@@ -192,7 +195,7 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="grade-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="width:34px;padding:7px 0">🌙</button>
+        <button class="grade-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle color theme" style="width:34px;padding:7px 0">🌙</button>
         <button class="grade-btn" id="gradeToggle" onclick="toggleGradeEditor()">⚙ Grade Scale</button>
       </div>
     </div>
@@ -296,11 +299,11 @@
         <div class="projection-grid">
           <label class="projection-field">
             <span>Planned future SGPA (0–10)</span>
-            <input class="input projection-input" id="projection-future-sgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 9.00" inputmode="decimal" />
+            <input aria-label="Planned future SGPA from 0 to 10" class="input projection-input" id="projection-future-sgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 9.00" inputmode="decimal" />
           </label>
           <label class="projection-field">
             <span>Future semesters</span>
-            <input class="input projection-input" id="projection-future-count" type="number" min="1" max="20" step="1" value="2" inputmode="numeric" />
+            <input aria-label="Number of future semesters" class="input projection-input" id="projection-future-count" type="number" min="1" max="20" step="1" value="2" inputmode="numeric" />
           </label>
         </div>
         <div class="target-actions">
@@ -326,10 +329,10 @@
         <div class="card-title">🎯 Reach your CGPA goal</div>
         <p class="target-intro">Plan ahead. Find the average SGPA you need in your remaining credits.</p>
         <div class="target-input-grid">
-          <label class="target-field"><span>Current CGPA <span class="target-range">(0–10)</span></span><input class="input target-number" id="target-current-cgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 7.80" inputmode="decimal" autocomplete="off" /></label>
-          <label class="target-field"><span>Target CGPA <span class="target-range">(0–10)</span></span><input class="input target-number" id="target-goal-cgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.50" inputmode="decimal" autocomplete="off" /></label>
-          <label class="target-field"><span>Credits earned</span><input class="input target-number" id="target-earned-credits" type="number" min="0" step="0.5" placeholder="e.g. 120" inputmode="decimal" autocomplete="off" /></label>
-          <label class="target-field"><span>Credits remaining</span><input class="input target-number" id="target-remaining-credits" type="number" min="0.5" step="0.5" placeholder="e.g. 60" inputmode="decimal" autocomplete="off" /></label>
+          <label class="target-field"><span>Current CGPA <span class="target-range">(0–10)</span></span><input aria-label="Current CGPA from 0 to 10" class="input target-number" id="target-current-cgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 7.80" inputmode="decimal" autocomplete="off" /></label>
+          <label class="target-field"><span>Target CGPA <span class="target-range">(0–10)</span></span><input aria-label="Target CGPA from 0 to 10" class="input target-number" id="target-goal-cgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.50" inputmode="decimal" autocomplete="off" /></label>
+          <label class="target-field"><span>Credits earned</span><input aria-label="Credits already earned" class="input target-number" id="target-earned-credits" type="number" min="0" step="0.5" placeholder="e.g. 120" inputmode="decimal" autocomplete="off" /></label>
+          <label class="target-field"><span>Credits remaining</span><input aria-label="Credits remaining" class="input target-number" id="target-remaining-credits" type="number" min="0.5" step="0.5" placeholder="e.g. 60" inputmode="decimal" autocomplete="off" /></label>
         </div>
         <div class="target-actions"><button class="btn-primary" id="target-calculate" type="button">Calculate target</button><button class="btn-secondary" id="target-reset" type="button">Reset</button></div>
         <p class="target-disclaimer">Uses a credit-weighted estimate for planning. Confirm your university's official CGPA formula before relying on the result.</p>
@@ -570,14 +573,21 @@ function setMarks(id, val) {
 }
 
 function addSubject() {
-  subjects.push({id:uid(), name:'', marks:'', credits:'', gradePoint:0, gradeLabel:'Ab'});
+  var newSubject = {id:uid(), name:'', marks:'', credits:'', gradePoint:0, gradeLabel:'Ab'};
+  subjects.push(newSubject);
   renderSubjects();
+  var firstField = document.querySelector('#row-' + newSubject.id + ' input');
+  if (firstField) firstField.focus();
 }
 
 function removeSubject(id) {
   if (subjects.length <= 1) return;
+  var removedIndex = subjects.findIndex(function(x){return x.id===id});
   subjects = subjects.filter(function(x){return x.id!==id});
   renderSubjects();
+  var focusIndex = Math.min(Math.max(removedIndex, 0), subjects.length - 1);
+  var nextField = document.querySelector('#row-' + subjects[focusIndex].id + ' input');
+  if (nextField) nextField.focus();
 }
 
 function getCurrentSubjectStats() {
@@ -728,14 +738,21 @@ function renderSems() {
 function updateSem(id, val) { var s=semesters.find(function(x){return x.id===id}); if(s) { s.sgpa=val; saveSemestersToLocalStorage(); } }
 
 function addSem() {
-  semesters.push({id:uid(), sgpa:''});
+  var newSemester = {id:uid(), sgpa:''};
+  semesters.push(newSemester);
   renderSems();
+  var field = document.querySelector('#sem-' + newSemester.id + ' input');
+  if (field) field.focus();
 }
 
 function removeSem(id) {
   if (semesters.length <= 1) return;
+  var removedIndex = semesters.findIndex(function(x){return x.id===id});
   semesters = semesters.filter(function(x){return x.id!==id});
   renderSems();
+  var focusIndex = Math.min(Math.max(removedIndex, 0), semesters.length - 1);
+  var nextField = document.querySelector('#sem-' + semesters[focusIndex].id + ' input');
+  if (nextField) nextField.focus();
 }
 
 function calcCGPA() {
