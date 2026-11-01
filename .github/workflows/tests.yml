@@ -11,4 +11,6 @@ jobs:
         with:
           node-version: 20
       - run: node --check analytics.js
+      - run: node --check js/arrears.js
       - run: node tests.js
+      - run: node --test tests/*.test.cjs
