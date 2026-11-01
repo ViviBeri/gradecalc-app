@@ -45,3 +45,41 @@ test('adding and removing semester rows moves focus predictably', () => {
   assert.ok(html.includes('function removeSem(id)'));
   assert.ok(html.includes('nextField.focus()'));
 });
+
+
+test('navigation tabs expose selected state and their controlled panels', () => {
+  for (const tab of ['sgpa', 'cgpa', 'convert', 'analytics', 'target']) {
+    assert.match(html, new RegExp('id="tab-' + tab + '"[^>]*role="tab"'));
+    assert.match(html, new RegExp('id="tab-' + tab + '"[^>]*aria-selected="(?:true|false)"'));
+    assert.match(html, new RegExp('id="tab-' + tab + '"[^>]*aria-controls="panel-' + tab + '"'));
+    assert.match(html, new RegExp('id="panel-' + tab + '"'));
+  }
+  assert.match(html, /setAttribute\('aria-selected','false'\)/);
+  assert.match(html, /setAttribute\('aria-selected','true'\)/);
+});
+
+test('grade editor toggle reports expanded state', () => {
+  assert.match(html, /id="gradeToggle"[^>]*aria-expanded="false"[^>]*aria-controls="grade-editor"/);
+  assert.match(html, /setAttribute\('aria-expanded', String\(open\)\)/);
+});
+
+test('dynamically generated subject and semester remove controls have descriptive names', () => {
+  assert.match(html, /aria-label="Remove subject '\+\(i\+1\)/);
+  assert.match(html, /aria-label="Remove semester '\+\(i\+1\)/);
+  assert.match(html, /function renderSubjects\(\)/);
+  assert.match(html, /function renderSems\(\)/);
+});
+
+test('subject and semester inputs have labels and numeric constraints', () => {
+  assert.match(html, /aria-label="Subject name '\+\(i\+1\)/);
+  assert.match(html, /aria-label="Marks for subject '\+\(i\+1\) out of 100" min="0" max="100"/);
+  assert.match(html, /aria-label="Credits for subject '\+\(i\+1\)" min="1" max="6"/);
+  assert.match(html, /aria-label="SGPA for '\+label\'" min="0" max="10"/);
+});
+
+test('calculation outputs and arrear tracker announce dynamic status updates', () => {
+  assert.match(html, /id="sgpa-result"[^>]*aria-live="polite"[^>]*role="status"/);
+  assert.match(html, /id="cgpa-result"[^>]*aria-live="polite"[^>]*role="status"/);
+  assert.match(html, /id="arrears-tracker"[^>]*aria-live="polite"/);
+  assert.match(html, /aria-live="polite"/);
+});
