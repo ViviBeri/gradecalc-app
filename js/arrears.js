@@ -66,6 +66,13 @@
     };
   }
 
+  function isValidDate(date) {
+    if (typeof date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return false;
+    var parts = date.split('-').map(Number);
+    var parsed = new Date(parts[0], parts[1] - 1, parts[2]);
+    return parsed.getFullYear() === parts[0] && parsed.getMonth() === parts[1] - 1 && parsed.getDate() === parts[2];
+  }
+
   function makeId() {
     return 'ar_' + Math.random().toString(36).slice(2, 11);
   }
