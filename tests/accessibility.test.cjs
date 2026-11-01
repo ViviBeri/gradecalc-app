@@ -27,8 +27,8 @@ test('all static projection and target calculator inputs have accessible names',
 });
 
 test('keyboard focus is visible in normal and forced-colors modes', () => {
-  assert.match(html, /:where\\(button,input,select,textarea,a,\\[tabindex\\]\\):focus-visible/);
-  assert.match(html, /@media \\(forced-colors:active\\)/);
+  assert.ok(html.includes(':where(button,input,select,textarea,a,[tabindex]):focus-visible'));
+  assert.ok(html.includes('@media (forced-colors:active)'));
   assert.match(html, /outline:3px solid Highlight/);
 });
 
