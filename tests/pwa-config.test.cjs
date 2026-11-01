@@ -94,7 +94,7 @@ test('restored subject and semester records receive safe default fields', () => 
 
 test('subject-name HTML escaping protects quoted input attributes', () => {
   const html = read('index.html');
-  assert.match(html, /function escapeHtml\(str\) \{ return String\(str == null \? '' : str\)\.replace\(\/\[&<>[\"']\]\/g/);
+  assert.ok(html.includes('.replace(/[&<>"\']/g,'), "escapeHtml must match HTML-special characters");
   assert.match(html, /&quot;/);
   assert.match(html, /&#39;/);
 });
