@@ -113,3 +113,12 @@ test('app mounts the tracker and service worker precaches its module', () => {
   assert.match(html, /function setMarks[\s\S]*?GradeCalcArrears\.syncSubjects/);
   assert.match(serviceWorker, /'js\/arrears\.js'/);
 });
+
+
+test('arrear attempt forms expose polite status messages and assertive validation errors', () => {
+  assert.match(source, /class="arrear-form-message" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(source, /message\.setAttribute\('role', 'alert'\)/);
+  assert.match(source, /message\.setAttribute\('aria-live', 'assertive'\)/);
+  assert.match(source, /updated\.setAttribute\('role', 'status'\)/);
+  assert.match(source, /updated\.setAttribute\('aria-live', 'polite'\)/);
+});

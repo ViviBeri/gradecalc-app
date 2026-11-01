@@ -190,7 +190,7 @@
           '<label>Attempt date<input type="date" name="date" required /></label>' +
           '<label>Marks (0–100)<input type="number" name="marks" min="0" max="100" step="0.01" required inputmode="decimal" /></label>' +
           '<label class="arrear-check"><input type="checkbox" name="cleared" /> Mark this attempt as cleared</label>' +
-          '<button class="btn-secondary" type="submit">Save attempt</button><p class="arrear-form-message" aria-live="polite"></p></form>' :
+          '<button class="btn-secondary" type="submit">Save attempt</button><p class="arrear-form-message" role="status" aria-live="polite" aria-atomic="true"></p></form>' :
           '<p class="arrear-empty">Add a subject name in the SGPA list to record a later attempt.</p>') +
         '<button class="arrear-remove" type="button" aria-label="Remove arrear record for ' + escapeHtml(record.subjectName) + '" data-remove-arrear="' + escapeHtml(record.id) + '">Remove record</button></article>';
     }).join('');
@@ -211,6 +211,8 @@
         if (!result.valid) {
           message.textContent = result.reason;
           message.className = 'arrear-form-message is-error';
+          message.setAttribute('role', 'alert');
+          message.setAttribute('aria-live', 'assertive');
           return;
         }
         render();
@@ -218,6 +220,8 @@
         if (updated) {
           updated.textContent = 'Attempt saved. Current status: ' + result.status + '.';
           updated.className = 'arrear-form-message is-success';
+          updated.setAttribute('role', 'status');
+          updated.setAttribute('aria-live', 'polite');
         }
       });
     });
