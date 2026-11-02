@@ -8,6 +8,7 @@ A mobile-friendly, installable Progressive Web App for students to calculate sem
 
 <p align="center">
   <a href="https://viviberi.github.io/gradecalc-app/"><img src="https://img.shields.io/badge/Launch-Live_App-16a34a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Launch GradeCalc" /></a>
+  <a href="https://github.com/ViviBeri/gradecalc-app/releases/latest"><img src="https://img.shields.io/github/v/release/ViviBeri/gradecalc-app?display_name=tag&style=for-the-badge&label=Latest%20Release" alt="Latest release" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/actions"><img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT license" /></a>
 </p>
@@ -22,6 +23,10 @@ A mobile-friendly, installable Progressive Web App for students to calculate sem
 
 If this project is useful to you, consider [sponsoring my open-source work](https://github.com/sponsors/ViviBeri). Your support helps fund ongoing maintenance, testing, documentation, and future improvements.
 
+
+## Latest release
+
+[**GradeCalc v1.0.0 — Stable Release**](https://github.com/ViviBeri/gradecalc-app/releases/tag/v1.0.0) is published. It includes SGPA and CGPA calculations, What-If projection, grade conversion, CSV export, installable PWA support, and offline access.
 
 ## Open the app
 
