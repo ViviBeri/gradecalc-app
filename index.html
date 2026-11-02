@@ -417,7 +417,7 @@
         <div class="target-actions"><button class="btn-primary" id="target-calculate" type="button">Calculate target</button><button class="btn-secondary" id="target-reset" type="button">Reset</button></div>
         <p class="target-disclaimer">Uses a credit-weighted estimate for planning. Confirm your university's official CGPA formula before relying on the result.</p>
       </div>
-      <div id="target-main-result"></div>
+      <div id="target-main-result" aria-live="polite" aria-atomic="true" role="status"></div>
       <div class="card" id="target-scenarios-card"><div class="card-title">Compare remaining-credit scenarios</div><p class="target-intro">See how the required average changes if you have 24, 30, or 36 credits left.</p><div id="target-scenarios" class="target-scenario-list"></div></div>
     </div>
 
