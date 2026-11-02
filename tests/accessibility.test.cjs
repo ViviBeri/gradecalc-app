@@ -132,3 +132,18 @@ test('arrear tracker action buttons meet a 44px minimum touch height', () => {
   assert.match(html, /\.arrear-attempt-form button\{[^}]*min-height:44px/);
   assert.match(html, /\.arrear-remove\{min-height:44px/);
 });
+
+
+test('responsive layouts define compact breakpoints and prevent narrow-screen grid overflow', () => {
+  assert.match(html, /@media\\s*\\(max-width:\\s*420px\\)/);
+  assert.match(html, /@media\\s*\\(max-width:\\s*360px\\)/);
+  assert.match(html, /grid-template-columns:minmax\\(0,1fr\\)/);
+  assert.match(html, /min-width:0/);
+  assert.match(html, /overflow-x:hidden/);
+  assert.match(html, /overflow-wrap:anywhere/);
+});
+
+test('motion-sensitive users receive reduced animation and transition effects', () => {
+  assert.match(html, /@media\\s*\\(prefers-reduced-motion:\\s*reduce\\)/);
+  assert.match(html, /animation:\\s*none/);
+});
