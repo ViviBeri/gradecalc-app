@@ -116,3 +116,14 @@ test('arrear record removal controls identify the affected subject', () => {
   const arrears = fs.readFileSync(path.join(__dirname, '..', 'js', 'arrears.js'), 'utf8');
   assert.ok(arrears.includes('aria-label="Remove arrear record for \' + escapeHtml(record.subjectName)'));
 });
+
+test('every static button has a visible or programmatic accessible name', () => {
+  const buttons = [...html.matchAll(/<button\\b([^>]*)>([\\s\\S]*?)<\\/button>/g)];
+  assert.ok(buttons.length > 0, 'expected static buttons');
+  for (const [index, match] of buttons.entries()) {
+    const attributes = match[1];
+    const visibleText = match[2].replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();
+    const hasProgrammaticName = /\\baria-label=|\\baria-labelledby=/.test(attributes);
+    assert.ok(visibleText || hasProgrammaticName, 'button ' + (index + 1) + ' must have an accessible name');
+  }
+});
