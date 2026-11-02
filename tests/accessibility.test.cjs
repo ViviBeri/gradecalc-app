@@ -17,7 +17,7 @@ test('all static projection and target calculator inputs have accessible names',
     'target-remaining-credits'
   ];
   for (const id of ids) {
-    const input = html.match(new RegExp('<input\b[^>]*id="' + id + '"[^>]*>'));
+    const input = html.match(new RegExp('<input\\b[^>]*id="' + id + '"[^>]*>'));
     assert.ok(input, 'expected input #' + id);
     assert.match(input[0], /aria-label=|aria-labelledby=/, id + ' must have an accessible name');
   }
@@ -123,7 +123,7 @@ test('every static button has a visible or programmatic accessible name', () => 
   for (const [index, match] of buttons.entries()) {
     const attributes = match[1];
     const visibleText = match[2].replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();
-    const hasProgrammaticName = /\baria-label=|\baria-labelledby=/.test(attributes);
+    const hasProgrammaticName = /\\baria-label=|\\baria-labelledby=/.test(attributes);
     assert.ok(visibleText || hasProgrammaticName, 'button ' + (index + 1) + ' must have an accessible name');
   }
 });
@@ -134,16 +134,16 @@ test('arrear tracker action buttons meet a 44px minimum touch height', () => {
 });
 
 
-test('responsive layouts define compact breakpoints and prevent narrow-screen grid overflow', () => {
-  assert.match(html, /@media\s*\(max-width:\s*420px\)/);
-  assert.match(html, /@media\s*\(max-width:\s*360px\)/);
-  assert.match(html, /grid-template-columns:minmax\(0,1fr\)/);
-  assert.match(html, /min-width:0/);
-  assert.match(html, /overflow-x:hidden/);
-  assert.match(html, /overflow-wrap:anywhere/);
+test('responsive layouts define compact breakpoints and narrow-screen overflow safeguards', () => {
+  assert.ok(html.includes('@media(max-width:420px)'));
+  assert.ok(html.includes('@media (max-width:360px)') || html.includes('@media(max-width:360px)'));
+  assert.ok(html.includes('grid-template-columns:minmax(0,1fr)'));
+  assert.ok(html.includes('min-width:0'));
+  assert.ok(html.includes('overflow-x:hidden'));
+  assert.ok(html.includes('overflow-wrap:anywhere'));
 });
 
-test('motion-sensitive users receive reduced animation and transition effects', () => {
-  assert.match(html, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.match(html, /animation:\s*none/);
+test('motion-sensitive users receive reduced animation effects', () => {
+  assert.ok(html.includes('@media (prefers-reduced-motion:reduce)') || html.includes('@media(prefers-reduced-motion:reduce)'));
+  assert.ok(html.includes('animation:none'));
 });
