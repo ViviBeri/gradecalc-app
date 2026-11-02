@@ -8,12 +8,11 @@ on:
       - .github/workflows/sync-pwa-icons.yml
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   render-icons:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,8 +23,6 @@ jobs:
           python -m pip install --quiet cairosvg pillow
           python - <<'PY'
           import cairosvg
-          from PIL import Image
-          from io import BytesIO
           from pathlib import Path
 
           svg = Path("gradecalc-icon.svg").read_bytes()
