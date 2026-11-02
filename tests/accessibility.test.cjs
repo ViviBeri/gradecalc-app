@@ -123,7 +123,7 @@ test('every static button has a visible or programmatic accessible name', () => 
   for (const [index, match] of buttons.entries()) {
     const attributes = match[1];
     const visibleText = match[2].replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();
-    const hasProgrammaticName = /\\baria-label=|\\baria-labelledby=/.test(attributes);
+    const hasProgrammaticName = /\baria-label=|\baria-labelledby=/.test(attributes);
     assert.ok(visibleText || hasProgrammaticName, 'button ' + (index + 1) + ' must have an accessible name');
   }
 });
@@ -146,4 +146,14 @@ test('responsive layouts define compact breakpoints and narrow-screen overflow s
 test('motion-sensitive users receive reduced animation effects', () => {
   assert.ok(html.includes('@media (prefers-reduced-motion:reduce)') || html.includes('@media(prefers-reduced-motion:reduce)'));
   assert.ok(html.includes('animation:none'));
+});
+
+test('arrear attempt controls have explicit labels and announce validation errors', () => {
+  const arrears = fs.readFileSync(path.join(__dirname, '..', 'js', 'arrears.js'), 'utf8');
+  assert.ok(arrears.includes('<label>Attempt date<input type="date" name="date" required />'));
+  assert.ok(arrears.includes('<label>Marks (0–100)<input type="number" name="marks" min="0" max="100" step="0.01" required inputmode="decimal" />'));
+  assert.ok(arrears.includes('<label class="arrear-check"><input type="checkbox" name="cleared" /> Mark this attempt as cleared</label>'));
+  assert.ok(arrears.includes("message.setAttribute('role', 'alert')"));
+  assert.ok(arrears.includes("message.setAttribute('aria-live', 'assertive')"));
+  assert.ok(arrears.includes("updated.setAttribute('aria-live', 'polite')"));
 });
