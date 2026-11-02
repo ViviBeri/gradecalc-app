@@ -118,7 +118,7 @@ test('arrear record removal controls identify the affected subject', () => {
 });
 
 test('every static button has a visible or programmatic accessible name', () => {
-  const buttons = [...html.matchAll(/<button\\b([^>]*)>([\\s\\S]*?)<\\/button>/g)];
+  const buttons = [...html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)];
   assert.ok(buttons.length > 0, 'expected static buttons');
   for (const [index, match] of buttons.entries()) {
     const attributes = match[1];
