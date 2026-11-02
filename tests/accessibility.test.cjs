@@ -167,3 +167,12 @@ test('subject and semester remove controls meet 44px touch target minimums at na
   assert.ok(html.includes('grid-template-columns:minmax(0,1fr) 46px 42px 46px 44px'));
   assert.ok(html.includes('grid-template-columns:minmax(0,1fr) 42px 38px 42px 44px'));
 });
+
+test('primary navigation, mode, grade and action buttons meet 44px touch target minimums', () => {
+  assert.match(html, /\.grade-btn\{min-width:44px;min-height:44px/);
+  assert.match(html, /\.tab-btn\{flex:1;min-height:44px/);
+  assert.match(html, /\.mode-pill\{min-height:44px/);
+  assert.match(html, /\.add-btn\{width:100%;min-height:44px/);
+  assert.match(html, /\.btn-primary\{flex:1;min-height:44px/);
+  assert.match(html, /\.btn-secondary\{flex:1;min-height:44px/);
+});
