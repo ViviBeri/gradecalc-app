@@ -157,3 +157,13 @@ test('arrear attempt controls have explicit labels and announce validation error
   assert.ok(arrears.includes("message.setAttribute('aria-live', 'assertive')"));
   assert.ok(arrears.includes("updated.setAttribute('aria-live', 'polite')"));
 });
+
+test('subject and semester remove controls meet 44px touch target minimums at narrow widths', () => {
+  assert.match(html, /\.remove-btn\{min-width:44px;min-height:44px;width:44px;height:44px/);
+  assert.match(html, /\.col-labels\{display:grid;grid-template-columns:1fr 62px 58px 68px 44px/);
+  assert.match(html, /\.subject-row\{display:grid;grid-template-columns:1fr 62px 58px 68px 44px/);
+  assert.match(html, /\.sem-row\{display:grid;grid-template-columns:1fr 1fr 44px/);
+  assert.ok(html.includes('grid-template-columns:minmax(0,1fr) 50px 46px 50px 44px'));
+  assert.ok(html.includes('grid-template-columns:minmax(0,1fr) 46px 42px 46px 44px'));
+  assert.ok(html.includes('grid-template-columns:minmax(0,1fr) 42px 38px 42px 44px'));
+});
