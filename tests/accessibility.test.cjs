@@ -127,3 +127,8 @@ test('every static button has a visible or programmatic accessible name', () => 
     assert.ok(visibleText || hasProgrammaticName, 'button ' + (index + 1) + ' must have an accessible name');
   }
 });
+
+test('arrear tracker action buttons meet a 44px minimum touch height', () => {
+  assert.match(html, /\.arrear-attempt-form button\{[^}]*min-height:44px/);
+  assert.match(html, /\.arrear-remove\{min-height:44px/);
+});
