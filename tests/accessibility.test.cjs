@@ -176,3 +176,9 @@ test('primary navigation, mode, grade and action buttons meet 44px touch target 
   assert.match(html, /\.btn-primary\{flex:1;min-height:44px/);
   assert.match(html, /\.btn-secondary\{flex:1;min-height:44px/);
 });
+
+test('target CGPA results and validation messages are announced', () => {
+  assert.match(html, /id="target-main-result"[^>]*aria-live="polite"[^>]*aria-atomic="true"[^>]*role="status"/);
+  assert.match(html, /target-main-result/);
+  assert.match(html, /role="alert"/);
+});
