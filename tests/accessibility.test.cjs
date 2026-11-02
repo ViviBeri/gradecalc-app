@@ -101,7 +101,7 @@ test('tab navigation exposes a tablist, tabpanels and keyboard navigation', () =
 
 test('navigation tab bar uses the active theme surface for readable inactive tabs', () => {
   assert.ok(html.includes('.tab-bar{display:flex;background:var(--surface2)'));
-  assert.ok(html.includes('.tab-btn{flex:1;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted)'));
+  assert.ok(html.includes('.tab-btn{flex:1;min-height:44px;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted)'));
 });
 
 test('focus indicators use theme-specific high-contrast colors and filled controls use dark text', () => {
@@ -109,7 +109,7 @@ test('focus indicators use theme-specific high-contrast colors and filled contro
   assert.ok(html.includes('--focus-ring:#166534'));
   assert.ok(html.includes(':focus-visible{outline:3px solid var(--focus-ring)'));
   assert.ok(html.includes('.tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#052e16'));
-  assert.ok(html.includes('.btn-primary{flex:1;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#052e16'));
+  assert.ok(html.includes('.btn-primary{flex:1;min-height:44px;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#052e16'));
 });
 
 test('arrear record removal controls identify the affected subject', () => {
