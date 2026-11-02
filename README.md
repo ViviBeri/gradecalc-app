@@ -163,7 +163,7 @@ LICENSE                             MIT license
 
 ## Continuous integration and deployment
 
-GitHub Actions runs the JavaScript calculation/regression checks and Python test suite. A separate workflow deploys the static app to GitHub Pages when changes are pushed to `main).
+GitHub Actions runs the JavaScript calculation/regression checks and Python test suite. A separate workflow deploys the static app to GitHub Pages when changes are pushed to `main`.
 
 - [View workflow runs](https://github.com/ViviBeri/gradecalc-app/actions)
 - [Report a bug](https://github.com/ViviBeri/gradecalc-app/issues/new?template=bug_report.yml)
