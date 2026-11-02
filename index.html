@@ -50,10 +50,10 @@
     .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;box-shadow:0 4px 14px rgba(34,197,94,.35)}
     .logo-name{font-size:18px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .logo-sub{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.8px;text-transform:uppercase}
-    .grade-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
+    .grade-btn{min-width:44px;min-height:44px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
     .grade-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(34,197,94,.1)}
     .tab-bar{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:4px;gap:3px}
-    .tab-btn{flex:1;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+    .tab-btn{flex:1;min-height:44px;padding:9px 0;background:transparent;border:none;border-radius:9px;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
     .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#052e16;box-shadow:0 3px 10px rgba(34,197,94,.3)}
     .body{flex:1;padding:16px 16px 130px;overflow-y:auto}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
@@ -70,11 +70,11 @@
     .auto-grade.fail  {background:rgba(239,68,68,.10); color:var(--red);   border-color:rgba(239,68,68,.30)}
     .remove-btn{min-width:44px;min-height:44px;width:44px;height:44px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:9px;color:var(--red);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
     .remove-btn:active{transform:scale(.92)}
-    .add-btn{width:100%;padding:10px;background:transparent;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
+    .add-btn{width:100%;min-height:44px;padding:10px;background:transparent;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
     .btn-row{display:flex;gap:10px;margin-top:14px}
-    .btn-primary{flex:1;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#052e16;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.3);transition:opacity .2s,transform .1s}
+    .btn-primary{flex:1;min-height:44px;padding:13px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#052e16;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.3);transition:opacity .2s,transform .1s}
     .btn-primary:active{opacity:.88;transform:scale(.98)}
-    .btn-secondary{flex:1;padding:13px 0;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
+    .btn-secondary{flex:1;min-height:44px;padding:13px 0;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
     .result-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 16px;margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:16px;animation:popIn .32s cubic-bezier(.34,1.56,.64,1)}
     .result-share-actions{display:flex;flex-wrap:wrap;gap:8px;width:100%;justify-content:center}
     .result-share-actions button{min-width:150px}
@@ -99,7 +99,7 @@
     .progress-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.16,1,.3,1);background:linear-gradient(90deg,var(--accent),var(--accent2))}
     .progress-val{font-size:11px;color:var(--text);font-weight:600;width:32px;text-align:right;font-family:var(--mono)}
     .mode-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
-    .mode-pill{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
+    .mode-pill{min-height:44px;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
     .mode-pill.active{background:rgba(20,184,166,.12);border-color:var(--teal);color:var(--teal)}
     .big-input{font-size:20px!important;padding:14px 16px!important;font-family:var(--mono)!important}
     .convert-result{background:var(--surface2);border:1px solid rgba(20,184,166,.25);border-radius:14px;padding:20px;text-align:center;margin-top:14px;animation:popIn .25s ease}
