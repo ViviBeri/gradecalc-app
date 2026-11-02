@@ -16,6 +16,13 @@ A mobile-friendly, installable Progressive Web App for students to calculate sem
   <strong>Built for the SGC student community · Puducherry</strong>
 </p>
 
+---
+
+## Support this project
+
+If this project is useful to you, consider [sponsoring my open-source work](https://github.com/sponsors/ViviBeri). Your support helps fund ongoing maintenance, testing, documentation, and future improvements.
+
+
 ## Open the app
 
 - **Live app:** [viviberi.github.io/gradecalc-app](https://viviberi.github.io/gradecalc-app/)
