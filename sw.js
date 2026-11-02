@@ -78,7 +78,7 @@ self.addEventListener('fetch', event => {
            event.request.url.includes('fonts.gstatic.com'))
         ) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(() => {});
         }
         return response;
       }).catch(() => new Response('', { status: 504, statusText: 'Offline' }))
