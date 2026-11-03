@@ -16,6 +16,8 @@ test('web app manifest is valid and resolves correctly at root and GitHub Pages 
   assert.equal(manifest.start_url, './');
   assert.equal(manifest.scope, './');
   assert.ok(manifest.icons.some((icon) => icon.type === 'image/svg+xml' && icon.sizes === 'any' && icon.purpose === 'any'));
+  assert.ok(manifest.icons.some((icon) => icon.src.startsWith('icons/icon-192.png') && icon.sizes === '192x192' && icon.type === 'image/png'));
+  assert.ok(manifest.icons.some((icon) => icon.src.startsWith('icons/icon-512.png') && icon.sizes === '512x512' && icon.type === 'image/png'));
 
   for (const pageUrl of [
     'https://example.com/',
@@ -108,4 +110,15 @@ test('all inline application scripts parse without JavaScript syntax errors', ()
   scripts.forEach((match, index) => {
     assert.doesNotThrow(() => new vm.Script(match[1], { filename: 'index-inline-' + index + '.js' }));
   });
+});
+
+test('Android-compatible PNG launcher icons are present in the PWA manifest and service-worker cache', () => {
+  const manifest = JSON.parse(read('manifest.json'));
+  const worker = read('sw.js');
+  for (const size of [192, 512]) {
+    const icon = manifest.icons.find((item) => item.src.startsWith('icons/icon-' + size + '.png'));
+    assert.ok(icon, 'missing ' + size + 'px PNG manifest icon');
+    assert.ok(fs.existsSync(path.join(root, icon.src.split('?')[0])), 'missing PNG asset: ' + icon.src);
+    assert.ok(worker.includes('icons/icon-' + size + '.png?v=20261103-mark-v2'));
+  }
 });
