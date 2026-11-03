@@ -7,6 +7,12 @@ A mobile-friendly, installable Progressive Web App for students to calculate sem
 </p>
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/readme-journey.svg" alt="Animated GradeCalc journey from subject entry to grade calculation, semester tracking and analytics" width="100%" />
+</p>
+
+<p align="center"><sub>Calculation journey shown above. CGPA currently uses the unweighted average of entered semester SGPAs; see the calculation notes below.</sub></p>
+
+<p align="center">
   <a href="https://viviberi.github.io/gradecalc-app/"><img src="https://img.shields.io/badge/Launch-Live_App-16a34a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Launch GradeCalc" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/releases/latest"><img src="https://img.shields.io/github/v/release/ViviBeri/gradecalc-app?display_name=tag&style=for-the-badge&label=Latest%20Release" alt="Latest release" /></a>
   <a href="https://github.com/ViviBeri/gradecalc-app/actions"><img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions" /></a>
