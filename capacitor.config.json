@@ -1,0 +1,8 @@
+{
+  "appId": "com.viviberi.gradecalc",
+  "appName": "GradeCalc",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
