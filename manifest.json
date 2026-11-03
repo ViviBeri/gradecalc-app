@@ -25,30 +25,6 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
-    },
-    {
-      "src": "icons/icon-192.png?v=20261103-mark-v1",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-512.png?v=20261103-mark-v1",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-192.png?v=20261103-mark-v1",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icons/icon-512.png?v=20261103-mark-v1",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -59,9 +35,9 @@
       "url": "./?tab=sgpa",
       "icons": [
         {
-          "src": "icons/icon-192.png?v=20261103-mark-v1",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "gradecalc-icon.svg?v=20261103-mark-v1",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -72,9 +48,9 @@
       "url": "./?tab=cgpa",
       "icons": [
         {
-          "src": "icons/icon-192.png?v=20261103-mark-v1",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "gradecalc-icon.svg?v=20261103-mark-v1",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -85,9 +61,9 @@
       "url": "./?tab=convert",
       "icons": [
         {
-          "src": "icons/icon-192.png?v=20261103-mark-v1",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "gradecalc-icon.svg?v=20261103-mark-v1",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     }
