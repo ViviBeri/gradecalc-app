@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
 <title id="title">GradeCalc G logo</title>
-<desc id="desc">A bold blue and white G with a graduation cap, gold tassel, calculator and green orbit swoosh. No outer box or wordmark.</desc>
+<desc id="desc">A large, clearly visible white and blue G with a graduation cap, gold tassel, a compact calculator at the lower right, and a green orbit swoosh on a deep navy rounded background.</desc>
 <defs>
  <linearGradient id="gFace" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".42" stop-color="#D8F2FF"/><stop offset=".78" stop-color="#58BFFF"/><stop offset="1" stop-color="#1474E8"/></linearGradient>
  <linearGradient id="gSide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#147BFF"/><stop offset="1" stop-color="#063AAB"/></linearGradient>
@@ -11,7 +11,10 @@
  <linearGradient id="key" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#65B8FF"/><stop offset="1" stop-color="#123C83"/></linearGradient>
  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
 </defs>
-<!-- green motion swoosh, deliberately open with no enclosing frame -->
+<!-- deep navy app tile background -->
+<rect width="512" height="512" rx="76" fill="#061B55"/>
+<rect x="3" y="3" width="506" height="506" rx="73" fill="none" stroke="#087DF4" stroke-opacity=".42" stroke-width="5"/>
+<!-- green motion swoosh -->
 <path d="M103 335C56 386 76 455 168 477c87 21 214 1 291-55-64 83-198 116-305 83C42 473 13 387 103 335Z" fill="url(#green)"/>
 <path d="M91 349C52 407 103 461 180 476" fill="none" stroke="#B8FF68" stroke-width="5" stroke-linecap="round" opacity=".8"/>
 <!-- dimensional G -->
@@ -26,7 +29,7 @@
 <path d="M253 68 367 116v65" fill="none" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
 <circle cx="367" cy="185" r="11" fill="#FFD52A"/><path d="M356 194h22l12 51-23 13-23-13z" fill="url(#gold)"/>
 <!-- calculator -->
-<g transform="rotate(7 375 381)">
+<g transform="translate(160 145) scale(.55)">
  <rect x="300" y="294" width="174" height="178" rx="28" fill="#041A49" opacity=".45" transform="translate(5 7)"/>
  <rect x="294" y="286" width="174" height="178" rx="28" fill="url(#calc)" stroke="#DDF8FF" stroke-width="6"/>
  <rect x="309" y="301" width="144" height="148" rx="19" fill="#061B42" stroke="#278FEA" stroke-width="3"/>
