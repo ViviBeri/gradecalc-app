@@ -20,7 +20,8 @@
     })();
   </script>
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="gradecalc-icon.svg?v=20261029-green-v2" />
+  <link rel="icon" type="image/svg+xml" href="gradecalc-icon.svg?v=20261103-mark-v1" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png?v=20261103-mark-v1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -47,7 +48,7 @@
     .header{position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:14px 16px 10px;transition:background .2s}
     .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
     .logo{display:flex;align-items:center;gap:10px}
-    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;box-shadow:0 4px 14px rgba(34,197,94,.35)}
+    .logo-icon{width:40px;height:40px;object-fit:cover;border-radius:11px;display:block;box-shadow:0 3px 12px rgba(0,140,255,.24)}
     .logo-name{font-size:18px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .logo-sub{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.8px;text-transform:uppercase}
     .grade-btn{min-width:44px;min-height:44px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
@@ -267,7 +268,7 @@
   <div class="header">
     <div class="header-top">
       <div class="logo">
-        <div class="logo-icon">G</div>
+        <img class="logo-icon" src="icons/icon-192.png?v=20261103-mark-v1" alt="" width="40" height="40" />
         <div>
           <div class="logo-name">GradeCalc</div>
           <div class="logo-sub">SGPA · CGPA · What‑If</div>
