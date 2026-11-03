@@ -738,7 +738,7 @@ function updateWhatIfProjection() {
 
 var lastResultCardData = null;
 
-function shareResultCard(kind) {
+function shareResultCard(kind, mode) {
   var status = document.getElementById(kind + '-share-status');
   if (!lastResultCardData || lastResultCardData.kind !== kind) { if (status) status.textContent = 'Calculate your result before exporting a card.'; return; }
   if (status) status.textContent = 'Preparing your result card…';
@@ -758,14 +758,15 @@ function shareResultCard(kind) {
     if (!blob) { if (status) status.textContent = 'Could not create the image in this browser.'; return; }
     var fileName = 'gradecalc-' + kind + '-result.png'; var file = new File([blob], fileName, { type: 'image/png' });
     try {
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (mode === 'share' && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'GradeCalc ' + kind.toUpperCase() + ' result', text: 'Academic result summary created with GradeCalc.' });
         if (status) status.textContent = 'Result card shared.'; return;
       }
     } catch (error) { if (error && error.name === 'AbortError') { if (status) status.textContent = 'Sharing cancelled.'; return; } }
-    var url = URL.createObjectURL(blob); var link = document.createElement('a'); link.href = url; link.download = fileName;
-    document.body.appendChild(link); link.click(); link.remove(); setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-    if (status) status.textContent = 'PNG result card downloaded.';
+    if (mode === 'share' && status) status.textContent = 'Sharing is not supported here. Use Download PNG instead.';
+    var url = URL.createObjectURL(blob); var link = document.createElement('a'); link.href = url; link.download = fileName; link.style.display = 'none';
+    document.body.appendChild(link); link.click(); link.remove(); setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+    if (status) status.textContent = 'Download requested: ' + fileName + '. Check your Downloads folder.';
   }, 'image/png');
 }
 function calcSGPA() {
@@ -811,7 +812,7 @@ function calcSGPA() {
     + '</div></div>'
     + '<div style="text-align:center;font-size:13px;color:var(--muted)">Total Credits: <span style="color:var(--text);font-weight:700">'+totalCr+'</span> &nbsp;·&nbsp; Weighted: <span style="color:var(--text);font-weight:700">'+totalPts.toFixed(1)+'</span></div>'
     + (warns ? '<div style="display:flex;flex-direction:column;gap:6px;width:100%">'+warns+'</div>' : '')
-    + '<div class="result-share-actions"><button class="btn-secondary" type="button" onclick="shareResultCard(\'sgpa\')">Share / Download PNG</button><p class="result-share-status" id="sgpa-share-status" role="status" aria-live="polite"></p></div>'
+    + '<div class="result-share-actions"><button class="btn-secondary" type="button" onclick="shareResultCard(\'sgpa\', \'share\')">Share PNG</button><button class="btn-secondary" type="button" onclick="shareResultCard(\'sgpa\', \'download\')">Download PNG</button><p class="result-share-status" id="sgpa-share-status" role="status" aria-live="polite"></p></div>'
     + '</div>';
 
   var rows = '';
@@ -934,7 +935,7 @@ function calcCGPA() {
     + '<div style="font-size:11px;color:var(--muted);margin-top:6px">'+valid.length+' semester'+(valid.length>1?'s':'')+'</div>'
     + '</div></div>'
     + '<div class="progress-list">'+bars+'</div>'
-    + '<div class="result-share-actions"><button class="btn-secondary" type="button" onclick="shareResultCard(\'cgpa\')">Share / Download PNG</button><p class="result-share-status" id="cgpa-share-status" role="status" aria-live="polite"></p></div>'
+    + '<div class="result-share-actions"><button class="btn-secondary" type="button" onclick="shareResultCard(\'cgpa\', \'share\')">Share PNG</button><button class="btn-secondary" type="button" onclick="shareResultCard(\'cgpa\', \'download\')">Download PNG</button><p class="result-share-status" id="cgpa-share-status" role="status" aria-live="polite"></p></div>'
     + '</div>';
   saveSemestersToLocalStorage();
 }

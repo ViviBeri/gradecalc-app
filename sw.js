@@ -3,7 +3,7 @@
 // (/<repository>/) and root-hosted deployments.
 
 const BASE_PATH = new URL('.', self.registration.scope).pathname;
-const CACHE_NAME = 'gradecalc-v13';
+const CACHE_NAME = 'gradecalc-v14';
 const ASSETS = [
   '',
   'manifest.json',
