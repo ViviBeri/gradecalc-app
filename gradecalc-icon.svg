@@ -1,20 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#102A1B"/>
-      <stop offset="1" stop-color="#030704"/>
-    </linearGradient>
-    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#BBF7D0"/>
-      <stop offset=".48" stop-color="#4ADE80"/>
-      <stop offset="1" stop-color="#16A34A"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect x="18" y="18" width="476" height="476" rx="98" fill="none" stroke="#22C55E" stroke-opacity=".42" stroke-width="8"/>
-  <path d="M352 118c-91 2-166 35-199 103-25 52-13 115 31 145 43 29 105 13 136-30 24-33 29-78 24-116-29 12-54 34-69 63-17 32-19 61-12 82-37-12-59-43-57-79 3-57 60-119 146-168z" fill="url(#leaf)" opacity=".95"/>
-  <path d="M145 245c-9-61 37-112 105-112 22 0 43 6 60 18l-26 37c-10-7-21-10-34-10-38 0-62 27-62 67 0 41 24 67 62 67 13 0 24-3 34-10l26 37c-17 12-38 18-60 18-68 0-105-50-105-112z" fill="#F0FDF4"/>
-  <path d="M285 236h84v36h-44c-3 20-18 34-40 39l-13-33c13-4 21-16 13-42z" fill="#052E16"/>
-  <circle cx="378" cy="375" r="24" fill="#86EFAC"/>
-  <path d="M367 375l8 8 15-18" fill="none" stroke="#052E16" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">GradeCalc symbol</title><desc id="desc">Graduation cap, SGPA and CGPA calculator, and A-plus grade sheet. No wordmark.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#073B82"/><stop offset=".55" stop-color="#071D58"/><stop offset="1" stop-color="#090D35"/></linearGradient>
+<linearGradient id="cap" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#29E4FF"/><stop offset=".55" stop-color="#087CF4"/><stop offset="1" stop-color="#312DEB"/></linearGradient>
+<linearGradient id="screen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26F3B0"/><stop offset="1" stop-color="#9CFF3F"/></linearGradient>
+<linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00D9FF"/><stop offset=".5" stop-color="#2DFF76"/><stop offset="1" stop-color="#00D9FF"/></linearGradient>
+<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/><rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#08BFFF" stroke-opacity=".65" stroke-width="5"/>
+<path d="M82 324C125 426 376 425 433 291" fill="none" stroke="url(#orbit)" stroke-width="12" stroke-linecap="round" filter="url(#glow)"/>
+<path d="M105 146 256 78 408 143 257 211Z" fill="url(#cap)" stroke="#79EFFF" stroke-width="5" stroke-linejoin="round"/>
+<path d="M157 170v54c53 43 145 43 198 0v-54l-98 43Z" fill="#123EAE" stroke="#278CFF" stroke-width="4"/>
+<path d="M256 90 366 139v54" fill="none" stroke="#FFD21C" stroke-width="13" stroke-linecap="round"/><circle cx="366" cy="202" r="11" fill="#FFD21C"/><path d="M356 210h20l8 39h-36Z" fill="#FFD21C"/>
+<g transform="rotate(-7 364 318)"><rect x="310" y="218" width="139" height="191" rx="15" fill="#DFF7FF" stroke="#A8EFFF" stroke-width="5"/><ellipse cx="379" cy="277" rx="45" ry="31" fill="none" stroke="#EF334A" stroke-width="5"/><text x="379" y="291" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="800" fill="#EF334A">A+</text><g fill="none" stroke="#16C96A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="m333 328 8 8 15-18M333 359l8 8 15-18M333 390l8 8 15-18"/></g><g stroke="#3DAAD7" stroke-width="7" stroke-linecap="round"><path d="M369 329h54M369 360h54M369 391h39"/></g></g>
+<g><rect x="73" y="199" width="270" height="239" rx="34" fill="#071A43" stroke="#D5F6FF" stroke-width="13"/><rect x="91" y="218" width="234" height="66" rx="16" fill="url(#screen)" stroke="#36F4D0" stroke-width="4"/><text x="208" y="260" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#062447">SGPA / CGPA</text>
+<g fill="#1679D8" stroke="#8ADFFF" stroke-width="4"><rect x="97" y="304" width="65" height="54" rx="13"/><rect x="173" y="304" width="65" height="54" rx="13"/><rect x="97" y="370" width="65" height="54" rx="13"/><rect x="173" y="370" width="65" height="54" rx="13"/></g>
+<rect x="250" y="304" width="68" height="120" rx="14" fill="#21DB52" stroke="#8CFF86" stroke-width="4"/>
+<g fill="none" stroke="#FFF" stroke-width="8" stroke-linecap="round"><path d="M113 331h33m-16-16v32M190 331h31M113 397l33 0m-33-16 33 32M190 397h31M205 381v32"/></g><path d="M268 359h32m-32 18h32" stroke="#FFF" stroke-width="8" stroke-linecap="round"/></g>
 </svg>
