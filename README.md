@@ -3,7 +3,7 @@
 A mobile-friendly, installable Progressive Web App for students to calculate semester grades, track cumulative performance, explore grade conversions, and review academic trends.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/gradecalc-icon.svg?v=20261103-symbol" alt="GradeCalc app symbol without wordmark" width="180" />
+  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/gradecalc-icon.svg?v=20261103-mark-v1" alt="GradeCalc app symbol without wordmark" width="180" />
 </p>
 
 <p align="center">
