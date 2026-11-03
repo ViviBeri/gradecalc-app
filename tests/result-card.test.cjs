@@ -6,11 +6,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
-test('SGPA and CGPA results expose share and download actions', () => {
+test('SGPA and CGPA results expose separate share and download actions', () => {
   assert.ok(html.includes('shareResultCard'));
   assert.ok(html.includes('sgpa-share-status'));
   assert.ok(html.includes('cgpa-share-status'));
-  assert.ok(html.includes('Share / Download PNG'));
+  assert.ok(html.includes("shareResultCard(\\'sgpa\\', \\'share\\')"));
+  assert.ok(html.includes("shareResultCard(\\'sgpa\\', \\'download\\')"));
+  assert.ok(html.includes("shareResultCard(\\'cgpa\\', \\'share\\')"));
+  assert.ok(html.includes("shareResultCard(\\'cgpa\\', \\'download\\')"));
+  assert.ok(html.includes('>Share PNG</button>'));
+  assert.ok(html.includes('>Download PNG</button>'));
 });
 
 test('result cards use a consistent 1200 by 630 PNG canvas', () => {
@@ -28,7 +33,10 @@ test('result card attribution is present and private subject details are exclude
   assert.ok(!html.includes('lastResultCardData.subjectName'));
 });
 
-test('native file sharing is feature-detected with PNG download fallback', () => {
+test('native file sharing is feature-detected with browser PNG fallback', () => {
+  assert.ok(html.includes('GradeCalcFiles'));
+  assert.ok(html.includes('sharePng'));
+  assert.ok(html.includes('savePng'));
   assert.ok(html.includes('navigator.share && navigator.canShare'));
   assert.ok(html.includes('navigator.canShare({ files: [file] })'));
   assert.ok(html.includes('link.download = fileName'));
