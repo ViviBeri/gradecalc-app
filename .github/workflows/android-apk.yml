@@ -1,0 +1,85 @@
+name: Build GradeCalc Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "index.html"
+      - "calc.js"
+      - "analytics.js"
+      - "js/**"
+      - "icons/**"
+      - "gradecalc-icon.svg"
+      - "manifest.json"
+      - "sw.js"
+      - "offline.html"
+      - "capacitor.config.json"
+      - "package.json"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gradecalc-android-apk
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    name: Build installable Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Prepare web assets
+        run: |
+          mkdir -p www
+          rsync -a ./ www/ \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='android/' \
+            --exclude='node_modules/' \
+            --exclude='www/' \
+            --exclude='python/' \
+            --exclude='tests/' \
+            --exclude='docs/' \
+            --exclude='screenshots/' \
+            --exclude='README.md' \
+            --exclude='CONTRIBUTING.md' \
+            --exclude='LICENSE' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='capacitor.config.json'
+
+      - name: Install Capacitor
+        run: npm install
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GradeCalc-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
