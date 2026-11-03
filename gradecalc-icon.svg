@@ -1,20 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-<title id="title">GradeCalc symbol</title><desc id="desc">Graduation cap, SGPA and CGPA calculator, and A-plus grade sheet. No wordmark.</desc>
+<title id="title">GradeCalc G logo</title>
+<desc id="desc">A bold blue and white G with a graduation cap, gold tassel, calculator and green orbit swoosh. No outer box or wordmark.</desc>
 <defs>
-<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#073B82"/><stop offset=".55" stop-color="#071D58"/><stop offset="1" stop-color="#090D35"/></linearGradient>
-<linearGradient id="cap" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#29E4FF"/><stop offset=".55" stop-color="#087CF4"/><stop offset="1" stop-color="#312DEB"/></linearGradient>
-<linearGradient id="screen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26F3B0"/><stop offset="1" stop-color="#9CFF3F"/></linearGradient>
-<linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00D9FF"/><stop offset=".5" stop-color="#2DFF76"/><stop offset="1" stop-color="#00D9FF"/></linearGradient>
-<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="gFace" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".42" stop-color="#D8F2FF"/><stop offset=".78" stop-color="#58BFFF"/><stop offset="1" stop-color="#1474E8"/></linearGradient>
+ <linearGradient id="gSide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#147BFF"/><stop offset="1" stop-color="#063AAB"/></linearGradient>
+ <linearGradient id="cap" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#35E8FF"/><stop offset=".48" stop-color="#087DF4"/><stop offset="1" stop-color="#2724D8"/></linearGradient>
+ <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#D7FF36"/><stop offset=".45" stop-color="#21E94D"/><stop offset="1" stop-color="#00CFAE"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF27A"/><stop offset=".5" stop-color="#FFC400"/><stop offset="1" stop-color="#FF8A00"/></linearGradient>
+ <linearGradient id="calc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#EAFBFF"/><stop offset=".4" stop-color="#58C9FF"/><stop offset="1" stop-color="#1261C8"/></linearGradient>
+ <linearGradient id="key" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#65B8FF"/><stop offset="1" stop-color="#123C83"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
 </defs>
-<rect width="512" height="512" rx="112" fill="url(#bg)"/><rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#08BFFF" stroke-opacity=".65" stroke-width="5"/>
-<path d="M82 324C125 426 376 425 433 291" fill="none" stroke="url(#orbit)" stroke-width="12" stroke-linecap="round" filter="url(#glow)"/>
-<path d="M105 146 256 78 408 143 257 211Z" fill="url(#cap)" stroke="#79EFFF" stroke-width="5" stroke-linejoin="round"/>
-<path d="M157 170v54c53 43 145 43 198 0v-54l-98 43Z" fill="#123EAE" stroke="#278CFF" stroke-width="4"/>
-<path d="M256 90 366 139v54" fill="none" stroke="#FFD21C" stroke-width="13" stroke-linecap="round"/><circle cx="366" cy="202" r="11" fill="#FFD21C"/><path d="M356 210h20l8 39h-36Z" fill="#FFD21C"/>
-<g transform="rotate(-7 364 318)"><rect x="310" y="218" width="139" height="191" rx="15" fill="#DFF7FF" stroke="#A8EFFF" stroke-width="5"/><ellipse cx="379" cy="277" rx="45" ry="31" fill="none" stroke="#EF334A" stroke-width="5"/><text x="379" y="291" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="800" fill="#EF334A">A+</text><g fill="none" stroke="#16C96A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="m333 328 8 8 15-18M333 359l8 8 15-18M333 390l8 8 15-18"/></g><g stroke="#3DAAD7" stroke-width="7" stroke-linecap="round"><path d="M369 329h54M369 360h54M369 391h39"/></g></g>
-<g><rect x="73" y="199" width="270" height="239" rx="34" fill="#071A43" stroke="#D5F6FF" stroke-width="13"/><rect x="91" y="218" width="234" height="66" rx="16" fill="url(#screen)" stroke="#36F4D0" stroke-width="4"/><text x="208" y="260" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#062447">SGPA / CGPA</text>
-<g fill="#1679D8" stroke="#8ADFFF" stroke-width="4"><rect x="97" y="304" width="65" height="54" rx="13"/><rect x="173" y="304" width="65" height="54" rx="13"/><rect x="97" y="370" width="65" height="54" rx="13"/><rect x="173" y="370" width="65" height="54" rx="13"/></g>
-<rect x="250" y="304" width="68" height="120" rx="14" fill="#21DB52" stroke="#8CFF86" stroke-width="4"/>
-<g fill="none" stroke="#FFF" stroke-width="8" stroke-linecap="round"><path d="M113 331h33m-16-16v32M190 331h31M113 397l33 0m-33-16 33 32M190 397h31M205 381v32"/></g><path d="M268 359h32m-32 18h32" stroke="#FFF" stroke-width="8" stroke-linecap="round"/></g>
+<!-- green motion swoosh, deliberately open with no enclosing frame -->
+<path d="M103 335C56 386 76 455 168 477c87 21 214 1 291-55-64 83-198 116-305 83C42 473 13 387 103 335Z" fill="url(#green)"/>
+<path d="M91 349C52 407 103 461 180 476" fill="none" stroke="#B8FF68" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+<!-- dimensional G -->
+<path d="M365 205c-28-29-65-45-113-45-99 0-166 72-166 174 0 104 68 173 168 173 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-67 0-111-48-111-123 0-74 43-122 108-122 31 0 56 9 76 27z" fill="#041C54" opacity=".48" filter="url(#shadow)" transform="translate(8 12)"/>
+<path d="M365 205c-28-29-65-45-113-45-99 0-166 72-166 174 0 104 68 173 168 173 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-67 0-111-48-111-123 0-74 43-122 108-122 31 0 56 9 76 27z" fill="url(#gSide)" transform="translate(0 10)"/>
+<path d="M355 191c-28-29-65-45-113-45-99 0-166 72-166 174 0 104 68 173 168 173 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-67 0-111-48-111-123 0-74 43-122 108-122 31 0 56 9 76 27z" fill="url(#gFace)" stroke="#C7F0FF" stroke-width="3" stroke-linejoin="round"/>
+<path d="M286 312h139v49H335c-9 44-41 76-91 87 27 16 58 24 93 24 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-19 0-36-4-51-11z" fill="url(#gSide)" opacity=".98"/>
+<path d="M286 300h139v49H335c-9 44-41 76-91 87 27 16 58 24 93 24 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-19 0-36-4-51-11z" fill="url(#gFace)" stroke="#B8E9FF" stroke-width="2" stroke-linejoin="round"/>
+<!-- graduation cap -->
+<path d="M108 122 253 55 407 119 258 190Z" fill="url(#cap)" stroke="#6DEBFF" stroke-width="5" stroke-linejoin="round"/>
+<path d="M153 144v47c57 39 145 39 202 0v-47l-97 45z" fill="#1045B7" stroke="#0879E9" stroke-width="4"/>
+<path d="M253 68 367 116v65" fill="none" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+<circle cx="367" cy="185" r="11" fill="#FFD52A"/><path d="M356 194h22l12 51-23 13-23-13z" fill="url(#gold)"/>
+<!-- calculator -->
+<g transform="rotate(7 375 381)">
+ <rect x="300" y="294" width="174" height="178" rx="28" fill="#041A49" opacity=".45" transform="translate(5 7)"/>
+ <rect x="294" y="286" width="174" height="178" rx="28" fill="url(#calc)" stroke="#DDF8FF" stroke-width="6"/>
+ <rect x="309" y="301" width="144" height="148" rx="19" fill="#061B42" stroke="#278FEA" stroke-width="3"/>
+ <g fill="url(#key)" stroke="#77CFFF" stroke-width="2">
+  <rect x="322" y="315" width="55" height="51" rx="12"/><rect x="385" y="315" width="55" height="51" rx="12"/>
+  <rect x="322" y="376" width="55" height="51" rx="12"/>
+ </g>
+ <rect x="385" y="376" width="55" height="51" rx="12" fill="#20E84C" stroke="#9AFF7B" stroke-width="2"/>
+ <g stroke="#FFF" stroke-width="7" stroke-linecap="round">
+  <path d="M337 340h25m-12-12v25M399 340h27M337 401l25 0m-25-12 25 24M400 401h25m-25 10h25"/>
+ </g>
+</g>
 </svg>
