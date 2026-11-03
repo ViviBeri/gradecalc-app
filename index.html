@@ -756,17 +756,45 @@ function shareResultCard(kind, mode) {
   ctx.fillStyle = '#86EFAC'; ctx.font = '500 22px Arial, sans-serif'; ctx.fillText('Created with GradeCalc · No personal or subject details included', 82, 590);
   canvas.toBlob(async function(blob) {
     if (!blob) { if (status) status.textContent = 'Could not create the image in this browser.'; return; }
-    var fileName = 'gradecalc-' + kind + '-result.png'; var file = new File([blob], fileName, { type: 'image/png' });
+    var fileName = 'gradecalc-' + kind + '-result.png';
     try {
-      if (mode === 'share' && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'GradeCalc ' + kind.toUpperCase() + ' result', text: 'Academic result summary created with GradeCalc.' });
-        if (status) status.textContent = 'Result card shared.'; return;
+      var capacitor = window.Capacitor;
+      var nativeFiles = capacitor && capacitor.Plugins && capacitor.Plugins.GradeCalcFiles;
+      if (capacitor && capacitor.isNativePlatform && capacitor.isNativePlatform() && nativeFiles) {
+        var dataUrl = await new Promise(function(resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function() { resolve(reader.result); };
+          reader.onerror = function() { reject(new Error('Could not read generated PNG.')); };
+          reader.readAsDataURL(blob);
+        });
+        if (mode === 'share') {
+          await nativeFiles.sharePng({ dataUrl: dataUrl, fileName: fileName });
+          if (status) status.textContent = 'Android share menu opened.';
+        } else {
+          var saved = await nativeFiles.savePng({ dataUrl: dataUrl, fileName: fileName });
+          if (status) status.textContent = 'Saved to Pictures/GradeCalc: ' + fileName;
+        }
+        return;
       }
-    } catch (error) { if (error && error.name === 'AbortError') { if (status) status.textContent = 'Sharing cancelled.'; return; } }
-    if (mode === 'share' && status) status.textContent = 'Sharing is not supported here. Use Download PNG instead.';
-    var url = URL.createObjectURL(blob); var link = document.createElement('a'); link.href = url; link.download = fileName; link.style.display = 'none';
-    document.body.appendChild(link); link.click(); link.remove(); setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
-    if (status) status.textContent = 'Download requested: ' + fileName + '. Check your Downloads folder.';
+      var file = new File([blob], fileName, { type: 'image/png' });
+      if (mode === 'share') {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'GradeCalc ' + kind.toUpperCase() + ' result', text: 'Academic result summary created with GradeCalc.' });
+          if (status) status.textContent = 'Result card shared.';
+          return;
+        }
+        if (status) status.textContent = 'Sharing is not supported in this browser.';
+        return;
+      }
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url; link.download = fileName; link.style.display = 'none';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+      if (status) status.textContent = 'Download requested: ' + fileName + '.';
+    } catch (error) {
+      if (status) status.textContent = error && error.message ? error.message : 'PNG export failed.';
+    }
   }, 'image/png');
 }
 function calcSGPA() {
