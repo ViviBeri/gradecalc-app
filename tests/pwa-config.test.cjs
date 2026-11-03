@@ -15,8 +15,7 @@ test('web app manifest is valid and resolves correctly at root and GitHub Pages 
   assert.equal(manifest.id, './');
   assert.equal(manifest.start_url, './');
   assert.equal(manifest.scope, './');
-  assert.ok(manifest.icons.some((icon) => icon.sizes === '192x192' && icon.purpose === 'any'));
-  assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512' && icon.purpose === 'any'));
+  assert.ok(manifest.icons.some((icon) => icon.type === 'image/svg+xml' && icon.sizes === 'any' && icon.purpose === 'any'));
 
   for (const pageUrl of [
     'https://example.com/',
@@ -31,11 +30,13 @@ test('web app manifest is valid and resolves correctly at root and GitHub Pages 
   }
 });
 
-test('all canonical raster PWA icon files referenced by the manifest exist', () => {
+test('the canonical SVG PWA icon exists and avoids unsupported maskable artwork', () => {
   const manifest = JSON.parse(read('manifest.json'));
-  const pngIcons = manifest.icons.filter((icon) => icon.type === 'image/png');
-  assert.ok(pngIcons.length >= 2);
-  for (const icon of pngIcons) {
+  const svgIcons = manifest.icons.filter((icon) => icon.type === 'image/svg+xml');
+  assert.ok(svgIcons.length >= 1);
+  for (const icon of svgIcons) {
+    assert.equal(icon.purpose, 'any');
+    assert.equal(icon.sizes, 'any');
     const localPath = icon.src.split('?')[0];
     assert.ok(fs.existsSync(path.join(root, localPath)), 'missing icon: ' + localPath);
   }

@@ -1,20 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#102A1B"/>
-      <stop offset="1" stop-color="#030704"/>
-    </linearGradient>
-    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#BBF7D0"/>
-      <stop offset=".48" stop-color="#4ADE80"/>
-      <stop offset="1" stop-color="#16A34A"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect x="18" y="18" width="476" height="476" rx="98" fill="none" stroke="#22C55E" stroke-opacity=".42" stroke-width="8"/>
-  <path d="M352 118c-91 2-166 35-199 103-25 52-13 115 31 145 43 29 105 13 136-30 24-33 29-78 24-116-29 12-54 34-69 63-17 32-19 61-12 82-37-12-59-43-57-79 3-57 60-119 146-168z" fill="url(#leaf)" opacity=".95"/>
-  <path d="M145 245c-9-61 37-112 105-112 22 0 43 6 60 18l-26 37c-10-7-21-10-34-10-38 0-62 27-62 67 0 41 24 67 62 67 13 0 24-3 34-10l26 37c-17 12-38 18-60 18-68 0-105-50-105-112z" fill="#F0FDF4"/>
-  <path d="M285 236h84v36h-44c-3 20-18 34-40 39l-13-33c13-4 21-16 13-42z" fill="#052E16"/>
-  <circle cx="378" cy="375" r="24" fill="#86EFAC"/>
-  <path d="M367 375l8 8 15-18" fill="none" stroke="#052E16" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">GradeCalc G logo</title>
+<desc id="desc">A bold blue and white G with a graduation cap, gold tassel, calculator and green orbit swoosh. No outer box or wordmark.</desc>
+<defs>
+ <linearGradient id="gFace" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".42" stop-color="#D8F2FF"/><stop offset=".78" stop-color="#58BFFF"/><stop offset="1" stop-color="#1474E8"/></linearGradient>
+ <linearGradient id="gSide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#147BFF"/><stop offset="1" stop-color="#063AAB"/></linearGradient>
+ <linearGradient id="cap" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#35E8FF"/><stop offset=".48" stop-color="#087DF4"/><stop offset="1" stop-color="#2724D8"/></linearGradient>
+ <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#D7FF36"/><stop offset=".45" stop-color="#21E94D"/><stop offset="1" stop-color="#00CFAE"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF27A"/><stop offset=".5" stop-color="#FFC400"/><stop offset="1" stop-color="#FF8A00"/></linearGradient>
+ <linearGradient id="calc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#EAFBFF"/><stop offset=".4" stop-color="#58C9FF"/><stop offset="1" stop-color="#1261C8"/></linearGradient>
+ <linearGradient id="key" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#65B8FF"/><stop offset="1" stop-color="#123C83"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>
+<!-- green motion swoosh, deliberately open with no enclosing frame -->
+<path d="M103 335C56 386 76 455 168 477c87 21 214 1 291-55-64 83-198 116-305 83C42 473 13 387 103 335Z" fill="url(#green)"/>
+<path d="M91 349C52 407 103 461 180 476" fill="none" stroke="#B8FF68" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+<!-- dimensional G -->
+<path d="M365 205c-28-29-65-45-113-45-99 0-166 72-166 174 0 104 68 173 168 173 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-67 0-111-48-111-123 0-74 43-122 108-122 31 0 56 9 76 27z" fill="#041C54" opacity=".48" filter="url(#shadow)" transform="translate(8 12)"/>
+<path d="M365 205c-28-29-65-45-113-45-99 0-166 72-166 174 0 104 68 173 168 173 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-67 0-111-48-111-123 0-74 43-122 108-122 31 0 56 9 76 27z" fill="url(#gSide)" transform="translate(0 10)"/>
+<path d="M355 191c-28-29-65-45-113-45-99 0-166 72-166 174 0 104 68 173 168 173 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-67 0-111-48-111-123 0-74 43-122 108-122 31 0 56 9 76 27z" fill="url(#gFace)" stroke="#C7F0FF" stroke-width="3" stroke-linejoin="round"/>
+<path d="M286 312h139v49H335c-9 44-41 76-91 87 27 16 58 24 93 24 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-19 0-36-4-51-11z" fill="url(#gSide)" opacity=".98"/>
+<path d="M286 300h139v49H335c-9 44-41 76-91 87 27 16 58 24 93 24 48 0 88-15 119-46l-31-34c-22 20-49 30-82 30-19 0-36-4-51-11z" fill="url(#gFace)" stroke="#B8E9FF" stroke-width="2" stroke-linejoin="round"/>
+<!-- graduation cap -->
+<path d="M108 122 253 55 407 119 258 190Z" fill="url(#cap)" stroke="#6DEBFF" stroke-width="5" stroke-linejoin="round"/>
+<path d="M153 144v47c57 39 145 39 202 0v-47l-97 45z" fill="#1045B7" stroke="#0879E9" stroke-width="4"/>
+<path d="M253 68 367 116v65" fill="none" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+<circle cx="367" cy="185" r="11" fill="#FFD52A"/><path d="M356 194h22l12 51-23 13-23-13z" fill="url(#gold)"/>
+<!-- calculator -->
+<g transform="rotate(7 375 381)">
+ <rect x="300" y="294" width="174" height="178" rx="28" fill="#041A49" opacity=".45" transform="translate(5 7)"/>
+ <rect x="294" y="286" width="174" height="178" rx="28" fill="url(#calc)" stroke="#DDF8FF" stroke-width="6"/>
+ <rect x="309" y="301" width="144" height="148" rx="19" fill="#061B42" stroke="#278FEA" stroke-width="3"/>
+ <g fill="url(#key)" stroke="#77CFFF" stroke-width="2">
+  <rect x="322" y="315" width="55" height="51" rx="12"/><rect x="385" y="315" width="55" height="51" rx="12"/>
+  <rect x="322" y="376" width="55" height="51" rx="12"/>
+ </g>
+ <rect x="385" y="376" width="55" height="51" rx="12" fill="#20E84C" stroke="#9AFF7B" stroke-width="2"/>
+ <g stroke="#FFF" stroke-width="7" stroke-linecap="round">
+  <path d="M337 340h25m-12-12v25M399 340h27M337 401l25 0m-25-12 25 24M400 401h25m-25 10h25"/>
+ </g>
+</g>
 </svg>
