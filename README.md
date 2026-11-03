@@ -172,6 +172,10 @@ CONTRIBUTING.md                     Contribution guidelines
 LICENSE                             MIT license
 ```
 
+## Engineering build log
+
+- [Build Log 01 — Building an Offline-Capable Academic Calculator](docs/BUILD_LOG_01_OFFLINE_ACADEMIC_CALCULATOR.md): calculation design, local-first PWA architecture, testing, and verification priorities.
+
 ## Continuous integration and deployment
 
 GitHub Actions runs the JavaScript calculation/regression checks and Python test suite. A separate workflow deploys the static app to GitHub Pages when changes are pushed to `main`.
