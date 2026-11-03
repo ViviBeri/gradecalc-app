@@ -71,6 +71,12 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Generate GradeCalc Android launcher icons
+        run: |
+          mkdir -p assets
+          cp gradecalc-icon.svg assets/logo.svg
+          npx @capacitor/assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
