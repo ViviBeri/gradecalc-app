@@ -71,6 +71,26 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Add Maven Central fallback mirror
+        working-directory: android
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          mirror = 'maven { url = uri("https://repo1.maven.org/maven2") }'
+          for filename in ["settings.gradle", "build.gradle"]:
+              path = Path(filename)
+              if not path.exists():
+                  continue
+              content = path.read_text()
+              if mirror in content:
+                  continue
+              if filename == "settings.gradle":
+                  content = content.replace("repositories {", "repositories {\\n        " + mirror, 1)
+              else:
+                  content = content.replace("repositories {", "repositories {\\n        " + mirror, 1)
+              path.write_text(content)
+          PY
+
       - name: Generate GradeCalc Android launcher icons
         run: |
           mkdir -p assets
