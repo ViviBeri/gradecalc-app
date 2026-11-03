@@ -12,9 +12,7 @@ const ASSETS = [
   'calc.js',
   'analytics.js',
   'js/target.js',
-  'js/arrears.js',
-  'icons/icon-192.png?v=20261103-mark-v1',
-  'icons/icon-512.png?v=20261103-mark-v1'
+  'js/arrears.js'
 ].map(path => BASE_PATH + path);
 
 const APP_ROOT = BASE_PATH;
