@@ -20,6 +20,7 @@ on:
       - "offline.html"
       - "capacitor.config.json"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/android-apk.yml"
 
 permissions:
@@ -68,11 +69,14 @@ jobs:
             --exclude='package-lock.json' \
             --exclude='capacitor.config.json'
 
-      - name: Install Capacitor
-        run: npm install
+      - name: Install locked Capacitor dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build the required Sharp native binary
+        run: npm rebuild sharp --foreground-scripts --no-audit --no-fund
 
       - name: Generate Android project
-        run: npx cap add android
+        run: ./node_modules/.bin/cap add android
 
       - name: Add Maven Central fallback mirror
         working-directory: android
@@ -93,7 +97,7 @@ jobs:
         run: |
           mkdir -p assets
           cp gradecalc-icon.svg assets/logo.svg
-          npx @capacitor/assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
+          ./node_modules/.bin/capacitor-assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
 
       - name: Add native GradeCalc PNG file bridge
         run: |
