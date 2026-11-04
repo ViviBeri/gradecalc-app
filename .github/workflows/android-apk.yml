@@ -20,6 +20,7 @@ on:
       - "offline.html"
       - "capacitor.config.json"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/android-apk.yml"
 
 permissions:
@@ -68,11 +69,11 @@ jobs:
             --exclude='package-lock.json' \
             --exclude='capacitor.config.json'
 
-      - name: Install Capacitor
-        run: npm install
+      - name: Install pinned Capacitor dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Generate Android project
-        run: npx cap add android
+        run: npm exec --no -- cap add android
 
       - name: Add Maven Central fallback mirror
         working-directory: android
@@ -93,7 +94,7 @@ jobs:
         run: |
           mkdir -p assets
           cp gradecalc-icon.svg assets/logo.svg
-          npx @capacitor/assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
+          npm exec --no -- capacitor-assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
 
       - name: Add native GradeCalc PNG file bridge
         run: |
@@ -181,8 +182,8 @@ jobs:
           from pathlib import Path
           path = Path("android/app/src/main/java/com/viviberi/gradecalc/MainActivity.java")
           source = path.read_text()
-          source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.viviberi.gradecalc.GradeCalcFilesPlugin;")
-          source = source.replace("public class MainActivity extends BridgeActivity {", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(GradeCalcFilesPlugin.class);\n        super.onCreate(savedInstanceState);\n    }")
+          source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\\nimport com.viviberi.gradecalc.GradeCalcFilesPlugin;")
+          source = source.replace("public class MainActivity extends BridgeActivity {", "public class MainActivity extends BridgeActivity {\\n    @Override\\n    public void onCreate(android.os.Bundle savedInstanceState) {\\n        registerPlugin(GradeCalcFilesPlugin.class);\\n        super.onCreate(savedInstanceState);\\n    }")
           path.write_text(source)
           PY
 
