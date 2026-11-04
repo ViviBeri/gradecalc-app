@@ -72,6 +72,9 @@ jobs:
       - name: Install pinned Capacitor dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      - name: Build the required Sharp native binary
+        run: npm rebuild sharp --foreground-scripts --no-audit --no-fund
+
       - name: Generate Android project
         run: npm exec --no -- cap add android
 
