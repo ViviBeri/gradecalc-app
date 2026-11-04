@@ -69,8 +69,8 @@ jobs:
             --exclude='package-lock.json' \
             --exclude='capacitor.config.json'
 
-      - name: Install pinned Capacitor dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install locked Capacitor dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Build the required Sharp native binary
         run: npm rebuild sharp --foreground-scripts --no-audit --no-fund
