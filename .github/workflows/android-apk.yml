@@ -76,7 +76,7 @@ jobs:
         run: npm rebuild sharp --foreground-scripts --no-audit --no-fund
 
       - name: Generate Android project
-        run: npm exec --no -- cap add android
+        run: ./node_modules/.bin/cap add android
 
       - name: Add Maven Central fallback mirror
         working-directory: android
@@ -97,7 +97,7 @@ jobs:
         run: |
           mkdir -p assets
           cp gradecalc-icon.svg assets/logo.svg
-          npm exec --no -- capacitor-assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
+          ./node_modules/.bin/capacitor-assets generate --android --iconBackgroundColor '#071D58' --splashBackgroundColor '#071D58'
 
       - name: Add native GradeCalc PNG file bridge
         run: |
