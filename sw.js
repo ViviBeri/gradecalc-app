@@ -3,7 +3,7 @@
 // (/<repository>/) and root-hosted deployments.
 
 const BASE_PATH = new URL('.', self.registration.scope).pathname;
-const CACHE_NAME = 'gradecalc-v14';
+const CACHE_NAME = 'gradecalc-v15';
 const ASSETS = [
   '',
   'manifest.json',
@@ -14,7 +14,8 @@ const ASSETS = [
   'calc.js',
   'analytics.js',
   'js/target.js',
-  'js/arrears.js'
+  'js/arrears.js',
+  'js/device.js'
 ].map(path => BASE_PATH + path);
 
 const APP_ROOT = BASE_PATH;
