@@ -30,12 +30,14 @@ function createHarness(options = {}) {
   let errorCallback;
   let nextWatchId = 41;
   const cleared = [];
+  const documentListeners = {};
   const document = {
     readyState: 'complete',
+    hidden: false,
     createElement: tag => new FakeElement(tag),
     querySelector: selector => selector === '.tab-bar' ? tabBar : selector === '.body' ? body : null,
     getElementById: id => ids[id] || null,
-    addEventListener: () => {}
+    addEventListener: (name, callback) => { documentListeners[name] = callback; }
   };
   const navigator = {
     geolocation: options.noGeolocation ? null : {
@@ -72,7 +74,7 @@ function createHarness(options = {}) {
   }
   body.children.forEach(indexTree);
   tabBar.children.forEach(indexTree);
-  return { ids, tabBar, body, cleared, navigator, window, storage,
+  return { ids, tabBar, body, cleared, navigator, window, storage, document, documentListeners,
     emitPosition: position => watchCallback(position),
     emitError: error => errorCallback(error) };
 }
@@ -113,6 +115,14 @@ assert.equal(h.ids['device-stop-location'].disabled, true);
 assert.equal(h.ids['device-start-location'].disabled, false);
 assert.equal(h.ids['device-open-map'].hidden, true);
 assert.match(h.ids['device-location-status'].textContent, /uploaded or saved/);
+
+const backgrounded = createHarness();
+backgrounded.ids['device-start-location'].click();
+backgrounded.document.hidden = true;
+backgrounded.documentListeners.visibilitychange();
+assert.deepEqual(backgrounded.cleared, [41], 'hiding the page stops foreground location access');
+assert.equal(backgrounded.ids['device-stop-location'].disabled, true);
+assert.equal(backgrounded.ids['device-start-location'].disabled, false);
 
 const denied = createHarness();
 denied.ids['device-start-location'].click();
