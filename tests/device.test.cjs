@@ -111,6 +111,8 @@ assert.equal(h.ids['device-open-map'].hidden, false);
 
 h.ids['device-stop-location'].click();
 assert.deepEqual(h.cleared, [41], 'stop clears the active geolocation watch');
+h.emitPosition({ coords: { latitude: 1, longitude: 2, accuracy: 5 }, timestamp: 2000 });
+assert.match(h.ids['device-location-details'].textContent, /only while you actively share/, 'late location callbacks are ignored after stop');
 assert.equal(h.ids['device-stop-location'].disabled, true);
 assert.equal(h.ids['device-start-location'].disabled, false);
 assert.equal(h.ids['device-open-map'].hidden, true);
