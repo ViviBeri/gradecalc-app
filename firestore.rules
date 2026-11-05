@@ -28,6 +28,7 @@ service cloud.firestore {
         && validDevice(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.platform == resource.data.platform
+        && (!resource.data.revoked || request.resource.data.revoked == true)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceName', 'revoked']);
       allow delete: if isOwner();
     }
