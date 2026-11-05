@@ -129,7 +129,9 @@
     glyph.textContent = '▣';
     glyph.style.cssText = 'font-size:25px;color:var(--accent);width:38px;text-align:center';
     var identity = element('div', '');
-    identity.appendChild(element('div', '', 'This device'));
+    var deviceTitle = element('div', '', 'My device');
+    deviceTitle.id = 'device-display-name';
+    identity.appendChild(deviceTitle);
     identity.appendChild(element('div', 'target-intro', 'Current browser or installed app'));
     deviceRow.appendChild(glyph);
     deviceRow.appendChild(identity);
@@ -148,6 +150,7 @@
     } catch (error) {
       nameInput.value = 'My device';
     }
+    deviceTitle.textContent = nameInput.value;
     var saveName = element('button', 'btn-secondary', 'Save device name');
     saveName.type = 'button';
     saveName.id = 'device-save-name';
@@ -162,6 +165,7 @@
       }
       try {
         localStorage.setItem(deviceNameKey, value);
+        deviceTitle.textContent = value;
         nameStatus.textContent = 'Device name saved on this device.';
       } catch (error) {
         nameStatus.textContent = 'This browser could not save the device name.';
