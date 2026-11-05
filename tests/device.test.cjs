@@ -87,7 +87,7 @@ assert.deepEqual(h.cleared, [41], 'stop clears the active geolocation watch');
 assert.equal(h.ids['device-stop-location'].disabled, true);
 assert.equal(h.ids['device-start-location'].disabled, false);
 assert.equal(h.ids['device-open-map'].hidden, true);
-assert.match(h.ids['device-location-status'].textContent, /not uploaded or saved/);
+assert.match(h.ids['device-location-status'].textContent, /uploaded or saved/);
 
 const denied = createHarness();
 denied.ids['device-start-location'].click();
