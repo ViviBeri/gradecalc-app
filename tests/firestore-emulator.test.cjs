@@ -105,3 +105,30 @@ test('a revoked device record cannot be reactivated', { skip: !process.env.FIRES
   await assertSucceeds(updateDoc(ref, { revoked: true }));
   await assertFails(updateDoc(ref, { revoked: false }));
 });
+
+test('device metadata rejects invalid names, platforms, and pre-revoked creation', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const db = testEnv.authenticatedContext('student-a').firestore();
+  const base = {
+    deviceName: 'Valid phone',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false
+  };
+
+  await assertFails(setDoc(doc(db, 'users/student-a/devices/empty-name'), {
+    ...base,
+    deviceName: ''
+  }));
+  await assertFails(setDoc(doc(db, 'users/student-a/devices/long-name'), {
+    ...base,
+    deviceName: 'x'.repeat(61)
+  }));
+  await assertFails(setDoc(doc(db, 'users/student-a/devices/invalid-platform'), {
+    ...base,
+    platform: 'desktop'
+  }));
+  await assertFails(setDoc(doc(db, 'users/student-a/devices/pre-revoked'), {
+    ...base,
+    revoked: true
+  }));
+});
