@@ -2,6 +2,7 @@
 
 (function () {
   var watchId = null;
+  var locationActive = false;
   var tabButton;
   var panel;
   var deviceNameKey = 'gradecalc_device_name';
@@ -21,6 +22,7 @@
   }
 
   function stopSharing() {
+    locationActive = false;
     if (watchId !== null && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchId);
     }
@@ -39,6 +41,7 @@
   }
 
   function showPosition(position) {
+    if (!locationActive) return;
     var lat = position.coords.latitude;
     var lon = position.coords.longitude;
     var accuracy = Math.round(position.coords.accuracy);
@@ -59,6 +62,7 @@
   }
 
   function startSharing() {
+    if (locationActive) return;
     if (!window.isSecureContext) {
       setStatus('Location requires a secure HTTPS connection. Open the installed app or its HTTPS website.', true);
       return;
@@ -71,8 +75,10 @@
     var stop = document.getElementById('device-stop-location');
     if (start) start.disabled = true;
     setStatus('Waiting for your device location permission…', false);
+    locationActive = true;
     try {
       watchId = navigator.geolocation.watchPosition(showPosition, function (error) {
+        if (!locationActive) return;
         stopSharing();
         var messages = {
           1: 'Location permission was denied. You can enable it in your device settings.',
