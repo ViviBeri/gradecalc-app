@@ -15,3 +15,7 @@ jobs:
       - run: node --check js/device.js
       - run: node tests.js
       - run: node --test tests/*.test.cjs
+      - name: Install temporary Firestore emulator test dependencies
+        run: npm install --no-save --package-lock=false firebase-tools @firebase/rules-unit-testing firebase
+      - name: Test Firestore security rules in emulator
+        run: npx firebase emulators:exec --only firestore --project demo-gradecalc "node --test tests/firestore-emulator.test.cjs"
