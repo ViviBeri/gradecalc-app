@@ -110,6 +110,41 @@ Before choosing a backend, compare current free-tier quotas and terms for authen
 - Quota exhaustion and offline mode do not create paid usage or break the calculator.
 - Logs and error messages never include raw pairing codes, access tokens, or precise coordinates.
 
+
+## Backend evaluation and provisional selection (November 2026)
+
+### Options reviewed
+
+| Requirement | Firebase Spark | Supabase Free |
+|---|---|---|
+| Published no-cost allowance | Firestore: 1 GiB, 50K reads/day, 20K writes/day, 20K deletes/day, 10 GiB/month egress. Realtime Database also has a free allowance. | 500 MB database, 50K monthly active users, 5 GB uncached + 5 GB cached egress, 2 million realtime messages/month, 200 peak realtime connections. |
+| Payment / billing posture | Spark is a no-cost plan and does not require a payment method. Do not upgrade to Blaze for this project. | Free plan is $0. Free projects may be paused after one week of inactivity. |
+| Pairing/security implementation | Firebase Authentication + Firestore transactions + strict Firestore Security Rules. No privileged service key in the client. | Auth + PostgreSQL Row Level Security + database functions + Realtime. Strong relational controls, but project pausing is a reliability concern. |
+| Important limitations | Firestore quotas are daily/monthly limits; Realtime Database has its own limits. Cloud Functions are not part of the Spark free allowance. Avoid phone/SMS auth because SMS is billable. | Free database is 500 MB and project pausing after inactivity can interrupt device synchronization. |
+
+Official references checked on 5 November 2026:
+- Firebase plans and quotas: https://firebase.google.com/pricing
+- Firebase Authentication limits: https://firebase.google.com/docs/auth/limits
+- Supabase pricing: https://supabase.com/pricing
+- Supabase billing and free-project behavior: https://supabase.com/docs/guides/platform/billing-on-supabase
+- Supabase Realtime limits: https://supabase.com/docs/guides/realtime/limits
+
+### Provisional selection: Firebase Spark
+
+Firebase Spark is the better fit for the current zero-budget and low-maintenance constraint because it does not require a payment method and does not list automatic free-project pausing after one week of inactivity. Use only Firebase Authentication and Cloud Firestore for the first remote-sync prototype. Do not use phone/SMS authentication, Cloud Functions, paid extensions, Storage, or any service that requires enabling billing.
+
+This is a provisional architecture choice, not an assertion that the service is unlimited, guaranteed, or permanently free. Before setup, verify the project console still offers Spark without adding a billing account. Do not enter payment details or enable Blaze. If a required capability becomes paid, stop and keep local-only functionality.
+
+### Implementation constraints for Spark
+
+- Use email/password authentication initially; require verified email before enabling pairing. Avoid email-link sign-in because the published Spark quota is only 5 sign-in emails/day. Do not use phone/SMS sign-in.
+- Pairing must be implemented with Firestore transactions and restrictive Security Rules, with random high-entropy one-time codes, a short expiry, one-time redemption, and owner-device confirmation. Never store a reusable plain-text code.
+- The app's public Firebase configuration is not a secret. Security depends on Authentication, Firestore Security Rules, and App Check where supported; never put Admin SDK credentials or service-account keys in the client.
+- Deny all access by default. Test owner isolation, pair membership, expiry, one-time redemption, and revocation rules in the Firebase Emulator Suite before any production data is enabled.
+- Keep location sync disabled until the rules and pairing protocol pass adversarial tests. A client-side UI check is not an authorization boundary.
+- No paid billing plan is permitted. If Spark limits prevent safe operation, remain local-only rather than upgrading.
+
+
 ## Free-tier and reliability rules
 
 - No paid APIs or mandatory billing accounts.
