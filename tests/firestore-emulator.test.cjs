@@ -92,3 +92,16 @@ test('device metadata cannot be used to smuggle location fields or rewrite immut
   await assertFails(updateDoc(ref, { platform: 'web' }));
   await assertFails(updateDoc(ref, { createdAt: serverTimestamp() }));
 });
+
+test('a revoked device record cannot be reactivated', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const db = testEnv.authenticatedContext('student-a').firestore();
+  const ref = doc(db, 'users/student-a/devices/revoked-phone');
+  await assertSucceeds(setDoc(ref, {
+    deviceName: 'Old phone',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false
+  }));
+  await assertSucceeds(updateDoc(ref, { revoked: true }));
+  await assertFails(updateDoc(ref, { revoked: false }));
+});
