@@ -99,6 +99,14 @@ Remote synchronization is intentionally not implemented until every item below h
 ### Provider selection gate
 Before choosing a backend, compare current free-tier quotas and terms for authentication, realtime delivery, database storage, bandwidth, region/data residency, abuse controls, and account limits. Verify whether a payment method is required and what happens at quota exhaustion. Prefer a design that can be disabled without affecting calculator functionality. No provider is selected by this document.
 
+### Phase 2A: private device registry (metadata only)
+
+The first authenticated data model is limited to a user's own device records at `users/{uid}/devices/{deviceId}`. The rules permit only that authenticated UID to read, create, update, or delete those records. A record contains only a short device label, a platform label, creation timestamp, and revoked flag. Creation timestamps and platform labels are immutable; updates may change only the label and revoked flag.
+
+This registry is not proof of a paired relationship and does not authorize another account to read anything. It contains no coordinates, location history, pairing codes, access tokens, or remote-control capability. All other Firestore paths remain denied. The emulator suite must prove owner access, cross-account denial, field allowlisting, and immutable-field enforcement before this schema is considered ready.
+
+**Important limitation:** Spark does not provide Cloud Functions for a trusted server-side pairing broker. A client-only pairing flow must not be treated as secure merely because it uses a Firestore transaction. Do not enable code issuance, redemption, or location writes until the protocol can enforce one-time redemption, confirmation, expiry, abuse resistance, and revocation without trusting an untrusted client.
+
 ### Required tests before enabling remote sync
 - Unauthenticated access is denied.
 - Account A cannot read or write Account B's devices or locations.
