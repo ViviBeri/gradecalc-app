@@ -18,4 +18,4 @@ jobs:
       - run: node tests.js
       - run: node --test tests/*.test.cjs
       - name: Test Firestore security rules in emulator
-        run: npx firebase emulators:exec --only firestore --project demo-gradecalc "node --test tests/firestore-emulator.test.cjs"
+        run: npx firebase emulators:exec --only firestore --project demo-gradecalc "env FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node --test tests/firestore-emulator.test.cjs"
