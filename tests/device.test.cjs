@@ -81,9 +81,11 @@ function createHarness(options = {}) {
 
 const h = createHarness({ storage: { gradecalc_device_name: 'Study phone' } });
 assert.equal(h.ids['device-local-name'].value, 'Study phone', 'saved local device name is restored');
+assert.equal(h.ids['device-display-name'].textContent, 'Study phone', 'saved name appears in device identity');
 h.ids['device-local-name'].value = 'Beri phone';
 h.ids['device-save-name'].click();
 assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone', 'device name saves locally');
+assert.equal(h.ids['device-display-name'].textContent, 'Beri phone', 'device identity updates after saving');
 assert.match(h.ids['device-name-status'].textContent, /saved on this device/);
 h.ids['device-local-name'].value = '   ';
 h.ids['device-save-name'].click();
