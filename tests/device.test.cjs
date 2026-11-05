@@ -40,6 +40,7 @@ function createHarness(options = {}) {
   const navigator = {
     geolocation: options.noGeolocation ? null : {
       watchPosition(success, failure) {
+        if (options.watchThrows) throw new Error('Geolocation unavailable');
         watchCallback = success;
         errorCallback = failure;
         return nextWatchId;
@@ -124,6 +125,12 @@ const insecure = createHarness({ secure: false });
 insecure.ids['device-start-location'].click();
 assert.match(insecure.ids['device-location-status'].textContent, /secure HTTPS/);
 assert.equal(insecure.ids['device-stop-location'].disabled, true);
+
+const startFailure = createHarness({ watchThrows: true });
+startFailure.ids['device-start-location'].click();
+assert.equal(startFailure.ids['device-start-location'].disabled, false, 'start is re-enabled if the browser throws');
+assert.equal(startFailure.ids['device-stop-location'].disabled, true, 'stop remains disabled if location never starts');
+assert.match(startFailure.ids['device-location-status'].textContent, /could not start location access/);
 
 const unsupported = createHarness({ noGeolocation: true });
 unsupported.ids['device-start-location'].click();
