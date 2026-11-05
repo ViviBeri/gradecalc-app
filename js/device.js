@@ -2,7 +2,6 @@
 
 (function () {
   var watchId = null;
-  var lastPosition = null;
   var tabButton;
   var panel;
   var deviceNameKey = 'gradecalc_device_name';
@@ -26,7 +25,6 @@
       navigator.geolocation.clearWatch(watchId);
     }
     watchId = null;
-    lastPosition = null;
     var start = document.getElementById('device-start-location');
     var stop = document.getElementById('device-stop-location');
     if (start) start.disabled = false;
@@ -41,7 +39,6 @@
   }
 
   function showPosition(position) {
-    lastPosition = position;
     var lat = position.coords.latitude;
     var lon = position.coords.longitude;
     var accuracy = Math.round(position.coords.accuracy);
@@ -74,15 +71,21 @@
     var stop = document.getElementById('device-stop-location');
     if (start) start.disabled = true;
     setStatus('Waiting for your device location permission…', false);
-    watchId = navigator.geolocation.watchPosition(showPosition, function (error) {
+    try {
+      watchId = navigator.geolocation.watchPosition(showPosition, function (error) {
+        stopSharing();
+        var messages = {
+          1: 'Location permission was denied. You can enable it in your device settings.',
+          2: 'Your device could not determine its location. Check GPS and try again.',
+          3: 'Location request timed out. Try again in an area with a clearer GPS signal.'
+        };
+        setStatus(messages[error.code] || 'Unable to access location. Please try again.', true);
+      }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+    } catch (error) {
       stopSharing();
-      var messages = {
-        1: 'Location permission was denied. You can enable it in your device settings.',
-        2: 'Your device could not determine its location. Check GPS and try again.',
-        3: 'Location request timed out. Try again in an area with a clearer GPS signal.'
-      };
-      setStatus(messages[error.code] || 'Unable to access location. Please try again.', true);
-    }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+      setStatus('Your device could not start location access. Check browser permissions and try again.', true);
+      return;
+    }
     if (stop) stop.disabled = false;
     var state = document.getElementById('device-sharing-state');
     if (state) state.textContent = 'Waiting for location…';
