@@ -5,6 +5,7 @@
   var lastPosition = null;
   var tabButton;
   var panel;
+  var deviceNameKey = 'gradecalc_device_name';
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -124,6 +125,44 @@
     deviceRow.appendChild(glyph);
     deviceRow.appendChild(identity);
     card.appendChild(deviceRow);
+
+    var nameLabel = element('label', 'target-intro', 'Name this device');
+    nameLabel.htmlFor = 'device-local-name';
+    var nameInput = element('input', 'input');
+    nameInput.id = 'device-local-name';
+    nameInput.type = 'text';
+    nameInput.maxLength = 60;
+    nameInput.autocomplete = 'off';
+    nameInput.setAttribute('aria-label', 'Device name on this device');
+    try {
+      nameInput.value = localStorage.getItem(deviceNameKey) || 'My device';
+    } catch (error) {
+      nameInput.value = 'My device';
+    }
+    var saveName = element('button', 'btn-secondary', 'Save device name');
+    saveName.type = 'button';
+    saveName.style.cssText = 'width:100%;margin-top:8px';
+    var nameStatus = element('p', 'projection-share-status', 'This name is stored only in this browser.');
+    nameStatus.id = 'device-name-status';
+    saveName.addEventListener('click', function () {
+      var value = nameInput.value.trim();
+      if (!value || value.length > 60) {
+        nameStatus.textContent = 'Enter a device name between 1 and 60 characters.';
+        return;
+      }
+      try {
+        localStorage.setItem(deviceNameKey, value);
+        nameStatus.textContent = 'Device name saved on this device.';
+      } catch (error) {
+        nameStatus.textContent = 'This browser could not save the device name.';
+      }
+    });
+    card.appendChild(nameLabel);
+    card.appendChild(nameInput);
+    card.appendChild(saveName);
+    card.appendChild(nameStatus);
+    card.appendChild(element('p', 'target-intro',
+      'Account sync and remote device pairing are not enabled yet. This local label does not register or pair a remote device.'));
 
     var state = element('div', 'target-status', 'Location sharing is off');
     state.id = 'device-sharing-state';
