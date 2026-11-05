@@ -132,3 +132,24 @@ test('device metadata rejects invalid names, platforms, and pre-revoked creation
     revoked: true
   }));
 });
+
+test('device metadata can be renamed and revoked but cannot be unrevoked or have platform changed', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const db = testEnv.authenticatedContext('student-a').firestore();
+  const ref = doc(db, 'users/student-a/devices/lifecycle-phone');
+  await assertSucceeds(setDoc(ref, {
+    deviceName: 'First name',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false
+  }));
+
+  await assertSucceeds(updateDoc(ref, { deviceName: 'Renamed phone' }));
+  const renamed = await getDoc(ref);
+  assert.equal(renamed.data().deviceName, 'Renamed phone');
+  assert.equal(renamed.data().revoked, false);
+
+  await assertSucceeds(updateDoc(ref, { revoked: true }));
+  await assertFails(updateDoc(ref, { deviceName: 'Attempted rename after revoke' }));
+  await assertFails(updateDoc(ref, { platform: 'web' }));
+  await assertFails(updateDoc(ref, { revoked: false }));
+});
