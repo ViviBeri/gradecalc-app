@@ -1,0 +1,108 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+
+class FakeElement {
+  constructor(tag) {
+    this.tagName = tag;
+    this.children = [];
+    this.attributes = {};
+    this.listeners = {};
+    this.style = {};
+    this.hidden = false;
+    this.disabled = false;
+    this.textContent = '';
+    this.href = '';
+  }
+  appendChild(child) { this.children.push(child); return child; }
+  setAttribute(name, value) { this.attributes[name] = value; }
+  addEventListener(name, callback) { this.listeners[name] = callback; }
+  click() { if (this.listeners.click && !this.disabled) this.listeners.click(); }
+}
+
+function createHarness(options = {}) {
+  const ids = {};
+  const tabBar = new FakeElement('div');
+  const body = new FakeElement('div');
+  let watchCallback;
+  let errorCallback;
+  let nextWatchId = 41;
+  const cleared = [];
+  const document = {
+    readyState: 'complete',
+    createElement: tag => new FakeElement(tag),
+    querySelector: selector => selector === '.tab-bar' ? tabBar : selector === '.body' ? body : null,
+    getElementById: id => ids[id] || null,
+    addEventListener: () => {}
+  };
+  const navigator = {
+    geolocation: options.noGeolocation ? null : {
+      watchPosition(success, failure) {
+        watchCallback = success;
+        errorCallback = failure;
+        return nextWatchId;
+      },
+      clearWatch(id) { cleared.push(id); }
+    }
+  };
+  const window = {
+    isSecureContext: options.secure !== false,
+    addEventListener: () => {},
+    switchTab: () => {}
+  };
+  const context = {
+    document, navigator, window, console,
+    Date, encodeURIComponent,
+  };
+  vm.runInNewContext(fs.readFileSync('js/device.js', 'utf8'), context);
+  function indexTree(node) {
+    if (node.id) ids[node.id] = node;
+    node.children.forEach(indexTree);
+  }
+  body.children.forEach(indexTree);
+  tabBar.children.forEach(indexTree);
+  return { ids, tabBar, body, cleared, navigator, window,
+    emitPosition: position => watchCallback(position),
+    emitError: error => errorCallback(error) };
+}
+
+const h = createHarness();
+assert.ok(h.ids['device-start-location'], 'device tab builds a start control');
+assert.equal(h.ids['device-stop-location'].disabled, true, 'stop is disabled before consent');
+assert.equal(h.ids['device-location-status'].textContent, 'Location permission has not been requested.');
+
+h.ids['device-start-location'].click();
+assert.equal(h.ids['device-start-location'].disabled, true, 'start is disabled while requesting location');
+assert.equal(h.ids['device-stop-location'].disabled, false, 'stop is available while location is active');
+h.emitPosition({ coords: { latitude: 11.93, longitude: 79.83, accuracy: 12 }, timestamp: 1000 });
+assert.match(h.ids['device-location-details'].textContent, /Latitude 11\.93000/);
+assert.match(h.ids['device-location-details'].textContent, /Accuracy about 12 m/);
+assert.match(h.ids['device-open-map'].href, /openstreetmap\.org/);
+assert.equal(h.ids['device-open-map'].hidden, false);
+
+h.ids['device-stop-location'].click();
+assert.deepEqual(h.cleared, [41], 'stop clears the active geolocation watch');
+assert.equal(h.ids['device-stop-location'].disabled, true);
+assert.equal(h.ids['device-start-location'].disabled, false);
+assert.equal(h.ids['device-open-map'].hidden, true);
+assert.match(h.ids['device-location-status'].textContent, /not uploaded or saved/);
+
+const denied = createHarness();
+denied.ids['device-start-location'].click();
+denied.emitError({ code: 1 });
+assert.deepEqual(denied.cleared, [41], 'permission failure clears the watch');
+assert.match(denied.ids['device-location-status'].textContent, /permission was denied/);
+assert.equal(denied.ids['device-start-location'].disabled, false);
+
+const insecure = createHarness({ secure: false });
+insecure.ids['device-start-location'].click();
+assert.match(insecure.ids['device-location-status'].textContent, /secure HTTPS/);
+assert.equal(insecure.ids['device-stop-location'].disabled, true);
+
+const unsupported = createHarness({ noGeolocation: true });
+unsupported.ids['device-start-location'].click();
+assert.match(unsupported.ids['device-location-status'].textContent, /does not support location/);
+
+console.log('Device feature tests passed (consent, location update, map link, stop, denial, HTTPS and unsupported browser).');
