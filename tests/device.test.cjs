@@ -52,8 +52,13 @@ function createHarness(options = {}) {
     addEventListener: () => {},
     switchTab: () => {}
   };
+  const storage = new Map(Object.entries(options.storage || {}));
+  const localStorage = {
+    getItem: key => storage.has(key) ? storage.get(key) : null,
+    setItem: (key, value) => storage.set(key, String(value))
+  };
   const context = {
-    document, navigator, window, console,
+    document, navigator, window, localStorage, console,
     Date, encodeURIComponent,
   };
   vm.runInNewContext(fs.readFileSync('js/device.js', 'utf8'), context);
@@ -63,12 +68,24 @@ function createHarness(options = {}) {
   }
   body.children.forEach(indexTree);
   tabBar.children.forEach(indexTree);
-  return { ids, tabBar, body, cleared, navigator, window,
+  return { ids, tabBar, body, cleared, navigator, window, storage,
     emitPosition: position => watchCallback(position),
     emitError: error => errorCallback(error) };
 }
 
-const h = createHarness();
+const h = createHarness({ storage: { gradecalc_device_name: 'Study phone' } });
+assert.equal(h.ids['device-local-name'].value, 'Study phone', 'saved local device name is restored');
+h.ids['device-local-name'].value = 'Beri phone';
+h.ids['device-local-name'].click();
+h.ids['device-name-status'].textContent = 'This status is updated by the save button.';
+h.body.children[0].children.find(node => node.children.some(child => child.id === 'device-name-status'))
+  .children.find(child => child.textContent === 'Save device name').click();
+assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone', 'device name saves locally');
+assert.match(h.ids['device-name-status'].textContent, /saved on this device/);
+h.ids['device-local-name'].value = '   ';
+h.body.children[0].children.find(node => node.children.some(child => child.id === 'device-name-status'))
+  .children.find(child => child.textContent === 'Save device name').click();
+assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
 assert.ok(h.ids['device-start-location'], 'device tab builds a start control');
 assert.equal(h.ids['device-stop-location'].disabled, true, 'stop is disabled before consent');
 assert.equal(h.ids['device-location-status'].textContent, 'Location permission has not been requested.');
