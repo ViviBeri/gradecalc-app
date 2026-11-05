@@ -149,7 +149,10 @@ test('device metadata can be renamed and revoked but cannot be unrevoked or have
   assert.equal(renamed.data().revoked, false);
 
   await assertSucceeds(updateDoc(ref, { revoked: true }));
-  await assertFails(updateDoc(ref, { deviceName: 'Attempted rename after revoke' }));
+  await assertSucceeds(updateDoc(ref, { deviceName: 'Archived phone' }));
+  const revoked = await getDoc(ref);
+  assert.equal(revoked.data().deviceName, 'Archived phone');
+  assert.equal(revoked.data().revoked, true);
   await assertFails(updateDoc(ref, { platform: 'web' }));
   await assertFails(updateDoc(ref, { revoked: false }));
 });
