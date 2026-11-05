@@ -55,7 +55,10 @@ function createHarness(options = {}) {
   const storage = new Map(Object.entries(options.storage || {}));
   const localStorage = {
     getItem: key => storage.has(key) ? storage.get(key) : null,
-    setItem: (key, value) => storage.set(key, String(value))
+    setItem: (key, value) => {
+      if (options.storageWriteFails) throw new Error('Storage unavailable');
+      storage.set(key, String(value));
+    }
   };
   const context = {
     document, navigator, window, localStorage, console,
@@ -76,16 +79,20 @@ function createHarness(options = {}) {
 const h = createHarness({ storage: { gradecalc_device_name: 'Study phone' } });
 assert.equal(h.ids['device-local-name'].value, 'Study phone', 'saved local device name is restored');
 h.ids['device-local-name'].value = 'Beri phone';
-h.ids['device-local-name'].click();
-h.ids['device-name-status'].textContent = 'This status is updated by the save button.';
-h.body.children[0].children.find(node => node.children.some(child => child.id === 'device-name-status'))
-  .children.find(child => child.textContent === 'Save device name').click();
+h.ids['device-save-name'].click();
 assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone', 'device name saves locally');
 assert.match(h.ids['device-name-status'].textContent, /saved on this device/);
 h.ids['device-local-name'].value = '   ';
-h.body.children[0].children.find(node => node.children.some(child => child.id === 'device-name-status'))
-  .children.find(child => child.textContent === 'Save device name').click();
+h.ids['device-save-name'].click();
 assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
+h.ids['device-local-name'].value = 'x'.repeat(61);
+h.ids['device-save-name'].click();
+assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/, 'names longer than 60 characters are rejected');
+
+const storageFailure = createHarness({ storageWriteFails: true });
+storageFailure.ids['device-local-name'].value = 'Backup phone';
+storageFailure.ids['device-save-name'].click();
+assert.match(storageFailure.ids['device-name-status'].textContent, /could not save/, 'storage failures are shown clearly');
 assert.ok(h.ids['device-start-location'], 'device tab builds a start control');
 assert.equal(h.ids['device-stop-location'].disabled, true, 'stop is disabled before consent');
 assert.equal(h.ids['device-location-status'].textContent, 'Location permission has not been requested.');
