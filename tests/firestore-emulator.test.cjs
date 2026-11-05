@@ -6,9 +6,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   initializeTestEnvironment,
-  assertFails
+  assertFails,
+  assertSucceeds
 } = require('@firebase/rules-unit-testing');
-const { doc, getDoc, setDoc } = require('firebase/firestore');
+const { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } = require('firebase/firestore');
 
 const projectId = 'demo-gradecalc';
 let testEnv;
@@ -34,16 +35,60 @@ test('unauthenticated clients cannot read or write remote documents', { skip: !p
   await assertFails(setDoc(ref, { location: 'must-not-be-written' }));
 });
 
-test('authenticated clients are also denied until pairing authorization is implemented', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+test('authenticated users can manage only their own valid device metadata', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
   const db = testEnv.authenticatedContext('student-a').firestore();
-  const ref = doc(db, 'users/student-a');
-  await assertFails(getDoc(ref));
-  await assertFails(setDoc(ref, { location: 'must-not-be-written' }));
+  const ref = doc(db, 'users/student-a/devices/phone-1');
+  await assertSucceeds(setDoc(ref, {
+    deviceName: 'My phone',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false
+  }));
+  await assertSucceeds(getDoc(ref));
+  await assertSucceeds(updateDoc(ref, { deviceName: 'My Android', revoked: true }));
+  await assertSucceeds(deleteDoc(ref));
 });
 
-test('one authenticated account cannot access another account document', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+test('one authenticated account cannot read, create, update, or delete another account device', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const dbA = testEnv.authenticatedContext('student-a').firestore();
+  const dbB = testEnv.authenticatedContext('student-b').firestore();
+  const ownRef = doc(dbB, 'users/student-b/devices/phone-2');
+  await assertSucceeds(setDoc(ownRef, {
+    deviceName: 'Student B phone',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false
+  }));
+
+  const otherRef = doc(dbA, 'users/student-b/devices/phone-2');
+  await assertFails(getDoc(otherRef));
+  await assertFails(setDoc(doc(dbA, 'users/student-b/devices/attacker'), {
+    deviceName: 'Attacker',
+    platform: 'web',
+    createdAt: serverTimestamp(),
+    revoked: false
+  }));
+  await assertFails(updateDoc(otherRef, { revoked: true }));
+  await assertFails(deleteDoc(otherRef));
+});
+
+test('device metadata cannot be used to smuggle location fields or rewrite immutable fields', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
   const db = testEnv.authenticatedContext('student-a').firestore();
-  const otherUser = doc(db, 'users/student-b');
-  await assertFails(getDoc(otherUser));
-  await assertFails(setDoc(otherUser, { location: 'must-not-be-written' }));
+  const ref = doc(db, 'users/student-a/devices/phone-3');
+  await assertFails(setDoc(ref, {
+    deviceName: 'Phone',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false,
+    latitude: 11.9,
+    longitude: 79.8
+  }));
+  await assertSucceeds(setDoc(ref, {
+    deviceName: 'Phone',
+    platform: 'android',
+    createdAt: serverTimestamp(),
+    revoked: false
+  }));
+  await assertFails(updateDoc(ref, { platform: 'web' }));
+  await assertFails(updateDoc(ref, { createdAt: serverTimestamp() }));
 });
