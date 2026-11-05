@@ -141,6 +141,7 @@
     }
     var saveName = element('button', 'btn-secondary', 'Save device name');
     saveName.type = 'button';
+    saveName.id = 'device-save-name';
     saveName.style.cssText = 'width:100%;margin-top:8px';
     var nameStatus = element('p', 'projection-share-status', 'This name is stored only in this browser.');
     nameStatus.id = 'device-name-status';
