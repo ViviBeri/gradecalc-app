@@ -26,21 +26,21 @@ test.after(async () => {
   if (testEnv) await testEnv.cleanup();
 });
 
-test('unauthenticated clients cannot read or write remote documents', async () => {
+test('unauthenticated clients cannot read or write remote documents', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
   const db = testEnv.unauthenticatedContext().firestore();
   const ref = doc(db, 'users/anonymous-device');
   await assertFails(getDoc(ref));
   await assertFails(setDoc(ref, { location: 'must-not-be-written' }));
 });
 
-test('authenticated clients are also denied until pairing authorization is implemented', async () => {
+test('authenticated clients are also denied until pairing authorization is implemented', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
   const db = testEnv.authenticatedContext('student-a').firestore();
   const ref = doc(db, 'users/student-a');
   await assertFails(getDoc(ref));
   await assertFails(setDoc(ref, { location: 'must-not-be-written' }));
 });
 
-test('one authenticated account cannot access another account document', async () => {
+test('one authenticated account cannot access another account document', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
   const db = testEnv.authenticatedContext('student-a').firestore();
   const otherUser = doc(db, 'users/student-b');
   await assertFails(getDoc(otherUser));
