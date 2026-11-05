@@ -224,6 +224,9 @@
   } else {
     build();
   }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopSharing();
+  });
   window.addEventListener('pagehide', stopSharing);
   window.addEventListener('beforeunload', stopSharing);
   window.GradeCalcDeviceFeatures = { stopSharing: stopSharing };
