@@ -2,9 +2,37 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Safe foundation: remote access remains disabled until authenticated
-    // pairing, ownership, expiry, and revocation rules have emulator tests.
-    // Never replace this with broad authenticated-user access.
+    // Private device metadata only. This is not a pairing or location permission.
+    match /users/{userId}/devices/{deviceId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function validDevice(data) {
+        return data.keys().hasAll(['deviceName', 'platform', 'createdAt', 'revoked'])
+          && data.keys().hasOnly(['deviceName', 'platform', 'createdAt', 'revoked'])
+          && data.deviceName is string
+          && data.deviceName.size() > 0
+          && data.deviceName.size() <= 60
+          && data.platform in ['web', 'android', 'ios', 'unknown']
+          && data.createdAt is timestamp
+          && data.revoked is bool;
+      }
+
+      allow read: if isOwner();
+      allow create: if isOwner()
+        && validDevice(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.revoked == false;
+      allow update: if isOwner()
+        && validDevice(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.platform == resource.data.platform
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceName', 'revoked']);
+      allow delete: if isOwner();
+    }
+
+    // Everything else, including pairing codes and location data, stays denied.
     match /{document=**} {
       allow read, write: if false;
     }
