@@ -69,6 +69,47 @@ No vendor or integration branding should appear in screens, menus, notifications
 - Only consider owner-initiated sessions with explicit permission, visible indicators, and no stealth behavior.
 - Never activate camera or microphone remotely without an on-device approval action.
 
+## Phase 2 security and pairing design gate
+
+Remote synchronization is intentionally not implemented until every item below has an agreed, tested design.
+
+### Pairing flow
+1. The owner signs in on the device that will share data.
+2. The owner explicitly chooses **Add a device** and generates a one-time pairing code.
+3. The code is random, short-lived (target: 5 minutes), single-use, and stored only as a server-side hash. It must not contain user IDs, credentials, or location.
+4. The receiving device must be signed in to its own account and enter the code. Pairing requires confirmation on the sharing device; possession of a code alone must not silently authorize tracking.
+5. Both devices show the paired device name, last-seen time, permissions, and a clear **Unpair / revoke** action.
+6. Revoke takes effect server-side immediately; the revoked device must not be able to refresh credentials or submit new location updates.
+
+### Authorization and data boundaries
+- Every read and write is authorized against the authenticated owner and an explicit device-pair relationship. Client-supplied owner IDs are never trusted.
+- Database rules must deny access by default and be tested for cross-account reads, cross-account writes, expired codes, reused codes, revoked devices, and unauthenticated requests.
+- Privileged service keys, admin credentials, and signing secrets must never be shipped in the PWA, Android bundle, repository, or public Actions logs.
+- Use provider-issued user authentication and short-lived scoped access where supported. Never implement a shared static secret embedded in the app.
+- Pairing codes are rate-limited by account, IP/device signal where available, and server-side attempt counters. Do not reveal whether a guessed code belongs to a particular account.
+
+### Location lifecycle
+- Remote location updates are off by default and require a separate, explicit opt-in on the sharing device.
+- Show a persistent in-app active state and last successful sync time. Background Android collection, if ever added, requires a foreground service notification and a separate permission explanation.
+- Send the minimum required fields: coordinates, accuracy, capture timestamp, and paired-device identifier. Do not collect contacts, call logs, messages, microphone, or camera data.
+- Define a short default retention period (initial proposal: 24 hours), owner-controlled deletion, and deletion on unpair. Do not enable history until deletion behavior is verified end-to-end.
+- Stale locations must be visibly marked with their age; never present old coordinates as live.
+- Network failure, quota exhaustion, expired authentication, and provider outage must stop or queue safely without silently increasing cost or changing consent state.
+
+### Provider selection gate
+Before choosing a backend, compare current free-tier quotas and terms for authentication, realtime delivery, database storage, bandwidth, region/data residency, abuse controls, and account limits. Verify whether a payment method is required and what happens at quota exhaustion. Prefer a design that can be disabled without affecting calculator functionality. No provider is selected by this document.
+
+### Required tests before enabling remote sync
+- Unauthenticated access is denied.
+- Account A cannot read or write Account B's devices or locations.
+- Invalid, expired, and previously redeemed pairing codes are rejected.
+- A pairing code cannot be redeemed without the sharing device's confirmation.
+- Revoked devices lose access immediately.
+- Location is not sent before opt-in or after stop/unpair.
+- Retention expiry and owner-requested deletion remove location records.
+- Quota exhaustion and offline mode do not create paid usage or break the calculator.
+- Logs and error messages never include raw pairing codes, access tokens, or precise coordinates.
+
 ## Free-tier and reliability rules
 
 - No paid APIs or mandatory billing accounts.
