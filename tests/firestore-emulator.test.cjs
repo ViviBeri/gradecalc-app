@@ -14,6 +14,7 @@ const projectId = 'demo-gradecalc';
 let testEnv;
 
 test.before(async () => {
+  if (!process.env.FIRESTORE_EMULATOR_HOST) return;
   testEnv = await initializeTestEnvironment({
     projectId,
     firestore: {
