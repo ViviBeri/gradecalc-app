@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
   ALLOWED_SCOPES,
+  bindGrantToSessionTransaction,
   INVITE_TTL_MS,
   createInviteSecret,
   confirmPairingRequestTransaction,
@@ -316,6 +317,46 @@ test('backend contract requires verified authentication context for owner identi
   assert.match(contract, /Viewer writes are always denied/i);
 });
 
+
+test('owner binds an active viewer grant to one matching sharing session', async () => {
+  const sessionId = 'session-identifier-1234';
+  const records = new Map([
+    ['deviceGrants/grant-a', {
+      ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+      scopes: ['battery'], status: 'active', expiresAt: 500000, sessionId: null
+    }],
+    ['deviceSessions/' + sessionId, {
+      ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+      scopes: ['battery', 'location'], status: 'active', expiresAt: 400000
+    }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) { return { key: name + '/' + id }; } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+  await assert.rejects(bindGrantToSessionTransaction({
+    db, grantId: 'grant-a', ownerUid: 'attacker', sessionId, now: 100000
+  }), /SHARING_UNAVAILABLE/);
+  const bound = await bindGrantToSessionTransaction({
+    db, grantId: 'grant-a', ownerUid: 'owner-a', sessionId, now: 100000
+  });
+  assert.equal(bound.status, 'bound');
+  assert.equal(records.get('deviceGrants/grant-a').sessionId, sessionId);
+  await assert.rejects(bindGrantToSessionTransaction({
+    db, grantId: 'grant-a', ownerUid: 'owner-a', sessionId, now: 100001
+  }), /SHARING_UNAVAILABLE/);
+});
 
 test('viewer telemetry reads require an active matching grant, session, and scope', () => {
   const grant = {
