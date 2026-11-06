@@ -189,5 +189,6 @@ module.exports = {
   hashInviteSecret,
   isInviteActive,
   normalizeScopes,
+  redeemInviteTransaction,
   validateTelemetry
 };
