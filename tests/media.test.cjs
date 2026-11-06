@@ -19,6 +19,7 @@ class FakeElement {
   addEventListener(name, callback) { this.listeners[name] = callback; }
   setAttribute(name, value) { this.attributes[name] = value; }
   removeAttribute(name) { delete this.attributes[name]; if (name === 'src') this.src = ''; }
+  removeAttribute(name) { delete this.attributes[name]; if (name === 'src') this.src = ''; }
   load() {}
   click() { if (this.listeners.click && !this.disabled) this.listeners.click(); }
   pause() {}
