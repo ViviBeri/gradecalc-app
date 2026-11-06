@@ -624,3 +624,23 @@ test('full pairing lifecycle requires approval and session binding before scoped
   assert.equal(records.has('deviceTelemetry/owner-a_phone-a'), false);
   assert.equal(records.get('deviceSessions/' + sessionId).status, 'stopped');
 });
+
+
+test('callable backend keeps privileged operations authenticated and App Check protected', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const source = fs.readFileSync(path.join(__dirname, '../functions/index.js'), 'utf8');
+  for (const operation of [
+    'createPairingInvite', 'redeemPairingInvite', 'confirmPairingRequest',
+    'bindGrantToSession', 'revokeDeviceGrant', 'startDeviceSharing',
+    'stopDeviceSharing', 'publishDeviceTelemetry', 'readDeviceTelemetry'
+  ]) {
+    assert.match(source, new RegExp('exports\\\\.' + operation + '\\\\s*=\\\\s*callable\\\\('));
+  }
+  assert.match(source, /enforceAppCheck:\\s*true/);
+  assert.match(source, /consumeAppCheckToken:\\s*true/);
+  assert.match(source, /request\\.auth\\.uid/);
+  assert.match(source, /provider === 'anonymous'/);
+  assert.match(source, /db\\.runTransaction\\(async transaction/);
+  assert.doesNotMatch(source, /request\\.data\\.(?:ownerUid|viewerUid)/);
+});
