@@ -6,6 +6,7 @@ const {
   ALLOWED_SCOPES,
   INVITE_TTL_MS,
   createInviteSecret,
+  confirmPairingRequestTransaction,
   hashInviteSecret,
   isInviteActive,
   normalizeScopes,
@@ -168,4 +169,96 @@ test('invite redemption rejects replay, wrong secrets, and self-pairing', async 
     db, inviteId: 'invite-a', secret, viewerUid: 'viewer-c',
     requestId: 'replay', now: 100001
   }), /PAIRING_UNAVAILABLE/);
+});
+
+
+test('only the owning account can approve a pending request for an active device', async () => {
+  const request = {
+    ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+    scopes: ['battery'], status: 'pending', expiresAt: 500000
+  };
+  const device = { deviceName: 'Phone', revoked: false };
+  const records = new Map([
+    ['pairingRequests/request-a', request],
+    ['users/owner-a/devices/phone-a', device]
+  ]);
+  const db = {
+    collection(name) {
+      return {
+        doc(id) {
+          const key = name + '/' + id;
+          return {
+            key,
+            collection(child) {
+              return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+            }
+          };
+        }
+      };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+
+  await assert.rejects(confirmPairingRequestTransaction({
+    db, requestId: 'request-a', ownerUid: 'attacker', grantId: 'grant-b', now: 100000
+  }), /PAIRING_UNAVAILABLE/);
+  const approved = await confirmPairingRequestTransaction({
+    db, requestId: 'request-a', ownerUid: 'owner-a', grantId: 'grant-a', now: 100000
+  });
+  assert.equal(approved.viewerUid, 'viewer-b');
+  assert.deepEqual(approved.scopes, ['battery']);
+  assert.equal(records.get('pairingRequests/request-a').status, 'approved');
+  assert.equal(records.get('deviceGrants/grant-a').status, 'active');
+  assert.equal(records.get('deviceGrants/grant-a').ownerUid, 'owner-a');
+});
+
+test('owner approval rejects expired, revoked-device, and already-approved requests', async () => {
+  async function makeDb({ expiresAt = 500000, revoked = false, status = 'pending' } = {}) {
+    const records = new Map([
+      ['pairingRequests/request-a', {
+        ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+        scopes: ['location'], status, expiresAt
+      }],
+      ['users/owner-a/devices/phone-a', { revoked }]
+    ]);
+    return {
+      collection(name) {
+        return { doc(id) { const key = name + '/' + id; return {
+          key,
+          collection(child) { return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } }; }
+        }; } };
+      },
+      async runTransaction(callback) {
+        const writes = [];
+        const tx = {
+          async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+          create(ref, value) { writes.push(() => records.set(ref.key, value)); },
+          update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+        };
+        const result = await callback(tx);
+        writes.forEach(write => write());
+        return result;
+      }
+    };
+  }
+  for (const options of [
+    { expiresAt: 100000 },
+    { revoked: true },
+    { status: 'approved' }
+  ]) {
+    await assert.rejects(confirmPairingRequestTransaction({
+      db: await makeDb(options), requestId: 'request-a',
+      ownerUid: 'owner-a', grantId: 'grant-a', now: 100000
+    }), /PAIRING_UNAVAILABLE/);
+  }
 });
