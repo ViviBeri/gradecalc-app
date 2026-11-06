@@ -361,7 +361,8 @@ test('owner binds an active viewer grant to one matching sharing session', async
 test('viewer telemetry reads require an active matching grant, session, and scope', () => {
   const grant = {
     ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
-    scopes: ['battery'], status: 'active', expiresAt: 500000, revokedAt: null
+    scopes: ['battery'], status: 'active', expiresAt: 500000, revokedAt: null,
+    sessionId: 'session-identifier-1234'
   };
   const session = {
     ownerUid: 'owner-a', deviceId: 'phone-a', sessionId: 'session-identifier-1234',
