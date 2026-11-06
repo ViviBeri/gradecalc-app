@@ -161,9 +161,9 @@
   }
 
   function build() {
-    var body = document.querySelector('.body');
+    var body = document.getElementById('panel-devices');
     if (!body || document.getElementById('media-controls')) return;
-    panel = element('section', 'panel');
+    panel = element('section', '');
     panel.id = 'media-controls';
     panel.setAttribute('aria-label', 'Camera and microphone');
     var camera = element('div', 'card');
