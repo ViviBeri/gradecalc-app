@@ -181,6 +181,29 @@ async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grant
   });
 }
 
+
+async function revokeDeviceGrantTransaction({ db, grantId, ownerUid, now = Date.now() }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof grantId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(grantId)) throw new TypeError('Invalid grant');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  const grantRef = db.collection('deviceGrants').doc(grantId);
+
+  return db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(grantRef);
+    if (!snapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
+    const grant = snapshot.data();
+    if (grant.ownerUid !== ownerUid || grant.status !== 'active' ||
+      typeof grant.viewerUid !== 'string' || typeof grant.deviceId !== 'string') {
+      throw new Error('PAIRING_UNAVAILABLE');
+    }
+    transaction.update(grantRef, {
+      status: 'revoked',
+      revokedAt: now
+    });
+    return { grantId, status: 'revoked', revokedAt: now };
+  });
+}
+
 module.exports = {
   ALLOWED_SCOPES,
   INVITE_TTL_MS,
@@ -190,5 +213,6 @@ module.exports = {
   isInviteActive,
   normalizeScopes,
   redeemInviteTransaction,
+  revokeDeviceGrantTransaction,
   validateTelemetry
 };
