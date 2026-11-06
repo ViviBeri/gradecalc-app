@@ -104,6 +104,32 @@ function harness() {
   assert.equal(h.ids['media-camera-stop'].disabled, true, 'backgrounding stops camera');
   assert.equal(h.stopped.length, 1, 'camera track is released');
 
+
+  const delayed = harness();
+  delayed.ids['media-camera-start'].click();
+  delayed.document.hidden = true;
+  delayed.documentListeners.visibilitychange();
+  delayed.document.hidden = false;
+  delayed.grant();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(delayed.stopped.length, 1, 'late camera permission response releases the stream');
+  assert.equal(delayed.ids['media-camera-stop'].disabled, true, 'late camera permission cannot reactivate capture');
+  assert.equal(delayed.ids['media-camera-start'].disabled, false, 'camera remains ready for a fresh user action');
+
+  const delayedMic = harness();
+  delayedMic.ids['media-mic-start'].click();
+  assert.equal(delayedMic.requested[0].audio, true, 'microphone requests audio after explicit action');
+  assert.equal(delayedMic.requested[0].video, false, 'microphone never requests camera access');
+  delayedMic.document.hidden = true;
+  delayedMic.documentListeners.visibilitychange();
+  delayedMic.document.hidden = false;
+  delayedMic.grant();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(delayedMic.stopped.length, 1, 'late microphone permission response releases the stream');
+  assert.equal(delayedMic.ids['media-mic-stop'].disabled, true, 'late microphone permission cannot start recording');
+
   const unavailable = harness();
   unavailable.document.hidden = false;
   // The feature reports unsupported APIs without requesting permissions.
@@ -116,5 +142,5 @@ function harness() {
   vm.runInNewContext(fs.readFileSync('js/media.js', 'utf8'), unsupportedContext);
   assert.match(unavailable.ids['media-camera-status'].textContent, /Camera is off/);
 
-  console.log('Media feature tests passed (no launch capture, explicit camera request, video-only permission, stop on background).');
+  console.log('Media feature tests passed (explicit permissions, camera stop, and delayed permission cleanup).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
