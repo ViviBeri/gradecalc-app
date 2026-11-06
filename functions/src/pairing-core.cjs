@@ -371,6 +371,7 @@ async function revokeDeviceGrantTransaction({ db, grantId, ownerUid, now = Date.
 
 module.exports = {
   ALLOWED_SCOPES,
+  bindGrantToSessionTransaction,
   canReadTelemetry,
   createSharingSessionTransaction,
   createPairingInviteTransaction,
