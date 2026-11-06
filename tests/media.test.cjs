@@ -93,7 +93,8 @@ function harness() {
   assert.equal(h.requested.length, 0, 'permissions are not requested on module load');
 
   h.ids['media-camera-start'].click();
-  assert.deepEqual(h.requested[0], { video: true, audio: false }, 'camera asks only for video after explicit action');
+  assert.equal(h.requested[0].video, true, 'camera asks for video after explicit action');
+  assert.equal(h.requested[0].audio, false, 'camera does not request microphone access');
   h.grant();
   await Promise.resolve();
   await Promise.resolve();
