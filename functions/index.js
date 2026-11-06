@@ -5,6 +5,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const {
   canReadTelemetry,
+  bindGrantToSessionTransaction,
   createInviteSecret,
   createPairingInviteTransaction,
   confirmPairingRequestTransaction,
@@ -76,6 +77,12 @@ exports.confirmPairingRequest = callable(async (request, ownerUid) => {
   const requestId = requiredString(request.data && request.data.requestId, 'requestId');
   const grantId = db.collection('deviceGrants').doc().id;
   return confirmPairingRequestTransaction({ db, requestId, ownerUid, grantId });
+});
+
+exports.bindGrantToSession = callable(async (request, ownerUid) => {
+  const grantId = requiredString(request.data && request.data.grantId, 'grantId');
+  const sessionId = requiredString(request.data && request.data.sessionId, 'sessionId');
+  return bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId });
 });
 
 exports.revokeDeviceGrant = callable(async (request, ownerUid) => {
