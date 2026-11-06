@@ -105,7 +105,10 @@
 
   function stopMicrophone() {
     micRequest += 1;
-    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    if (recorder && recorder.state !== 'inactive') {
+      if (discardRecording) recorder.__gradecalcDiscard = true;
+      recorder.stop();
+    }
     if (microphoneStream) microphoneStream.getTracks().forEach(function (track) { track.stop(); });
     microphoneStream = null;
     recorder = null;
@@ -138,6 +141,7 @@
       try {
         recorder = new MediaRecorder(stream);
         var currentRecorder = recorder;
+        currentRecorder.__gradecalcDiscard = false;
         recorder.addEventListener('dataavailable', function (event) {
           if (event.data && event.data.size) recordedChunks.push(event.data);
         });
@@ -145,7 +149,7 @@
           if (audioUrl) URL.revokeObjectURL(audioUrl);
           audioUrl = null;
           var audio = document.getElementById('media-audio-playback');
-          if (!discardRecording && recordedChunks.length && audio) {
+          if (!currentRecorder.__gradecalcDiscard && recordedChunks.length && audio) {
             audioUrl = URL.createObjectURL(new Blob(recordedChunks, { type: currentRecorder.mimeType || 'audio/webm' }));
             audio.src = audioUrl;
             audio.hidden = false;
