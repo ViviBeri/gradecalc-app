@@ -300,3 +300,14 @@ test('only the grant owner can revoke an active device grant', async () => {
     db, grantId: 'grant-a', ownerUid: 'owner-a', now: 200001
   }), /PAIRING_UNAVAILABLE/);
 });
+
+
+test('backend contract requires verified authentication context for owner identity', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const contract = fs.readFileSync(path.join(__dirname, '../docs/device-monitor-backend-contract.md'), 'utf8');
+  assert.match(contract, /derive owner\/viewer UIDs only from verified auth context/i);
+  assert.match(contract, /never accept a UID supplied by the client as authority/i);
+  assert.match(contract, /Revocation and Stop must block subsequent reads\/writes immediately/i);
+  assert.match(contract, /Viewer writes are always denied/i);
+});
