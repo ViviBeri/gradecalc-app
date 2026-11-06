@@ -320,11 +320,14 @@ test('backend contract requires verified authentication context for owner identi
 test('viewer telemetry reads require an active matching grant, session, and scope', () => {
   const grant = {
     ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
-    sessionId: 'session-identifier-1234', scopes: ['battery'],
-    status: 'active', expiresAt: 500000, revokedAt: null
+    scopes: ['battery'], status: 'active', expiresAt: 500000, revokedAt: null
+  };
+  const session = {
+    ownerUid: 'owner-a', deviceId: 'phone-a', sessionId: 'session-identifier-1234',
+    scopes: ['battery', 'location'], status: 'active', expiresAt: 400000, stoppedAt: null
   };
   const args = {
-    grant, viewerUid: 'viewer-b', ownerUid: 'owner-a', deviceId: 'phone-a',
+    grant, session, viewerUid: 'viewer-b', ownerUid: 'owner-a', deviceId: 'phone-a',
     sessionId: 'session-identifier-1234', scope: 'battery', now: 100000
   };
   assert.equal(canReadTelemetry(args), true);
@@ -334,6 +337,9 @@ test('viewer telemetry reads require an active matching grant, session, and scop
   assert.equal(canReadTelemetry({ ...args, sessionId: 'old-session' }), false);
   assert.equal(canReadTelemetry({ ...args, now: 500000 }), false);
   assert.equal(canReadTelemetry({ ...args, grant: { ...grant, status: 'revoked' } }), false);
+  assert.equal(canReadTelemetry({ ...args, session: { ...session, status: 'stopped' } }), false);
+  assert.equal(canReadTelemetry({ ...args, session: { ...session, expiresAt: 100000 } }), false);
+  assert.equal(canReadTelemetry({ ...args, session: { ...session, scopes: ['location'] } }), false);
 });
 
 test('telemetry publishing requires an active owner session and rejects ungranted fields', async () => {
