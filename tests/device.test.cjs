@@ -98,7 +98,7 @@ const storageFailure = createHarness({ storageWriteFails: true });
 storageFailure.ids['device-local-name'].value = 'Backup phone';
 storageFailure.ids['device-save-name'].click();
 assert.match(storageFailure.ids['device-name-status'].textContent, /could not save/, 'storage failures are shown clearly');
-assert.ok(h.ids['device-start-location'], 'device tab builds a start control');
+assert.ok(h.ids['device-start-location'], 'device tab builds a location preview control');
 assert.equal(h.ids['device-stop-location'].disabled, true, 'stop is disabled before consent');
 assert.equal(h.ids['device-location-status'].textContent, 'Location permission has not been requested.');
 
