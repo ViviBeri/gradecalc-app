@@ -529,3 +529,98 @@ test('pairing invite creation stores only a hash and requires an active owner de
     secret: createInviteSecret(), scopes: ['battery'], now: 100001
   }), /PAIRING_UNAVAILABLE/);
 });
+
+
+test('full pairing lifecycle requires approval and session binding before scoped reads', async () => {
+  const records = new Map([
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) {
+        const key = name + '/' + id;
+        return {
+          key,
+          collection(child) {
+            return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+          }
+        };
+      } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) {
+          const value = records.get(ref.key);
+          return { exists: value !== undefined, data: () => value };
+        },
+        create(ref, value) {
+          writes.push(() => {
+            if (records.has(ref.key)) throw new Error('already-exists');
+            records.set(ref.key, value);
+          });
+        },
+        update(ref, value) {
+          writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value }));
+        },
+        set(ref, value) { writes.push(() => records.set(ref.key, value)); },
+        delete(ref) { writes.push(() => records.delete(ref.key)); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+
+  const secret = createInviteSecret();
+  await require('../functions/src/pairing-core.cjs').createPairingInviteTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', inviteId: 'invite-flow',
+    secret, scopes: ['battery'], now: 100000
+  });
+  const redeemed = await redeemInviteTransaction({
+    db, inviteId: 'invite-flow', secret, viewerUid: 'viewer-b',
+    requestId: 'request-flow', now: 100001
+  });
+  assert.equal(redeemed.status, 'pending');
+  assert.equal(records.has('deviceGrants/grant-flow'), false);
+
+  const approved = await confirmPairingRequestTransaction({
+    db, requestId: 'request-flow', ownerUid: 'owner-a',
+    grantId: 'grant-flow', now: 100002
+  });
+  assert.equal(approved.viewerUid, 'viewer-b');
+  const sessionId = 'session-flow-identifier';
+  await createSharingSessionTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    scopes: ['battery'], now: 100003
+  });
+  await bindGrantToSessionTransaction({
+    db, grantId: 'grant-flow', ownerUid: 'owner-a', sessionId, now: 100004
+  });
+  await publishTelemetryTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    snapshot: { battery: { level: 0.7, charging: false } }, now: 100005
+  });
+
+  const authorization = {
+    grant: records.get('deviceGrants/grant-flow'),
+    session: records.get('deviceSessions/' + sessionId),
+    viewerUid: 'viewer-b', ownerUid: 'owner-a', deviceId: 'phone-a',
+    sessionId, scope: 'battery', now: 100006
+  };
+  assert.equal(canReadTelemetry(authorization), true);
+  assert.equal(canReadTelemetry({ ...authorization, scope: 'location' }), false);
+
+  await revokeDeviceGrantTransaction({
+    db, grantId: 'grant-flow', ownerUid: 'owner-a', now: 100007
+  });
+  assert.equal(canReadTelemetry({
+    ...authorization, grant: records.get('deviceGrants/grant-flow'), now: 100008
+  }), false);
+
+  await stopSharingSessionTransaction({
+    db, ownerUid: 'owner-a', sessionId, now: 100009
+  });
+  assert.equal(records.has('deviceTelemetry/owner-a_phone-a'), false);
+  assert.equal(records.get('deviceSessions/' + sessionId).status, 'stopped');
+});
