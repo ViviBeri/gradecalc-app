@@ -32,7 +32,7 @@
     if (start) start.disabled = false;
     if (stop) stop.disabled = true;
     var state = document.getElementById('device-sharing-state');
-    if (state) state.textContent = 'Location sharing is off';
+    if (state) state.textContent = 'Location access is off';
     setStatus('Location access has stopped. No location was uploaded or saved.', false);
     var details = document.getElementById('device-location-details');
     if (details) details.textContent = 'Your location will appear here only while you actively share it.';
@@ -52,13 +52,13 @@
       details.textContent = 'Latitude ' + lat.toFixed(5) + ' · Longitude ' + lon.toFixed(5) +
         ' · Accuracy about ' + accuracy + ' m · Updated ' + new Date(position.timestamp).toLocaleTimeString();
     }
-    if (state) state.textContent = 'Sharing on this device';
+    if (state) state.textContent = 'Location access active on this device';
     if (map) {
       map.href = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(lat) +
         '&mlon=' + encodeURIComponent(lon) + '#map=17/' + encodeURIComponent(lat) + '/' + encodeURIComponent(lon);
       map.hidden = false;
     }
-    setStatus('Location is being accessed on this device only. Stop sharing whenever you like.', false);
+    setStatus('Location is visible on this device only. Stop access whenever you like.', false);
   }
 
   function startSharing() {
@@ -94,7 +94,7 @@
     }
     if (stop) stop.disabled = false;
     var state = document.getElementById('device-sharing-state');
-    if (state) state.textContent = 'Waiting for location…';
+    if (state) state.textContent = 'Waiting for your device location…';
   }
 
   function build() {
@@ -122,7 +122,7 @@
     var card = element('div', 'card');
     card.appendChild(element('div', 'card-title', 'Your devices'));
     card.appendChild(element('p', 'target-intro',
-      'Manage location access for this device. Sharing starts only when you choose it.'));
+      'Preview this device’s location only when you choose. Nothing is shared with another person.'));
     var deviceRow = element('div', '');
     deviceRow.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:14px';
     var glyph = element('div', '');
@@ -183,7 +183,7 @@
     card.appendChild(state);
 
     var actions = element('div', 'target-actions');
-    var start = element('button', 'btn-primary', 'Share my location');
+    var start = element('button', 'btn-primary', 'Preview my location');
     start.type = 'button';
     start.id = 'device-start-location';
     start.addEventListener('click', startSharing);
