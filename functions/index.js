@@ -113,32 +113,46 @@ exports.publishDeviceTelemetry = callable(async (request, ownerUid) => {
 
 exports.readDeviceTelemetry = callable(async (request, viewerUid) => {
   const grantId = requiredString(request.data && request.data.grantId, 'grantId');
+  const sessionId = requiredString(request.data && request.data.sessionId, 'sessionId');
   const scope = requiredString(request.data && request.data.scope, 'scope', 32);
   const grantRef = db.collection('deviceGrants').doc(grantId);
-  const grantSnapshot = await grantRef.get();
-  if (!grantSnapshot.exists) throw new HttpsError('permission-denied', 'Telemetry access denied.');
-  const grant = grantSnapshot.data();
-  const sessionRef = db.collection('deviceSessions').doc(
-    requiredString(request.data.sessionId, 'sessionId')
-  );
-  const sessionSnapshot = await sessionRef.get();
-  if (!sessionSnapshot.exists) throw new HttpsError('permission-denied', 'Telemetry access denied.');
-  const session = sessionSnapshot.data();
-  if (!canReadTelemetry({
-    grant, session, viewerUid, ownerUid: grant.ownerUid,
-    deviceId: grant.deviceId, scope, sessionId: session.sessionId
-  })) throw new HttpsError('permission-denied', 'Telemetry access denied.');
-  const telemetrySnapshot = await db.collection('deviceTelemetry')
-    .doc(grant.ownerUid + '_' + grant.deviceId).get();
-  if (!telemetrySnapshot.exists) return { snapshot: null, updatedAt: null };
-  const telemetry = telemetrySnapshot.data();
-  if (telemetry.sessionId !== session.sessionId ||
-      typeof telemetry.expiresAt !== 'number' || telemetry.expiresAt <= Date.now()) {
-    return { snapshot: null, updatedAt: null };
-  }
-  return {
-    snapshot: Object.prototype.hasOwnProperty.call(telemetry.snapshot || {}, scope)
-      ? { [scope]: telemetry.snapshot[scope] } : {},
-    updatedAt: telemetry.updatedAt
-  };
+  const sessionRef = db.collection('deviceSessions').doc(sessionId);
+
+  return db.runTransaction(async transaction => {
+    const [grantSnapshot, sessionSnapshot] = await Promise.all([
+      transaction.get(grantRef),
+      transaction.get(sessionRef)
+    ]);
+    if (!grantSnapshot.exists || !sessionSnapshot.exists) {
+      throw new HttpsError('permission-denied', 'Telemetry access denied.');
+    }
+
+    const grant = grantSnapshot.data();
+    const session = sessionSnapshot.data();
+    if (!canReadTelemetry({
+      grant, session, viewerUid, ownerUid: grant.ownerUid,
+      deviceId: grant.deviceId, scope, sessionId
+    })) {
+      throw new HttpsError('permission-denied', 'Telemetry access denied.');
+    }
+
+    const telemetryRef = db.collection('deviceTelemetry')
+      .doc(grant.ownerUid + '_' + grant.deviceId);
+    const telemetrySnapshot = await transaction.get(telemetryRef);
+    if (!telemetrySnapshot.exists) return { snapshot: null, updatedAt: null };
+
+    const telemetry = telemetrySnapshot.data();
+    if (!telemetry || telemetry.sessionId !== sessionId ||
+        typeof telemetry.expiresAt !== 'number' || telemetry.expiresAt <= Date.now() ||
+        !telemetry.snapshot || typeof telemetry.snapshot !== 'object' ||
+        Array.isArray(telemetry.snapshot)) {
+      return { snapshot: null, updatedAt: null };
+    }
+
+    return {
+      snapshot: Object.prototype.hasOwnProperty.call(telemetry.snapshot, scope)
+        ? { [scope]: telemetry.snapshot[scope] } : {},
+      updatedAt: telemetry.updatedAt
+    };
+  });
 });
