@@ -96,7 +96,48 @@ function validateTelemetry(snapshot) {
   return true;
 }
 
-module.exports = {
+
+async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, requestId, now = Date.now() }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof inviteId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(inviteId)) throw new TypeError('Invalid invitation');
+  if (typeof requestId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(requestId)) throw new TypeError('Invalid request');
+  if (typeof viewerUid !== 'string' || !viewerUid.trim() || viewerUid.length > 128) throw new TypeError('Authentication required');
+  const suppliedHash = hashInviteSecret(secret);
+  const inviteRef = db.collection('pairingInvites').doc(inviteId);
+  const requestRef = db.collection('pairingRequests').doc(requestId);
+
+  return db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(inviteRef);
+    if (!snapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
+    const invite = snapshot.data();
+    if (!isInviteActive(invite, now)) throw new Error('PAIRING_UNAVAILABLE');
+    const stored = Buffer.from(invite.secretHash, 'hex');
+    const supplied = Buffer.from(suppliedHash, 'hex');
+    if (stored.length !== supplied.length || !crypto.timingSafeEqual(stored, supplied)) {
+      throw new Error('PAIRING_UNAVAILABLE');
+    }
+    if (invite.ownerUid === viewerUid) throw new Error('PAIRING_UNAVAILABLE');
+    if (typeof invite.ownerUid !== 'string' || typeof invite.deviceId !== 'string' ||
+      !Array.isArray(invite.scopes)) throw new Error('PAIRING_UNAVAILABLE');
+    const scopes = normalizeScopes(invite.scopes);
+    const requestSnapshot = await transaction.get(requestRef);
+    if (requestSnapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
+
+    transaction.update(inviteRef, { consumedAt: now });
+    transaction.create(requestRef, {
+      inviteId,
+      ownerUid: invite.ownerUid,
+      deviceId: invite.deviceId,
+      viewerUid,
+      scopes,
+      status: 'pending',
+      createdAt: now,
+      expiresAt: Math.min(invite.expiresAt, now + INVITE_TTL_MS)
+    });
+    return { requestId, status: 'pending', scopes };
+  });
+}
+\nmodule.exports = {
   ALLOWED_SCOPES,
   INVITE_TTL_MS,
   createInviteSecret,
