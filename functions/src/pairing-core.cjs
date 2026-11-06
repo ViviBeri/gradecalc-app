@@ -182,6 +182,61 @@ async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grant
 }
 
 
+
+function canReadTelemetry({ grant, viewerUid, ownerUid, deviceId, scope, sessionId, now = Date.now() }) {
+  if (!grant || typeof grant !== 'object' || grant.status !== 'active' ||
+    grant.ownerUid !== ownerUid || grant.viewerUid !== viewerUid ||
+    grant.deviceId !== deviceId || typeof sessionId !== 'string' || !sessionId ||
+    grant.sessionId !== sessionId ||
+    typeof grant.expiresAt !== 'number' || grant.expiresAt <= now ||
+    grant.revokedAt != null) return false;
+  let scopes;
+  try { scopes = normalizeScopes(grant.scopes); } catch { return false; }
+  return scopes.includes(scope);
+}
+
+function validateTelemetryEnvelope({ snapshot, grant, ownerUid, deviceId, sessionId, now = Date.now() }) {
+  if (!validateTelemetry(snapshot) || !grant || grant.status !== 'active' ||
+    grant.ownerUid !== ownerUid || grant.deviceId !== deviceId ||
+    grant.sessionId !== sessionId || grant.revokedAt != null ||
+    typeof grant.expiresAt !== 'number' || grant.expiresAt <= now ||
+    typeof sessionId !== 'string' || sessionId.length < 16 || sessionId.length > 128) return false;
+  let scopes;
+  try { scopes = normalizeScopes(grant.scopes); } catch { return false; }
+  return Object.keys(snapshot).every(key => scopes.includes(key));
+}
+
+async function publishTelemetryTransaction({ db, ownerUid, deviceId, sessionId, snapshot, now = Date.now(), telemetryTtlMs = 2 * 60 * 1000 }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  if (typeof deviceId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(deviceId)) throw new TypeError('Invalid device');
+  if (typeof sessionId !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(sessionId)) throw new TypeError('Invalid session');
+  if (!Number.isSafeInteger(telemetryTtlMs) || telemetryTtlMs < 10000 || telemetryTtlMs > 300000) throw new TypeError('Invalid telemetry TTL');
+  const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(deviceId);
+  const sessionRef = db.collection('deviceSessions').doc(sessionId);
+  const telemetryRef = db.collection('deviceTelemetry').doc(ownerUid + '_' + deviceId);
+
+  return db.runTransaction(async transaction => {
+    const [deviceSnapshot, sessionSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(sessionRef)
+    ]);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false ||
+      !sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
+    const session = sessionSnapshot.data();
+    if (session.ownerUid !== ownerUid || session.deviceId !== deviceId ||
+      session.status !== 'active' || session.sessionId !== sessionId ||
+      typeof session.expiresAt !== 'number' || session.expiresAt <= now ||
+      !validateTelemetryEnvelope({ snapshot, grant: session, ownerUid, deviceId, sessionId, now })) {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
+    transaction.set(telemetryRef, {
+      ownerUid, deviceId, sessionId, snapshot,
+      updatedAt: now, expiresAt: now + telemetryTtlMs
+    });
+    return { updatedAt: now, expiresAt: now + telemetryTtlMs };
+  });
+}
+
 async function revokeDeviceGrantTransaction({ db, grantId, ownerUid, now = Date.now() }) {
   if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
   if (typeof grantId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(grantId)) throw new TypeError('Invalid grant');
@@ -206,13 +261,16 @@ async function revokeDeviceGrantTransaction({ db, grantId, ownerUid, now = Date.
 
 module.exports = {
   ALLOWED_SCOPES,
+  canReadTelemetry,
   INVITE_TTL_MS,
   createInviteSecret,
   confirmPairingRequestTransaction,
   hashInviteSecret,
   isInviteActive,
   normalizeScopes,
+  publishTelemetryTransaction,
   redeemInviteTransaction,
   revokeDeviceGrantTransaction,
-  validateTelemetry
+  validateTelemetry,
+  validateTelemetryEnvelope
 };
