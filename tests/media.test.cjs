@@ -33,6 +33,7 @@ function harness() {
   const requested = [];
   const stopped = [];
   const revoked = [];
+  let created = 0;
   let resolveMedia;
   const devices = new FakeElement('section');
   devices.id = 'panel-devices';
@@ -60,19 +61,20 @@ function harness() {
       this.state = 'inactive';
       this.listeners = {};
       this.mimeType = 'audio/webm';
+      this.dataCallback = null;
     }
     addEventListener(name, callback) { this.listeners[name] = callback; }
     start() { this.state = 'recording'; }
     stop() {
       this.state = 'inactive';
-      if (this.listeners.stop) this.listeners.stop();
+      Promise.resolve().then(() => { if (this.listeners.stop) this.listeners.stop(); });
     }
   }
   const context = {
     document, navigator,
     window: { addEventListener: (name, callback) => { windowListeners[name] = callback; } },
     MediaRecorder: FakeMediaRecorder,
-    URL: { createObjectURL: () => 'blob:audio', revokeObjectURL: url => revoked.push(url) },
+    URL: { createObjectURL: () => { created += 1; return 'blob:audio'; }, revokeObjectURL: url => revoked.push(url) },
     Blob, console
   };
   function index(node) {
@@ -86,7 +88,7 @@ function harness() {
     const track = { stop: () => stopped.push(true) };
     resolveMedia({ getTracks: () => [track] });
   }
-  return { ids, devices, requested, stopped, revoked, document, documentListeners, windowListeners, grant, media: context.window.GradeCalcMedia };
+  return { ids, devices, requested, stopped, revoked, document, documentListeners, windowListeners, grant, media: context.window.GradeCalcMedia, get created() { return created; } };
 }
 
 (async function () {
@@ -143,6 +145,18 @@ function harness() {
   assert.equal(cleanup.ids['media-photo-preview'].src, '', 'leaving media feature clears captured photo data');
   assert.equal(cleanup.ids['media-audio-playback'].hidden, true, 'leaving media feature hides audio playback');
   assert.equal(cleanup.ids['media-audio-playback'].src, '', 'leaving media feature clears audio playback source');
+
+  const recordingCleanup = harness();
+  recordingCleanup.ids['media-mic-start'].click();
+  recordingCleanup.grant();
+  await Promise.resolve();
+  await Promise.resolve();
+  recordingCleanup.media.stopAll();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(recordingCleanup.ids['media-audio-playback'].hidden, true, 'async recorder stop cannot restore playback after cleanup');
+  assert.equal(recordingCleanup.ids['media-audio-playback'].src, '', 'async recorder stop leaves playback source empty');
+  assert.equal(recordingCleanup.created, 0, 'discarded recording does not create a temporary audio URL');
 
   const unavailable = harness();
   unavailable.document.hidden = false;
