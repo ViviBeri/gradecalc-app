@@ -637,10 +637,10 @@ test('callable backend keeps privileged operations authenticated and App Check p
   ]) {
     assert.ok(source.includes(`exports.${operation} = callable(`));
   }
-  assert.match(source, /enforceAppCheck:\\s*true/);
-  assert.match(source, /consumeAppCheckToken:\\s*true/);
-  assert.match(source, /request\\.auth\\.uid/);
-  assert.match(source, /provider === 'anonymous'/);
+  assert.ok(source.includes('enforceAppCheck: true'));
+  assert.ok(source.includes('consumeAppCheckToken: true'));
+  assert.ok(source.includes('request.auth.uid'));
+  assert.ok(source.includes("provider === 'anonymous'"));
   assert.ok(source.includes('db.runTransaction(async transaction'));
-  assert.doesNotMatch(source, /request\\.data\\.(?:ownerUid|viewerUid)/);
+  assert.ok(!source.includes('request.data.ownerUid') && !source.includes('request.data.viewerUid'));
 });
