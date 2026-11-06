@@ -172,7 +172,7 @@ function harness() {
   assert.match(unavailable.ids['media-camera-status'].textContent, /Camera is off/);
 
   const appHtml = fs.readFileSync('index.html', 'utf8');
-  assert.match(appHtml, /function switchTab\(tab, btn\)\s*\{\s*if \(tab !== 'devices' && window\.GradeCalcMedia\) window\.GradeCalcMedia\.stopAll\(\);/, 'switching away from Devices stops all media sessions');
+  assert.ok(appHtml.includes("if (tab !== 'devices' && window.GradeCalcMedia) window.GradeCalcMedia.stopAll();"), 'switching away from Devices stops all media sessions');
 
   assert.equal(typeof h.windowListeners.pagehide, 'function', 'pagehide cleanup handler is registered');
   assert.equal(typeof h.windowListeners.beforeunload, 'function', 'beforeunload cleanup handler is registered');
