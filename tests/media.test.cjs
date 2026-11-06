@@ -18,6 +18,8 @@ class FakeElement {
   appendChild(child) { this.children.push(child); return child; }
   addEventListener(name, callback) { this.listeners[name] = callback; }
   setAttribute(name, value) { this.attributes[name] = value; }
+  removeAttribute(name) { delete this.attributes[name]; if (name === 'src') this.src = ''; }
+  load() {}
   click() { if (this.listeners.click && !this.disabled) this.listeners.click(); }
   pause() {}
   play() { return Promise.resolve(); }
@@ -30,6 +32,7 @@ function harness() {
   const windowListeners = {};
   const requested = [];
   const stopped = [];
+  const revoked = [];
   let resolveMedia;
   const devices = new FakeElement('section');
   devices.id = 'panel-devices';
@@ -69,7 +72,7 @@ function harness() {
     document, navigator,
     window: { addEventListener: (name, callback) => { windowListeners[name] = callback; } },
     MediaRecorder: FakeMediaRecorder,
-    URL: { createObjectURL: () => 'blob:audio', revokeObjectURL: () => {} },
+    URL: { createObjectURL: () => 'blob:audio', revokeObjectURL: url => revoked.push(url) },
     Blob, console
   };
   function index(node) {
@@ -83,7 +86,7 @@ function harness() {
     const track = { stop: () => stopped.push(true) };
     resolveMedia({ getTracks: () => [track] });
   }
-  return { ids, devices, requested, stopped, document, documentListeners, windowListeners, grant };
+  return { ids, devices, requested, stopped, revoked, document, documentListeners, windowListeners, grant, media: context.window.GradeCalcMedia };
 }
 
 (async function () {
@@ -129,6 +132,17 @@ function harness() {
   await Promise.resolve();
   assert.equal(delayedMic.stopped.length, 1, 'late microphone permission response releases the stream');
   assert.equal(delayedMic.ids['media-mic-stop'].disabled, true, 'late microphone permission cannot start recording');
+
+  const cleanup = harness();
+  cleanup.ids['media-photo-preview'].src = 'data:image/jpeg;base64,test';
+  cleanup.ids['media-photo-preview'].hidden = false;
+  cleanup.ids['media-audio-playback'].src = 'blob:old-audio';
+  cleanup.ids['media-audio-playback'].hidden = false;
+  cleanup.media.stopAll();
+  assert.equal(cleanup.ids['media-photo-preview'].hidden, true, 'leaving media feature hides captured photo');
+  assert.equal(cleanup.ids['media-photo-preview'].src, '', 'leaving media feature clears captured photo data');
+  assert.equal(cleanup.ids['media-audio-playback'].hidden, true, 'leaving media feature hides audio playback');
+  assert.equal(cleanup.ids['media-audio-playback'].src, '', 'leaving media feature clears audio playback source');
 
   const unavailable = harness();
   unavailable.document.hidden = false;
