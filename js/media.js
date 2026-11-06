@@ -121,7 +121,7 @@
 
   function startMicrophone() {
     if (microphoneStream) return;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined' || typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function' || typeof URL.revokeObjectURL !== 'function') {
       status('media-mic-status', 'Microphone recording is unavailable in this browser or context.', true);
       return;
     }
