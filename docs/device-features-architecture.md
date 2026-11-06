@@ -174,3 +174,29 @@ This is a provisional architecture choice, not an assertion that the service is 
 8. No third-party branding appears in the interface.
 9. The feature works only in a secure context and handles unsupported browsers gracefully.
 10. No paid service or API key is required.
+
+
+## Camera and microphone access policy
+
+Camera and microphone features remain optional and are not enabled by the current local-device implementation. If added later, they must follow these rules:
+
+- The device owner may grant the Android permission in advance. A previously granted permission removes the need to ask for the same runtime permission repeatedly, but it is not blanket consent for every future capture session.
+- Each photo capture or audio recording session must begin with a clear, on-device action such as **Take photo** or **Start recording**. Do not start capture merely because the app opened, a device paired, or a remote user requested it.
+- Do not add repetitive GradeCalc pop-ups when permission is already granted. Keep the active feature state and the capture controls clear and unobtrusive.
+- Android's system privacy indicators and permission controls must remain intact. GradeCalc must not attempt to hide, suppress, spoof, or bypass operating-system camera or microphone indicators, notifications, permission prompts, or privacy controls.
+- No covert capture, remote activation, background recording, unattended photography, or capture after the user leaves the feature.
+- Provide an obvious **Stop** or **Cancel** action. Stop media tracks and release the camera/microphone immediately when the session ends, the page becomes hidden, or the app is backgrounded.
+- Do not upload, transmit, or retain captured media unless a separate, explicit user action authorizes that specific operation. Explain the destination and purpose before any upload.
+- Request only the permission needed for the selected action. A photo-only workflow must not request microphone access; an audio-only workflow must not request camera access.
+- If permission is denied, unavailable, or revoked, explain the limitation without repeatedly prompting or trying to work around the user's choice.
+
+### Camera/audio acceptance criteria
+
+1. No camera or microphone permission is requested on app launch.
+2. A permission already granted is not needlessly requested again.
+3. Every capture session is started by an explicit on-device action.
+4. The interface provides clear active state and a working stop/cancel action.
+5. All media tracks are stopped on session end and when the app becomes hidden/backgrounded.
+6. Android privacy indicators and system permission controls are never hidden or bypassed.
+7. No remote activation, covert capture, background recording, or automatic media upload is possible.
+8. Camera and microphone permissions are requested independently and only for the feature that needs them.
