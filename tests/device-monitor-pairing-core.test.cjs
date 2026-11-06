@@ -10,6 +10,7 @@ const {
   hashInviteSecret,
   isInviteActive,
   normalizeScopes,
+  redeemInviteTransaction,
   validateTelemetry
 } = require('../functions/src/pairing-core.cjs');
 
