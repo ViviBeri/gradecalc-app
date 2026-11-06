@@ -236,13 +236,23 @@ async function bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId,
     if (!grantSnapshot.exists || !sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
     const grant = grantSnapshot.data();
     const session = sessionSnapshot.data();
+    let grantScopes;
+    let sessionScopes;
+    try {
+      grantScopes = normalizeScopes(grant.scopes);
+      sessionScopes = normalizeScopes(session.scopes);
+    } catch {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
     if (grant.ownerUid !== ownerUid || grant.status !== 'active' ||
-      typeof grant.viewerUid !== 'string' || grant.expiresAt <= now ||
+      typeof grant.viewerUid !== 'string' ||
+      typeof grant.expiresAt !== 'number' || grant.expiresAt <= now ||
       grant.sessionId != null ||
       session.ownerUid !== ownerUid || session.status !== 'active' ||
-      session.sessionId !== sessionId || session.expiresAt <= now ||
+      session.sessionId !== sessionId ||
+      typeof session.expiresAt !== 'number' || session.expiresAt <= now ||
       session.deviceId !== grant.deviceId ||
-      !normalizeScopes(grant.scopes).every(scope => session.scopes.includes(scope))) {
+      !grantScopes.every(scope => sessionScopes.includes(scope))) {
       throw new Error('SHARING_UNAVAILABLE');
     }
     transaction.update(grantRef, { sessionId });
