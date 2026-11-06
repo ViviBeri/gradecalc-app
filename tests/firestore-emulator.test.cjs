@@ -156,3 +156,30 @@ test('device metadata can be renamed and revoked but cannot be unrevoked or have
   await assertFails(updateDoc(ref, { platform: 'web' }));
   await assertFails(updateDoc(ref, { revoked: false }));
 });
+
+
+test('pairing invitations, device grants, and telemetry remain denied to every client', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const ownerDb = testEnv.authenticatedContext('device-owner').firestore();
+  const viewerDb = testEnv.authenticatedContext('device-viewer').firestore();
+  const anonymousDb = testEnv.unauthenticatedContext().firestore();
+  const protectedPaths = [
+    'pairingInvites/invite-1',
+    'deviceGrants/grant-1',
+    'deviceTelemetry/device-owner_phone-1'
+  ];
+
+  for (const db of [ownerDb, viewerDb, anonymousDb]) {
+    for (const documentPath of protectedPaths) {
+      const ref = doc(db, documentPath);
+      await assertFails(getDoc(ref));
+      await assertFails(setDoc(ref, {
+        ownerUid: 'device-owner',
+        viewerUid: 'device-viewer',
+        deviceId: 'phone-1',
+        scopes: ['location'],
+        latitude: 11.9,
+        longitude: 79.8
+      }));
+    }
+  }
+});
