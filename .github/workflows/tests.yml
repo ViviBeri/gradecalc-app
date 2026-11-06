@@ -14,6 +14,8 @@ jobs:
       - run: node --check js/arrears.js
       - run: node --check js/device.js
       - run: node --check js/media.js
+      - run: node --check functions/index.js
+      - run: node --check functions/src/pairing-core.cjs
       - name: Install temporary Firestore emulator test dependencies
         run: npm install --no-save --package-lock=false firebase-tools @firebase/rules-unit-testing firebase
       - run: node tests.js
