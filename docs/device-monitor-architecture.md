@@ -6,7 +6,7 @@
 
 The current Firestore rules intentionally deny all location and pairing documents. Do not loosen those rules until authentication, pairing, revocation, validation, and emulator tests are implemented together.
 
-## User-approved product scope
+## Backend implementation contract\n\nSee [the trusted backend contract](device-monitor-backend-contract.md) for callable operations, data validation, authorization boundaries, abuse controls, emulator cases, and rollout gates. It is a design document only; no backend is deployed.\n\n## User-approved product scope
 
 The device owner selected:
 - All supported details: location, battery, network, device/platform, camera permission status, microphone permission status, and app activity.
