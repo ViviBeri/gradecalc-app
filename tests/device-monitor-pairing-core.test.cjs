@@ -635,7 +635,7 @@ test('callable backend keeps privileged operations authenticated and App Check p
     'bindGrantToSession', 'revokeDeviceGrant', 'startDeviceSharing',
     'stopDeviceSharing', 'publishDeviceTelemetry', 'readDeviceTelemetry'
   ]) {
-    assert.match(source, new RegExp('exports\\\\.' + operation + '\\\\s*=\\\\s*callable\\\\('));
+    assert.ok(source.includes(`exports.${operation} = callable(`));
   }
   assert.match(source, /enforceAppCheck:\\s*true/);
   assert.match(source, /consumeAppCheckToken:\\s*true/);
