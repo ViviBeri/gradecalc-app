@@ -183,6 +183,45 @@ async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grant
 
 
 
+
+async function createSharingSessionTransaction({ db, ownerUid, deviceId, sessionId, scopes, now = Date.now(), sessionTtlMs = 15 * 60 * 1000 }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  if (typeof deviceId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(deviceId)) throw new TypeError('Invalid device');
+  if (typeof sessionId !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(sessionId)) throw new TypeError('Invalid session');
+  if (!Number.isSafeInteger(sessionTtlMs) || sessionTtlMs < 60000 || sessionTtlMs > 3600000) throw new TypeError('Invalid session TTL');
+  const approvedScopes = normalizeScopes(scopes);
+  const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(deviceId);
+  const sessionRef = db.collection('deviceSessions').doc(sessionId);
+  return db.runTransaction(async transaction => {
+    const deviceSnapshot = await transaction.get(deviceRef);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) throw new Error('SHARING_UNAVAILABLE');
+    const sessionSnapshot = await transaction.get(sessionRef);
+    if (sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
+    const session = { ownerUid, deviceId, sessionId, scopes: approvedScopes, status: 'active', createdAt: now, expiresAt: now + sessionTtlMs, stoppedAt: null };
+    transaction.create(sessionRef, session);
+    return { sessionId, scopes: approvedScopes, expiresAt: session.expiresAt };
+  });
+}
+
+async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Date.now() }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  if (typeof sessionId !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(sessionId)) throw new TypeError('Invalid session');
+  const sessionRef = db.collection('deviceSessions').doc(sessionId);
+  return db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(sessionRef);
+    if (!snapshot.exists) throw new Error('SHARING_UNAVAILABLE');
+    const session = snapshot.data();
+    if (session.ownerUid !== ownerUid || session.status !== 'active') throw new Error('SHARING_UNAVAILABLE');
+    const latestRef = db.collection('deviceTelemetry').doc(ownerUid + '_' + session.deviceId);
+    const latestSnapshot = await transaction.get(latestRef);
+    transaction.update(sessionRef, { status: 'stopped', stoppedAt: now, expiresAt: now });
+    if (latestSnapshot.exists && latestSnapshot.data().sessionId === sessionId) transaction.delete(latestRef);
+    return { sessionId, status: 'stopped', stoppedAt: now };
+  });
+}
+
 function canReadTelemetry({ grant, viewerUid, ownerUid, deviceId, scope, sessionId, now = Date.now() }) {
   if (!grant || typeof grant !== 'object' || grant.status !== 'active' ||
     grant.ownerUid !== ownerUid || grant.viewerUid !== viewerUid ||
@@ -262,6 +301,7 @@ async function revokeDeviceGrantTransaction({ db, grantId, ownerUid, now = Date.
 module.exports = {
   ALLOWED_SCOPES,
   canReadTelemetry,
+  createSharingSessionTransaction,
   INVITE_TTL_MS,
   createInviteSecret,
   confirmPairingRequestTransaction,
@@ -272,5 +312,6 @@ module.exports = {
   redeemInviteTransaction,
   revokeDeviceGrantTransaction,
   validateTelemetry,
-  validateTelemetryEnvelope
+  validateTelemetryEnvelope,
+  stopSharingSessionTransaction
 };
