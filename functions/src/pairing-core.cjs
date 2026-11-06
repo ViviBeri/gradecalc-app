@@ -138,10 +138,54 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
   });
 }
 
+
+async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grantId, now = Date.now() }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof requestId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(requestId)) throw new TypeError('Invalid request');
+  if (typeof grantId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(grantId)) throw new TypeError('Invalid grant');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  const requestRef = db.collection('pairingRequests').doc(requestId);
+  const grantRef = db.collection('deviceGrants').doc(grantId);
+
+  return db.runTransaction(async transaction => {
+    const requestSnapshot = await transaction.get(requestRef);
+    if (!requestSnapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
+    const request = requestSnapshot.data();
+    if (request.status !== 'pending' || request.ownerUid !== ownerUid ||
+      typeof request.viewerUid !== 'string' || request.viewerUid === ownerUid ||
+      typeof request.deviceId !== 'string' ||
+      typeof request.expiresAt !== 'number' || request.expiresAt <= now) {
+      throw new Error('PAIRING_UNAVAILABLE');
+    }
+    const scopes = normalizeScopes(request.scopes);
+    const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(request.deviceId);
+    const [deviceSnapshot, grantSnapshot] = await Promise.all([
+      transaction.get(deviceRef),
+      transaction.get(grantRef)
+    ]);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false || grantSnapshot.exists) {
+      throw new Error('PAIRING_UNAVAILABLE');
+    }
+    transaction.create(grantRef, {
+      ownerUid,
+      viewerUid: request.viewerUid,
+      deviceId: request.deviceId,
+      scopes,
+      status: 'active',
+      createdAt: now,
+      expiresAt: Math.min(request.expiresAt, now + INVITE_TTL_MS),
+      revokedAt: null
+    });
+    transaction.update(requestRef, { status: 'approved', approvedAt: now, grantId });
+    return { grantId, viewerUid: request.viewerUid, deviceId: request.deviceId, scopes };
+  });
+}
+
 module.exports = {
   ALLOWED_SCOPES,
   INVITE_TTL_MS,
   createInviteSecret,
+  confirmPairingRequestTransaction,
   hashInviteSecret,
   isInviteActive,
   normalizeScopes,
