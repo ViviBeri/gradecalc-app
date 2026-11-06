@@ -66,7 +66,7 @@ Do not transmit a location reading when system Location Services are off or perm
 - [x] Camera and microphone are permission status only.
 - [x] No telemetry network transport exists in the local dashboard.
 - [x] Existing Firestore rules deny pairing and telemetry paths.
-- [ ] Authenticated owner sign-in and session management.
+- [ ] Authenticated owner sign-in and session management.\n- [x] Emulator coverage confirms pairing invitations, device grants, and telemetry remain denied to owners, viewers, and anonymous clients until trusted server flows exist.
 - [ ] One-time pairing invitation and owner confirmation.
 - [ ] Scoped viewer dashboard with immediate revocation.
 - [ ] Retention/expiry implementation and security emulator tests.
