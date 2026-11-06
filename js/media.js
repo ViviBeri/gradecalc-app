@@ -9,6 +9,7 @@
   var panel;
   var cameraRequest = 0;
   var micRequest = 0;
+  var discardRecording = false;
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -144,7 +145,7 @@
           if (audioUrl) URL.revokeObjectURL(audioUrl);
           audioUrl = null;
           var audio = document.getElementById('media-audio-playback');
-          if (recordedChunks.length && audio) {
+          if (!discardRecording && recordedChunks.length && audio) {
             audioUrl = URL.createObjectURL(new Blob(recordedChunks, { type: currentRecorder.mimeType || 'audio/webm' }));
             audio.src = audioUrl;
             audio.hidden = false;
@@ -255,8 +256,19 @@
   }
 
   function stopAll() {
+    discardRecording = true;
     stopCamera();
     stopMicrophone();
+    var photo = document.getElementById('media-photo-preview');
+    if (photo) { photo.removeAttribute('src'); photo.hidden = true; }
+    var canvas = document.getElementById('media-photo-canvas');
+    if (canvas) { canvas.width = 0; canvas.height = 0; }
+    var audio = document.getElementById('media-audio-playback');
+    if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); audio.hidden = true; }
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    audioUrl = null;
+    recordedChunks = [];
+    discardRecording = false;
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
