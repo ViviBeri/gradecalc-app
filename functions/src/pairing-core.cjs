@@ -61,13 +61,13 @@ function validateTelemetry(snapshot) {
     if (!v || typeof v !== 'object' ||
       !Number.isFinite(v.latitude) || v.latitude < -90 || v.latitude > 90 ||
       !Number.isFinite(v.longitude) || v.longitude < -180 || v.longitude > 180 ||
-      !Number.isFinite(v.accuracy) || v.accuracy < 0) return false;
+      !Number.isFinite(v.accuracy) || v.accuracy < 0 || Object.keys(v).some(key => !['latitude', 'longitude', 'accuracy'].includes(key))) return false;
   }
   if ('battery' in snapshot) {
     const v = snapshot.battery;
     if (!v || typeof v !== 'object' ||
       !Number.isFinite(v.level) || v.level < 0 || v.level > 1 ||
-      typeof v.charging !== 'boolean') return false;
+      typeof v.charging !== 'boolean' || Object.keys(v).some(key => !['level', 'charging'].includes(key))) return false;
   }
   if ('network' in snapshot) {
     const v = snapshot.network;
