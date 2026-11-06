@@ -485,3 +485,46 @@ test('sharing session starts only for an active owner device and stops with tele
     db, ownerUid: 'owner-a', sessionId, now: 110001
   }), /SHARING_UNAVAILABLE/);
 });
+
+
+test('pairing invite creation stores only a hash and requires an active owner device', async () => {
+  const secret = createInviteSecret();
+  const records = new Map([
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) {
+        const key = name + '/' + id;
+        return {
+          key,
+          collection(child) { return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } }; }
+        };
+      } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+  const { createPairingInviteTransaction } = require('../functions/src/pairing-core.cjs');
+  const result = await createPairingInviteTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', inviteId: 'invite-a',
+    secret, scopes: ['battery'], now: 100000
+  });
+  const stored = records.get('pairingInvites/invite-a');
+  assert.equal(result.expiresAt, 100000 + INVITE_TTL_MS);
+  assert.equal(stored.secretHash, hashInviteSecret(secret));
+  assert.equal(Object.values(stored).includes(secret), false);
+  assert.deepEqual(stored.scopes, ['battery']);
+  await assert.rejects(createPairingInviteTransaction({
+    db, ownerUid: 'attacker', deviceId: 'phone-a', inviteId: 'invite-b',
+    secret: createInviteSecret(), scopes: ['battery'], now: 100001
+  }), /PAIRING_UNAVAILABLE/);
+});
