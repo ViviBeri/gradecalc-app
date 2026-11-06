@@ -7,6 +7,8 @@ const {
   INVITE_TTL_MS,
   createInviteSecret,
   confirmPairingRequestTransaction,
+  canReadTelemetry,
+  publishTelemetryTransaction,
   hashInviteSecret,
   isInviteActive,
   normalizeScopes,
@@ -310,4 +312,77 @@ test('backend contract requires verified authentication context for owner identi
   assert.match(contract, /never accept a UID supplied by the client as authority/i);
   assert.match(contract, /Revocation and Stop must block subsequent reads\/writes immediately/i);
   assert.match(contract, /Viewer writes are always denied/i);
+});
+
+
+test('viewer telemetry reads require an active matching grant, session, and scope', () => {
+  const grant = {
+    ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+    sessionId: 'session-identifier-1234', scopes: ['battery'],
+    status: 'active', expiresAt: 500000, revokedAt: null
+  };
+  const args = {
+    grant, viewerUid: 'viewer-b', ownerUid: 'owner-a', deviceId: 'phone-a',
+    sessionId: 'session-identifier-1234', scope: 'battery', now: 100000
+  };
+  assert.equal(canReadTelemetry(args), true);
+  assert.equal(canReadTelemetry({ ...args, viewerUid: 'attacker' }), false);
+  assert.equal(canReadTelemetry({ ...args, deviceId: 'other-device' }), false);
+  assert.equal(canReadTelemetry({ ...args, scope: 'location' }), false);
+  assert.equal(canReadTelemetry({ ...args, sessionId: 'old-session' }), false);
+  assert.equal(canReadTelemetry({ ...args, now: 500000 }), false);
+  assert.equal(canReadTelemetry({ ...args, grant: { ...grant, status: 'revoked' } }), false);
+});
+
+test('telemetry publishing requires an active owner session and rejects ungranted fields', async () => {
+  const sessionId = 'session-identifier-1234';
+  const session = {
+    ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    scopes: ['battery'], status: 'active', expiresAt: 500000, revokedAt: null
+  };
+  const records = new Map([
+    ['users/owner-a/devices/phone-a', { revoked: false }],
+    ['deviceSessions/' + sessionId, session]
+  ]);
+  const db = {
+    collection(name) {
+      return {
+        doc(id) {
+          const key = name + '/' + id;
+          return {
+            key,
+            collection(child) {
+              return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+            }
+          };
+        }
+      };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        set(ref, value) { writes.push(() => records.set(ref.key, value)); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+  const snapshot = { battery: { level: 0.8, charging: true } };
+  const result = await publishTelemetryTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    snapshot, now: 100000
+  });
+  assert.equal(result.updatedAt, 100000);
+  assert.equal(records.get('deviceTelemetry/owner-a_phone-a').snapshot.battery.level, 0.8);
+  await assert.rejects(publishTelemetryTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    snapshot: { battery: { level: 0.8, charging: true }, location: { latitude: 1, longitude: 2, accuracy: 3 } },
+    now: 100001
+  }), /SHARING_UNAVAILABLE/);
+  await assert.rejects(publishTelemetryTransaction({
+    db, ownerUid: 'attacker', deviceId: 'phone-a', sessionId,
+    snapshot, now: 100001
+  }), /SHARING_UNAVAILABLE/);
 });
