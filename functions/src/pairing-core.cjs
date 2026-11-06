@@ -222,16 +222,23 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
   });
 }
 
-function canReadTelemetry({ grant, viewerUid, ownerUid, deviceId, scope, sessionId, now = Date.now() }) {
+function canReadTelemetry({ grant, session, viewerUid, ownerUid, deviceId, scope, sessionId, now = Date.now() }) {
   if (!grant || typeof grant !== 'object' || grant.status !== 'active' ||
     grant.ownerUid !== ownerUid || grant.viewerUid !== viewerUid ||
-    grant.deviceId !== deviceId || typeof sessionId !== 'string' || !sessionId ||
-    grant.sessionId !== sessionId ||
+    grant.deviceId !== deviceId || grant.revokedAt != null ||
     typeof grant.expiresAt !== 'number' || grant.expiresAt <= now ||
-    grant.revokedAt != null) return false;
-  let scopes;
-  try { scopes = normalizeScopes(grant.scopes); } catch { return false; }
-  return scopes.includes(scope);
+    !session || typeof session !== 'object' || session.status !== 'active' ||
+    session.ownerUid !== ownerUid || session.deviceId !== deviceId ||
+    session.sessionId !== sessionId || typeof sessionId !== 'string' ||
+    typeof session.expiresAt !== 'number' || session.expiresAt <= now ||
+    session.stoppedAt != null) return false;
+  let grantScopes;
+  let sessionScopes;
+  try {
+    grantScopes = normalizeScopes(grant.scopes);
+    sessionScopes = normalizeScopes(session.scopes);
+  } catch { return false; }
+  return grantScopes.includes(scope) && sessionScopes.includes(scope);
 }
 
 function validateTelemetryEnvelope({ snapshot, grant, ownerUid, deviceId, sessionId, now = Date.now() }) {
