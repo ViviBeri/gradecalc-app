@@ -511,6 +511,7 @@ function svgRing(value, size) {
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
+  if (tab !== 'devices' && window.GradeCalcMedia) window.GradeCalcMedia.stopAll();
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false')});
   btn.classList.add('active');
   btn.setAttribute('aria-selected','true');
