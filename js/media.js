@@ -7,6 +7,8 @@
   var recordedChunks = [];
   var audioUrl = null;
   var panel;
+  var cameraRequest = 0;
+  var micRequest = 0;
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -23,6 +25,7 @@
   }
 
   function stopCamera() {
+    cameraRequest += 1;
     if (cameraStream) cameraStream.getTracks().forEach(function (track) { track.stop(); });
     cameraStream = null;
     var video = document.getElementById('media-camera-preview');
@@ -49,11 +52,12 @@
     var start = document.getElementById('media-camera-start');
     if (start) start.disabled = true;
     status('media-camera-status', 'Starting camera…', false);
+    var requestId = ++cameraRequest;
     navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(function (stream) {
-      if (document.hidden) {
+      if (document.hidden || requestId !== cameraRequest) {
         stream.getTracks().forEach(function (track) { track.stop(); });
         if (start) start.disabled = false;
-        status('media-camera-status', 'Camera was not started because the app is not visible.', true);
+        if (requestId === cameraRequest) status('media-camera-status', 'Camera was not started because the app is not visible.', true);
         return;
       }
       cameraStream = stream;
@@ -70,6 +74,7 @@
       if (stop) stop.disabled = false;
       status('media-camera-status', 'Camera is active on this device. Stop when finished.', false);
     }).catch(function () {
+      if (requestId !== cameraRequest) return;
       if (start) start.disabled = false;
       status('media-camera-status', 'Camera could not start. Check the camera permission and try again.', true);
     });
@@ -98,6 +103,7 @@
   }
 
   function stopMicrophone() {
+    micRequest += 1;
     if (recorder && recorder.state !== 'inactive') recorder.stop();
     if (microphoneStream) microphoneStream.getTracks().forEach(function (track) { track.stop(); });
     microphoneStream = null;
@@ -118,17 +124,19 @@
     var start = document.getElementById('media-mic-start');
     if (start) start.disabled = true;
     status('media-mic-status', 'Starting microphone…', false);
+    var requestId = ++micRequest;
     navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
-      if (document.hidden) {
+      if (document.hidden || requestId !== micRequest) {
         stream.getTracks().forEach(function (track) { track.stop(); });
         if (start) start.disabled = false;
-        status('media-mic-status', 'Recording was not started because the app is not visible.', true);
+        if (requestId === micRequest) status('media-mic-status', 'Recording was not started because the app is not visible.', true);
         return;
       }
       microphoneStream = stream;
       recordedChunks = [];
       try {
         recorder = new MediaRecorder(stream);
+        var currentRecorder = recorder;
         recorder.addEventListener('dataavailable', function (event) {
           if (event.data && event.data.size) recordedChunks.push(event.data);
         });
@@ -137,7 +145,7 @@
           audioUrl = null;
           var audio = document.getElementById('media-audio-playback');
           if (recordedChunks.length && audio) {
-            audioUrl = URL.createObjectURL(new Blob(recordedChunks, { type: recorder && recorder.mimeType || 'audio/webm' }));
+            audioUrl = URL.createObjectURL(new Blob(recordedChunks, { type: currentRecorder.mimeType || 'audio/webm' }));
             audio.src = audioUrl;
             audio.hidden = false;
           }
@@ -155,6 +163,7 @@
       if (stop) stop.disabled = false;
       status('media-mic-status', 'Microphone is recording on this device. Stop when finished.', false);
     }).catch(function () {
+      if (requestId !== micRequest) return;
       if (start) start.disabled = false;
       status('media-mic-status', 'Microphone could not start. Check the microphone permission and try again.', true);
     });
