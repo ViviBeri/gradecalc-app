@@ -97,6 +97,32 @@ function validateTelemetry(snapshot) {
 }
 
 
+async function createPairingInviteTransaction({ db, ownerUid, deviceId, inviteId, secret, scopes, now = Date.now() }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  if (typeof deviceId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(deviceId)) throw new TypeError('Invalid device');
+  if (typeof inviteId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(inviteId)) throw new TypeError('Invalid invitation');
+  const secretHash = hashInviteSecret(secret);
+  const approvedScopes = normalizeScopes(scopes);
+  const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(deviceId);
+  const inviteRef = db.collection('pairingInvites').doc(inviteId);
+  return db.runTransaction(async transaction => {
+    const [deviceSnapshot, inviteSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(inviteRef)
+    ]);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false || inviteSnapshot.exists) {
+      throw new Error('PAIRING_UNAVAILABLE');
+    }
+    const invite = {
+      ownerUid, deviceId, secretHash, scopes: approvedScopes,
+      createdAt: now, expiresAt: now + INVITE_TTL_MS,
+      consumedAt: null, revokedAt: null
+    };
+    transaction.create(inviteRef, invite);
+    return { inviteId, expiresAt: invite.expiresAt, scopes: approvedScopes };
+  });
+}
+
 async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, requestId, now = Date.now() }) {
   if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
   if (typeof inviteId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(inviteId)) throw new TypeError('Invalid invitation');
@@ -347,6 +373,7 @@ module.exports = {
   ALLOWED_SCOPES,
   canReadTelemetry,
   createSharingSessionTransaction,
+  createPairingInviteTransaction,
   INVITE_TTL_MS,
   createInviteSecret,
   confirmPairingRequestTransaction,
