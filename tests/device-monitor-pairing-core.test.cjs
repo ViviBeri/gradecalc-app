@@ -11,6 +11,7 @@ const {
   isInviteActive,
   normalizeScopes,
   redeemInviteTransaction,
+  revokeDeviceGrantTransaction,
   validateTelemetry
 } = require('../functions/src/pairing-core.cjs');
 
@@ -262,4 +263,40 @@ test('owner approval rejects expired, revoked-device, and already-approved reque
       ownerUid: 'owner-a', grantId: 'grant-a', now: 100000
     }), /PAIRING_UNAVAILABLE/);
   }
+});
+
+
+test('only the grant owner can revoke an active device grant', async () => {
+  const records = new Map([['deviceGrants/grant-a', {
+    ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+    status: 'active', revokedAt: null
+  }]]);
+  const db = {
+    collection(name) {
+      return { doc(id) { return { key: name + '/' + id }; } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+
+  await assert.rejects(revokeDeviceGrantTransaction({
+    db, grantId: 'grant-a', ownerUid: 'attacker', now: 200000
+  }), /PAIRING_UNAVAILABLE/);
+  const result = await revokeDeviceGrantTransaction({
+    db, grantId: 'grant-a', ownerUid: 'owner-a', now: 200000
+  });
+  assert.equal(result.status, 'revoked');
+  assert.equal(records.get('deviceGrants/grant-a').status, 'revoked');
+  assert.equal(records.get('deviceGrants/grant-a').revokedAt, 200000);
+  await assert.rejects(revokeDeviceGrantTransaction({
+    db, grantId: 'grant-a', ownerUid: 'owner-a', now: 200001
+  }), /PAIRING_UNAVAILABLE/);
 });
