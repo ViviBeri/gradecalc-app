@@ -22,3 +22,22 @@ test('monitor inline JavaScript parses', () => {
   assert.ok(script, 'inline monitor script exists');
   assert.doesNotThrow(() => new vm.Script(script[1]));
 });
+
+test('monitor never captures camera or microphone media', () => {
+  assert.doesNotMatch(html, /getUserMedia\s*\(/);
+  assert.doesNotMatch(html, /MediaRecorder/);
+  assert.match(html, /Permission status only/);
+  assert.match(html, /permission\('camera'/);
+  assert.match(html, /permission\('microphone'/);
+});
+
+test('monitor uses device geolocation only and has no network-location fallback', () => {
+  assert.match(html, /navigator\.geolocation\.watchPosition/);
+  assert.doesNotMatch(html, /ipapi|ipinfo|ipify|ipwho\.is|geoip|geolocation-db/i);
+  assert.doesNotMatch(html, /navigator\.connection\.[^;]*(?:latitude|longitude)/i);
+});
+
+test('monitor does not persist device telemetry', () => {
+  assert.doesNotMatch(html, /localStorage|sessionStorage|indexedDB|document\.cookie/);
+  assert.match(html, /No data is uploaded, saved, or shared/);
+});
