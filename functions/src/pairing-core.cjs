@@ -222,10 +222,38 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
   });
 }
 
+async function bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId, now = Date.now() }) {
+  if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
+  if (typeof grantId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(grantId)) throw new TypeError('Invalid grant');
+  if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
+  if (typeof sessionId !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(sessionId)) throw new TypeError('Invalid session');
+  const grantRef = db.collection('deviceGrants').doc(grantId);
+  const sessionRef = db.collection('deviceSessions').doc(sessionId);
+  return db.runTransaction(async transaction => {
+    const [grantSnapshot, sessionSnapshot] = await Promise.all([
+      transaction.get(grantRef), transaction.get(sessionRef)
+    ]);
+    if (!grantSnapshot.exists || !sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
+    const grant = grantSnapshot.data();
+    const session = sessionSnapshot.data();
+    if (grant.ownerUid !== ownerUid || grant.status !== 'active' ||
+      typeof grant.viewerUid !== 'string' || grant.expiresAt <= now ||
+      grant.sessionId != null ||
+      session.ownerUid !== ownerUid || session.status !== 'active' ||
+      session.sessionId !== sessionId || session.expiresAt <= now ||
+      session.deviceId !== grant.deviceId ||
+      !normalizeScopes(grant.scopes).every(scope => session.scopes.includes(scope))) {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
+    transaction.update(grantRef, { sessionId });
+    return { grantId, sessionId, status: 'bound' };
+  });
+}
+
 function canReadTelemetry({ grant, session, viewerUid, ownerUid, deviceId, scope, sessionId, now = Date.now() }) {
   if (!grant || typeof grant !== 'object' || grant.status !== 'active' ||
     grant.ownerUid !== ownerUid || grant.viewerUid !== viewerUid ||
-    grant.deviceId !== deviceId || grant.revokedAt != null ||
+    grant.deviceId !== deviceId || grant.sessionId !== sessionId || grant.revokedAt != null ||
     typeof grant.expiresAt !== 'number' || grant.expiresAt <= now ||
     !session || typeof session !== 'object' || session.status !== 'active' ||
     session.ownerUid !== ownerUid || session.deviceId !== deviceId ||
