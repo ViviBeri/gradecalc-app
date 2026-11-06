@@ -176,6 +176,7 @@ function harness() {
 
   assert.equal(typeof h.windowListeners.pagehide, 'function', 'pagehide cleanup handler is registered');
   assert.equal(typeof h.windowListeners.beforeunload, 'function', 'beforeunload cleanup handler is registered');
+  assert.ok(fs.readFileSync('js/media.js', 'utf8').includes("typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function' || typeof URL.revokeObjectURL !== 'function'"), 'microphone checks blob and object URL support before recording');
 
   console.log('Media feature tests passed (explicit permissions, camera stop, and delayed permission cleanup).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
