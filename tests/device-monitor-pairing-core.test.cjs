@@ -8,6 +8,8 @@ const {
   createInviteSecret,
   confirmPairingRequestTransaction,
   canReadTelemetry,
+  createSharingSessionTransaction,
+  stopSharingSessionTransaction,
   publishTelemetryTransaction,
   hashInviteSecret,
   isInviteActive,
@@ -384,5 +386,55 @@ test('telemetry publishing requires an active owner session and rejects ungrante
   await assert.rejects(publishTelemetryTransaction({
     db, ownerUid: 'attacker', deviceId: 'phone-a', sessionId,
     snapshot, now: 100001
+  }), /SHARING_UNAVAILABLE/);
+});
+
+
+test('sharing session starts only for an active owner device and stops with telemetry cleanup', async () => {
+  const sessionId = 'session-identifier-1234';
+  const records = new Map([
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) {
+        const key = name + '/' + id;
+        return {
+          key,
+          collection(child) { return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } }; }
+        };
+      } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); },
+        delete(ref) { writes.push(() => records.delete(ref.key)); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+  const started = await createSharingSessionTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    scopes: ['battery'], now: 100000
+  });
+  assert.equal(started.expiresAt, 100000 + 15 * 60 * 1000);
+  records.set('deviceTelemetry/owner-a_phone-a', { sessionId, snapshot: { battery: { level: 1, charging: true } } });
+  await assert.rejects(createSharingSessionTransaction({
+    db, ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+    scopes: ['battery'], now: 100001
+  }), /SHARING_UNAVAILABLE/);
+  const stopped = await stopSharingSessionTransaction({
+    db, ownerUid: 'owner-a', sessionId, now: 110000
+  });
+  assert.equal(stopped.status, 'stopped');
+  assert.equal(records.get('deviceSessions/' + sessionId).status, 'stopped');
+  assert.equal(records.has('deviceTelemetry/owner-a_phone-a'), false);
+  await assert.rejects(stopSharingSessionTransaction({
+    db, ownerUid: 'owner-a', sessionId, now: 110001
   }), /SHARING_UNAVAILABLE/);
 });
