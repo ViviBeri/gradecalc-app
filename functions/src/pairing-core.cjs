@@ -137,7 +137,8 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
     return { requestId, status: 'pending', scopes };
   });
 }
-\nmodule.exports = {
+
+module.exports = {
   ALLOWED_SCOPES,
   INVITE_TTL_MS,
   createInviteSecret,
