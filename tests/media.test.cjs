@@ -31,11 +31,13 @@ function harness() {
   const requested = [];
   const stopped = [];
   let resolveMedia;
+  const devices = new FakeElement('section');
+  devices.id = 'panel-devices';
   const document = {
     readyState: 'complete',
     hidden: false,
     createElement: tag => new FakeElement(tag),
-    getElementById: id => ids[id] || null,
+    getElementById: id => id === 'panel-devices' ? devices : ids[id] || null,
     getElementByIdForBuild: id => ids[id] || null,
     getElementByIdExisting: id => ids[id] || null,
     querySelector: () => null,
@@ -70,18 +72,12 @@ function harness() {
     URL: { createObjectURL: () => 'blob:audio', revokeObjectURL: () => {} },
     Blob, console
   };
-  vm.runInNewContext(fs.readFileSync('js/media.js', 'utf8'), context);
   function index(node) {
     if (node.id) ids[node.id] = node;
     node.children.forEach(index);
   }
-  // Simulate the Devices panel created by device.js before media.js loads.
-  const devices = new FakeElement('section');
-  devices.id = 'panel-devices';
   body.appendChild(devices);
-  // Rebuild with the actual expected parent and index the appended controls.
-  context.document.getElementById = id => id === 'panel-devices' ? devices : ids[id] || null;
-  // media.js builds immediately; index after the module has appended its controls.
+  vm.runInNewContext(fs.readFileSync('js/media.js', 'utf8'), context);
   devices.children.forEach(index);
   function grant() {
     const track = { stop: () => stopped.push(true) };
