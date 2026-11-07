@@ -146,7 +146,15 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
     if (typeof invite.ownerUid !== 'string' || typeof invite.deviceId !== 'string' ||
       !Array.isArray(invite.scopes)) throw new Error('PAIRING_UNAVAILABLE');
     const scopes = normalizeScopes(invite.scopes);
-    const requestSnapshot = await transaction.get(requestRef);
+    const deviceRef = db.collection('users').doc(invite.ownerUid)
+      .collection('devices').doc(invite.deviceId);
+    const [deviceSnapshot, requestSnapshot] = await Promise.all([
+      transaction.get(deviceRef),
+      transaction.get(requestRef)
+    ]);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) {
+      throw new Error('PAIRING_UNAVAILABLE');
+    }
     if (requestSnapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
 
     transaction.update(inviteRef, { consumedAt: now });
