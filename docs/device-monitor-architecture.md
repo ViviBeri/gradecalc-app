@@ -6,7 +6,11 @@
 
 The current Firestore rules intentionally deny all location and pairing documents. Do not loosen those rules until authentication, pairing, revocation, validation, and emulator tests are implemented together.
 
-## Backend implementation contract\n\nSee [the trusted backend contract](device-monitor-backend-contract.md) for callable operations, data validation, authorization boundaries, abuse controls, emulator cases, and rollout gates. It is a design document only; no backend is deployed.\n\n## User-approved product scope
+## Backend implementation contract
+
+See [the trusted backend contract](device-monitor-backend-contract.md) for callable operations, data validation, authorization boundaries, abuse controls, emulator cases, and rollout gates. It is a design document only; no backend is deployed.
+
+## User-approved product scope
 
 The device owner selected:
 - All supported details: location, battery, network, device/platform, camera permission status, microphone permission status, and app activity.
@@ -37,7 +41,7 @@ Only the authenticated owner may start or stop their device's sharing session. A
 
 ## Telemetry allowlist and minimization
 
-- Location: latitude, longitude, accuracy, capture timestamp only while the owner enables location sharing. No IP-based location fallback.
+- Location: latitude, longitude, and accuracy only while the owner enables location sharing. The server controls telemetry update and expiry timestamps. No IP-based location fallback.
 - Battery: level and charging state when supported.
 - Network: online/offline and coarse effective connection type only. Never SSID, BSSID, IP address, or carrier identifiers.
 - Device: coarse platform and app version. Avoid persistent hardware fingerprints.
@@ -66,8 +70,9 @@ Do not transmit a location reading when system Location Services are off or perm
 - [x] Camera and microphone are permission status only.
 - [x] No telemetry network transport exists in the local dashboard.
 - [x] Existing Firestore rules deny pairing and telemetry paths.
-- [ ] Authenticated owner sign-in and session management.\n- [x] Emulator coverage confirms pairing invitations, device grants, and telemetry remain denied to owners, viewers, and anonymous clients until trusted server flows exist.
+- [ ] Authenticated owner sign-in and session management.
+- [x] Emulator coverage confirms pairing invitations, device grants, and telemetry remain denied to owners, viewers, and anonymous clients until trusted server flows exist.
 - [ ] One-time pairing invitation and owner confirmation.
 - [ ] Scoped viewer dashboard with immediate revocation.
-- [ ] Retention/expiry implementation and security emulator tests.
+- [x] Backend enforces session and telemetry expiry; emulator coverage for callable authorization and full remote read lifecycle remains pending.
 - [ ] Physical Android permission and lifecycle verification.
