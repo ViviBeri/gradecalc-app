@@ -314,7 +314,8 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
       }
     }
     for (let i = 0; i < locks.length; i++) {
-      if (lockSnapshots[i].exists && lockSnapshots[i].data().grantId === locks[i].grantId) transaction.delete(locks[i].ref);\n    }
+      if (lockSnapshots[i].exists && lockSnapshots[i].data().grantId === locks[i].grantId) transaction.delete(locks[i].ref);
+    }
     if (telemetrySnapshot.exists && telemetrySnapshot.data().sessionId === sessionId) transaction.delete(telemetryRef);
     return { sessionId, status: 'stopped', stoppedAt: now };
   });
