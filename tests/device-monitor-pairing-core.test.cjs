@@ -90,7 +90,10 @@ test('invite redemption atomically consumes a valid invite and creates a pending
     consumedAt: null,
     revokedAt: null
   };
-  const records = new Map([['pairingInvites/invite-a', invite]]);
+  const records = new Map([
+    ['pairingInvites/invite-a', invite],
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
   const db = {
     collection(name) {
       return {
@@ -190,7 +193,10 @@ test('invite redemption rejects replay, wrong secrets, and self-pairing', async 
     consumedAt: null,
     revokedAt: null
   };
-  const records = new Map([['pairingInvites/invite-a', invite]]);
+  const records = new Map([
+    ['pairingInvites/invite-a', invite],
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
   const db = {
     collection(name) {
       return { doc(id) {
