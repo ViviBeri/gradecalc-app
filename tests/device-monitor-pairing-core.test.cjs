@@ -96,7 +96,12 @@ test('invite redemption atomically consumes a valid invite and creates a pending
       return {
         doc(id) {
           const key = name + '/' + id;
-          return { key };
+          return {
+            key,
+            collection(child) {
+              return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+            }
+          };
         }
       };
     },
@@ -188,7 +193,15 @@ test('invite redemption rejects replay, wrong secrets, and self-pairing', async 
   const records = new Map([['pairingInvites/invite-a', invite]]);
   const db = {
     collection(name) {
-      return { doc(id) { return { key: name + '/' + id }; } };
+      return { doc(id) {
+        const key = name + '/' + id;
+        return {
+          key,
+          collection(child) {
+            return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+          }
+        };
+      } };
     },
     async runTransaction(callback) {
       const writes = [];
