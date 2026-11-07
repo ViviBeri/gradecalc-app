@@ -33,7 +33,7 @@ No operation may return pairing secrets after creation. Never log raw codes, pre
 Allowed scopes are individual values: `location`, `battery`, `network`, `device`, `permissionStatus`, `appStatus`. The owner must approve each requested scope. No wildcard scope.
 
 Telemetry validation:
-- Location: finite latitude [-90, 90], longitude [-180, 180], finite non-negative accuracy, timestamp; only when the owner enabled location sharing.
+- Location: finite latitude [-90, 90], longitude [-180, 180], and finite non-negative accuracy; only when the owner enabled location sharing. The location object contains no client-supplied timestamp; the telemetry envelope carries the server-side `updatedAt` and `expiresAt` values.
 - Battery: finite level [0, 1], boolean charging.
 - Network: boolean online and a coarse enumerated effective type; no IP, SSID, BSSID, carrier, or network identifiers.
 - Device: coarse platform enum and app version string with strict length; no hardware identifiers or fingerprint.
@@ -47,7 +47,7 @@ Telemetry validation:
 - Viewer writes are always denied.
 - Revocation and Stop must block subsequent reads/writes immediately, not merely hide the dashboard UI.
 - Clients cannot create, redeem, confirm, or modify grants through direct Firestore writes.
-- Server timestamps are authoritative. Client timestamps are informational only.
+- Server-side `updatedAt` and `expiresAt` values are authoritative. Client-supplied timestamps are not part of the accepted telemetry schema.
 - Use strict field allowlists and reject unknown keys.
 - Retain only the latest snapshot unless product requirements explicitly justify a short history window.
 
