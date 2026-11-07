@@ -300,9 +300,10 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
       const grant = grantSnapshots[i].data();
       if (grant.ownerUid === ownerUid && grant.sessionId === sessionId && typeof grant.viewerUid === 'string') {
         const key = crypto.createHash('sha256').update([ownerUid, grant.viewerUid, grant.deviceId].join(':')).digest('hex');
-        locks.push(db.collection('activeDeviceGrantLocks').doc(key));
+        locks.push({ grantId: ids[i], ref: db.collection('activeDeviceGrantLocks').doc(key) });
       }
     }
+    const lockSnapshots = await Promise.all(locks.map(lock => transaction.get(lock.ref)));
     transaction.update(sessionRef, { status: 'stopped', stoppedAt: now, expiresAt: now, grantIds: [] });
     for (let i = 0; i < grantSnapshots.length; i++) {
       if (grantSnapshots[i].exists) {
@@ -312,7 +313,7 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
         }
       }
     }
-    for (const ref of locks) transaction.delete(ref);
+    for (let i = 0; i < locks.length; i++) {\n      if (lockSnapshots[i].exists && lockSnapshots[i].data().grantId === locks[i].grantId) transaction.delete(locks[i].ref);\n    }
     if (telemetrySnapshot.exists && telemetrySnapshot.data().sessionId === sessionId) transaction.delete(telemetryRef);
     return { sessionId, status: 'stopped', stoppedAt: now };
   });
