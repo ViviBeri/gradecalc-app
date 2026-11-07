@@ -807,3 +807,35 @@ test('callable backend keeps privileged operations authenticated and App Check p
   assert.ok(source.includes("deviceSnapshot.data().revoked !== false"));
   assert.ok(!source.includes('request.data.ownerUid') && !source.includes('request.data.viewerUid'));
 });
+
+
+test('telemetry reads reject expired grants and sessions, wrong viewers, and stopped sessions', () => {
+  const now = 500000;
+  const grant = {
+    ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+    sessionId: 'session-identifier-1234', scopes: ['battery'],
+    status: 'active', revokedAt: null, expiresAt: now + 1000
+  };
+  const session = {
+    ownerUid: 'owner-a', deviceId: 'phone-a',
+    sessionId: 'session-identifier-1234', scopes: ['battery'],
+    status: 'active', stoppedAt: null, expiresAt: now + 1000
+  };
+  const base = {
+    grant, session, viewerUid: 'viewer-b', ownerUid: 'owner-a',
+    deviceId: 'phone-a', sessionId: 'session-identifier-1234',
+    scope: 'battery', now
+  };
+
+  assert.equal(canReadTelemetry(base), true);
+  assert.equal(canReadTelemetry({ ...base, viewerUid: 'viewer-c' }), false);
+  assert.equal(canReadTelemetry({ ...base, deviceId: 'phone-other' }), false);
+  assert.equal(canReadTelemetry({ ...base, now: grant.expiresAt }), false);
+  assert.equal(canReadTelemetry({ ...base, now: session.expiresAt }), false);
+  assert.equal(canReadTelemetry({
+    ...base, session: { ...session, status: 'stopped', stoppedAt: now }
+  }), false);
+  assert.equal(canReadTelemetry({
+    ...base, grant: { ...grant, status: 'revoked', revokedAt: now }
+  }), false);
+});
