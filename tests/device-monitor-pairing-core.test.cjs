@@ -341,7 +341,7 @@ test('only the owning account can approve a pending request for an active device
       const tx = {
         async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
         create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); },
-        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); },
         set(ref, value) { writes.push(() => records.set(ref.key, value)); }
       };
       const result = await callback(tx);
