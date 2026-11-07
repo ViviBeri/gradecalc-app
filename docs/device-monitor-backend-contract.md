@@ -25,7 +25,7 @@ No operation may return pairing secrets after creation. Never log raw codes, pre
 
 ## Data contract
 
-- Pairing invite: invite ID, secret hash, owner UID, device ID, createdAt, expiresAt, consumedAt, revokedAt, attempt counters / rate-limit metadata.
+- Pairing invite: invite ID, secret hash, owner UID, device ID, createdAt, expiresAt, consumedAt, revokedAt, and a server-maintained `failedAttempts` counter.\n- Viewer redemption throttle: a hashed viewer UID plus fixed 15-minute window start and attempt count in `pairingRedemptionLimits`; never store raw invite secrets or viewer identifiers in document IDs.
 - Pending request: request ID, invite ID, viewer UID, viewer display label (untrusted presentation only), requested scopes, createdAt, expiresAt, status.
 - Grant: owner UID, viewer UID, device ID, explicit scopes, createdAt, expiresAt, revokedAt, active session ID.
 - Telemetry: owner UID, device ID, session ID, updatedAt, expiresAt, and allowlisted values only.
@@ -55,7 +55,7 @@ Telemetry validation:
 
 - Short invite expiry (initial proposal: 5 minutes); single-use redemption.
 - Cryptographically secure random invite material with sufficient entropy; store a keyed or salted cryptographic hash, never plaintext.
-- Per-account and per-invite attempt throttles; generic redemption errors to reduce invite enumeration.
+- Allow at most 5 failed attempts per invitation and 10 redemption attempts per authenticated viewer in each fixed 15-minute window. Enforce both counters in the same Firestore transaction as redemption to prevent concurrent bypass.\n- Increment viewer attempt counts for every redemption request, including missing or invalid invitations. Increment invite failure counts for failed validation where the invite document exists.\n- Return the same `PAIRING_UNAVAILABLE` error for invalid, expired, consumed, revoked, self-pairing, and throttled invitations. Never expose remaining attempts or counter values to clients.\n- Keep rate-limit documents short-lived using Firestore TTL as cleanup only; authorization checks use the stored window start and count, not TTL.
 - Prevent owner self-pairing and duplicate active grants.
 - Require fresh owner confirmation; pending requests expire automatically.
 - Use server-side expiry checks on every read/write path. Firestore TTL is cleanup, not authorization.
