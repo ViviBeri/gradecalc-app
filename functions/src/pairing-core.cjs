@@ -123,6 +123,10 @@ async function createPairingInviteTransaction({ db, ownerUid, deviceId, inviteId
   });
 }
 
+const REDEMPTION_WINDOW_MS = 15 * 60 * 1000;
+const MAX_VIEWER_REDEMPTION_ATTEMPTS = 10;
+const MAX_INVITE_FAILED_ATTEMPTS = 5;
+
 async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, requestId, now = Date.now() }) {
   if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
   if (typeof inviteId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(inviteId)) throw new TypeError('Invalid invitation');
@@ -131,31 +135,55 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
   const suppliedHash = hashInviteSecret(secret);
   const inviteRef = db.collection('pairingInvites').doc(inviteId);
   const requestRef = db.collection('pairingRequests').doc(requestId);
+  const windowStart = Math.floor(now / REDEMPTION_WINDOW_MS) * REDEMPTION_WINDOW_MS;
+  const viewerKey = crypto.createHash('sha256').update(viewerUid, 'utf8').digest('hex');
+  const limitRef = db.collection('pairingRedemptionLimits').doc(viewerKey + '_' + windowStart);
 
-  return db.runTransaction(async transaction => {
-    const snapshot = await transaction.get(inviteRef);
-    if (!snapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
-    const invite = snapshot.data();
-    if (!isInviteActive(invite, now)) throw new Error('PAIRING_UNAVAILABLE');
-    const stored = Buffer.from(invite.secretHash, 'hex');
-    const supplied = Buffer.from(suppliedHash, 'hex');
-    if (stored.length !== supplied.length || !crypto.timingSafeEqual(stored, supplied)) {
+  const outcome = await db.runTransaction(async transaction => {
+    const [snapshot, limitSnapshot] = await Promise.all([
+      transaction.get(inviteRef),
+      transaction.get(limitRef)
+    ]);
+    const limit = limitSnapshot.exists ? limitSnapshot.data() : { windowStart, attempts: 0 };
+    if (limit.windowStart !== windowStart || !Number.isSafeInteger(limit.attempts) || limit.attempts < 0) {
       throw new Error('PAIRING_UNAVAILABLE');
     }
-    if (invite.ownerUid === viewerUid) throw new Error('PAIRING_UNAVAILABLE');
+    if (limit.attempts >= MAX_VIEWER_REDEMPTION_ATTEMPTS) return { denied: true };
+    const nextLimit = { windowStart, attempts: limit.attempts + 1 };
+    if (limitSnapshot.exists) transaction.update(limitRef, nextLimit);
+    else transaction.create(limitRef, nextLimit);
+
+    if (!snapshot.exists) return { denied: true };
+    const invite = snapshot.data();
+    const failInvite = () => {
+      const failedAttempts = Number.isSafeInteger(invite.failedAttempts) && invite.failedAttempts >= 0
+        ? invite.failedAttempts : 0;
+      if (failedAttempts < MAX_INVITE_FAILED_ATTEMPTS) {
+        transaction.update(inviteRef, { failedAttempts: failedAttempts + 1 });
+      }
+      return { denied: true };
+    };
+    if (!isInviteActive(invite, now) ||
+      (Number.isSafeInteger(invite.failedAttempts) && invite.failedAttempts >= MAX_INVITE_FAILED_ATTEMPTS)) {
+      return failInvite();
+    }
+    const stored = Buffer.from(invite.secretHash, 'hex');
+    const supplied = Buffer.from(suppliedHash, 'hex');
+    if (stored.length !== supplied.length || !crypto.timingSafeEqual(stored, supplied)) return failInvite();
+    if (invite.ownerUid === viewerUid) return failInvite();
     if (typeof invite.ownerUid !== 'string' || typeof invite.deviceId !== 'string' ||
-      !Array.isArray(invite.scopes)) throw new Error('PAIRING_UNAVAILABLE');
-    const scopes = normalizeScopes(invite.scopes);
+      !Array.isArray(invite.scopes)) return failInvite();
+    let scopes;
+    try { scopes = normalizeScopes(invite.scopes); } catch { return failInvite(); }
     const deviceRef = db.collection('users').doc(invite.ownerUid)
       .collection('devices').doc(invite.deviceId);
     const [deviceSnapshot, requestSnapshot] = await Promise.all([
       transaction.get(deviceRef),
       transaction.get(requestRef)
     ]);
-    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) {
-      throw new Error('PAIRING_UNAVAILABLE');
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false || requestSnapshot.exists) {
+      return failInvite();
     }
-    if (requestSnapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
 
     transaction.update(inviteRef, { consumedAt: now });
     transaction.create(requestRef, {
@@ -170,8 +198,9 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
     });
     return { requestId, status: 'pending', scopes };
   });
+  if (outcome.denied) throw new Error('PAIRING_UNAVAILABLE');
+  return outcome;
 }
-
 
 async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grantId, now = Date.now() }) {
   if (!db || typeof db.runTransaction !== 'function') throw new TypeError('A transaction-capable database is required');
@@ -383,7 +412,7 @@ module.exports = {
   canReadTelemetry,
   createSharingSessionTransaction,
   createPairingInviteTransaction,
-  INVITE_TTL_MS,
+  INVITE_TTL_MS,\n  REDEMPTION_WINDOW_MS,\n  MAX_VIEWER_REDEMPTION_ATTEMPTS,\n  MAX_INVITE_FAILED_ATTEMPTS,
   createInviteSecret,
   confirmPairingRequestTransaction,
   hashInviteSecret,
