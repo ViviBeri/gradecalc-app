@@ -642,5 +642,7 @@ test('callable backend keeps privileged operations authenticated and App Check p
   assert.ok(source.includes('request.auth.uid'));
   assert.ok(source.includes("provider === 'anonymous'"));
   assert.ok(source.includes('db.runTransaction(async transaction'));
+  assert.ok(source.includes("db.collection('users').doc(grant.ownerUid)"));
+  assert.ok(source.includes("deviceSnapshot.data().revoked !== false"));
   assert.ok(!source.includes('request.data.ownerUid') && !source.includes('request.data.viewerUid'));
 });
