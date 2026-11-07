@@ -5,7 +5,10 @@ const test = require('node:test');
 const {
   ALLOWED_SCOPES,
   bindGrantToSessionTransaction,
-  INVITE_TTL_MS,\n  REDEMPTION_WINDOW_MS,\n  MAX_VIEWER_REDEMPTION_ATTEMPTS,\n  MAX_INVITE_FAILED_ATTEMPTS,
+  INVITE_TTL_MS,
+  REDEMPTION_WINDOW_MS,
+  MAX_VIEWER_REDEMPTION_ATTEMPTS,
+  MAX_INVITE_FAILED_ATTEMPTS,
   createInviteSecret,
   confirmPairingRequestTransaction,
   canReadTelemetry,
