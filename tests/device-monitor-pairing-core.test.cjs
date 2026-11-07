@@ -132,6 +132,48 @@ test('invite redemption atomically consumes a valid invite and creates a pending
   assert.equal(records.get('pairingRequests/request-a').status, 'pending');
 });
 
+test('invite redemption rejects a device revoked after invite creation', async () => {
+  const secret = createInviteSecret();
+  const invite = {
+    secretHash: hashInviteSecret(secret), ownerUid: 'owner-a', deviceId: 'phone-a',
+    scopes: ['battery'], expiresAt: 900000, consumedAt: null, revokedAt: null
+  };
+  const records = new Map([
+    ['pairingInvites/invite-a', invite],
+    ['users/owner-a/devices/phone-a', { revoked: true }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) {
+        const key = name + '/' + id;
+        return {
+          key,
+          collection(child) {
+            return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+          }
+        };
+      } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); },
+        create(ref, value) { writes.push(() => records.set(ref.key, value)); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+  await assert.rejects(redeemInviteTransaction({
+    db, inviteId: 'invite-a', secret, viewerUid: 'viewer-b',
+    requestId: 'request-a', now: 100000
+  }), /PAIRING_UNAVAILABLE/);
+  assert.equal(records.get('pairingInvites/invite-a').consumedAt, null);
+  assert.equal(records.has('pairingRequests/request-a'), false);
+});
+
 test('invite redemption rejects replay, wrong secrets, and self-pairing', async () => {
   const secret = createInviteSecret();
   const invite = {
