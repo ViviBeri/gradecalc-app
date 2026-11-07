@@ -3,6 +3,8 @@
 const crypto = require('node:crypto');
 
 const INVITE_TTL_MS = 5 * 60 * 1000;
+const PENDING_REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
+const GRANT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const ALLOWED_SCOPES = Object.freeze([
   'location',
   'battery',
@@ -201,7 +203,7 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
       scopes,
       status: 'pending',
       createdAt: now,
-      expiresAt: Math.min(invite.expiresAt, now + INVITE_TTL_MS)
+      expiresAt: now + PENDING_REQUEST_TTL_MS
     });
     return { requestId, status: 'pending', scopes };
   });
@@ -216,7 +218,6 @@ async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grant
   if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
   const requestRef = db.collection('pairingRequests').doc(requestId);
   const grantRef = db.collection('deviceGrants').doc(grantId);
-
   return db.runTransaction(async transaction => {
     const requestSnapshot = await transaction.get(requestRef);
     if (!requestSnapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
@@ -224,33 +225,37 @@ async function confirmPairingRequestTransaction({ db, requestId, ownerUid, grant
     if (request.status !== 'pending' || request.ownerUid !== ownerUid ||
       typeof request.viewerUid !== 'string' || request.viewerUid === ownerUid ||
       typeof request.deviceId !== 'string' ||
-      typeof request.expiresAt !== 'number' || request.expiresAt <= now) {
-      throw new Error('PAIRING_UNAVAILABLE');
-    }
+      typeof request.expiresAt !== 'number' || request.expiresAt <= now) throw new Error('PAIRING_UNAVAILABLE');
     const scopes = normalizeScopes(request.scopes);
     const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(request.deviceId);
-    const [deviceSnapshot, grantSnapshot] = await Promise.all([
-      transaction.get(deviceRef),
-      transaction.get(grantRef)
+    const relationshipId = crypto.createHash('sha256').update([ownerUid, request.viewerUid, request.deviceId].join(':')).digest('hex');
+    const relationshipRef = db.collection('activeDeviceGrantLocks').doc(relationshipId);
+    const [deviceSnapshot, grantSnapshot, relationshipSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(grantRef), transaction.get(relationshipRef)
     ]);
-    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false || grantSnapshot.exists) {
-      throw new Error('PAIRING_UNAVAILABLE');
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false || grantSnapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
+    if (relationshipSnapshot.exists) {
+      const existingId = relationshipSnapshot.data().grantId;
+      if (typeof existingId === 'string') {
+        const existingRef = db.collection('deviceGrants').doc(existingId);
+        const existingSnapshot = await transaction.get(existingRef);
+        if (existingSnapshot.exists) {
+          const existing = existingSnapshot.data();
+          if (existing.status === 'active' && existing.revokedAt == null &&
+            typeof existing.expiresAt === 'number' && existing.expiresAt > now) throw new Error('PAIRING_UNAVAILABLE');
+        }
+      }
     }
     transaction.create(grantRef, {
-      ownerUid,
-      viewerUid: request.viewerUid,
-      deviceId: request.deviceId,
-      scopes,
-      status: 'active',
-      createdAt: now,
-      expiresAt: Math.min(request.expiresAt, now + INVITE_TTL_MS),
-      revokedAt: null
+      ownerUid, viewerUid: request.viewerUid, deviceId: request.deviceId, scopes,
+      status: 'active', createdAt: now, expiresAt: now + GRANT_TTL_MS,
+      revokedAt: null, sessionId: null
     });
+    transaction.set(relationshipRef, { grantId, ownerUid, viewerUid: request.viewerUid, deviceId: request.deviceId, expiresAt: now + GRANT_TTL_MS });
     transaction.update(requestRef, { status: 'approved', approvedAt: now, grantId });
     return { grantId, viewerUid: request.viewerUid, deviceId: request.deviceId, scopes };
   });
 }
-
 
 
 
@@ -268,7 +273,7 @@ async function createSharingSessionTransaction({ db, ownerUid, deviceId, session
     if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) throw new Error('SHARING_UNAVAILABLE');
     const sessionSnapshot = await transaction.get(sessionRef);
     if (sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
-    const session = { ownerUid, deviceId, sessionId, scopes: approvedScopes, status: 'active', createdAt: now, expiresAt: now + sessionTtlMs, stoppedAt: null };
+    const session = { ownerUid, deviceId, sessionId, scopes: approvedScopes, status: 'active', createdAt: now, expiresAt: now + sessionTtlMs, stoppedAt: null, grantIds: [] };
     transaction.create(sessionRef, session);
     return { sessionId, scopes: approvedScopes, expiresAt: session.expiresAt };
   });
@@ -284,10 +289,31 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
     if (!snapshot.exists) throw new Error('SHARING_UNAVAILABLE');
     const session = snapshot.data();
     if (session.ownerUid !== ownerUid || session.status !== 'active') throw new Error('SHARING_UNAVAILABLE');
-    const latestRef = db.collection('deviceTelemetry').doc(ownerUid + '_' + session.deviceId);
-    const latestSnapshot = await transaction.get(latestRef);
-    transaction.update(sessionRef, { status: 'stopped', stoppedAt: now, expiresAt: now });
-    if (latestSnapshot.exists && latestSnapshot.data().sessionId === sessionId) transaction.delete(latestRef);
+    const ids = Array.isArray(session.grantIds) ? [...new Set(session.grantIds)] : [];
+    const refs = ids.map(id => db.collection('deviceGrants').doc(id));
+    const grantSnapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
+    const telemetryRef = db.collection('deviceTelemetry').doc(ownerUid + '_' + session.deviceId);
+    const telemetrySnapshot = await transaction.get(telemetryRef);
+    const locks = [];
+    for (let i = 0; i < grantSnapshots.length; i++) {
+      if (!grantSnapshots[i].exists) continue;
+      const grant = grantSnapshots[i].data();
+      if (grant.ownerUid === ownerUid && grant.sessionId === sessionId && typeof grant.viewerUid === 'string') {
+        const key = crypto.createHash('sha256').update([ownerUid, grant.viewerUid, grant.deviceId].join(':')).digest('hex');
+        locks.push(db.collection('activeDeviceGrantLocks').doc(key));
+      }
+    }
+    transaction.update(sessionRef, { status: 'stopped', stoppedAt: now, expiresAt: now, grantIds: [] });
+    for (let i = 0; i < grantSnapshots.length; i++) {
+      if (grantSnapshots[i].exists) {
+        const grant = grantSnapshots[i].data();
+        if (grant.ownerUid === ownerUid && grant.sessionId === sessionId && grant.status === 'active') {
+          transaction.update(refs[i], { status: 'revoked', revokedAt: now });
+        }
+      }
+    }
+    for (const ref of locks) transaction.delete(ref);
+    if (telemetrySnapshot.exists && telemetrySnapshot.data().sessionId === sessionId) transaction.delete(telemetryRef);
     return { sessionId, status: 'stopped', stoppedAt: now };
   });
 }
@@ -325,7 +351,10 @@ async function bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId,
       !grantScopes.every(scope => sessionScopes.includes(scope))) {
       throw new Error('SHARING_UNAVAILABLE');
     }
+    const grantIds = Array.isArray(session.grantIds) ? session.grantIds : [];
+    if (grantIds.includes(grantId)) throw new Error('SHARING_UNAVAILABLE');
     transaction.update(grantRef, { sessionId });
+    transaction.update(sessionRef, { grantIds: [...grantIds, grantId] });
     return { grantId, sessionId, status: 'bound' };
   });
 }
@@ -396,19 +425,24 @@ async function revokeDeviceGrantTransaction({ db, grantId, ownerUid, now = Date.
   if (typeof grantId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(grantId)) throw new TypeError('Invalid grant');
   if (typeof ownerUid !== 'string' || !ownerUid.trim() || ownerUid.length > 128) throw new TypeError('Authentication required');
   const grantRef = db.collection('deviceGrants').doc(grantId);
-
   return db.runTransaction(async transaction => {
     const snapshot = await transaction.get(grantRef);
     if (!snapshot.exists) throw new Error('PAIRING_UNAVAILABLE');
     const grant = snapshot.data();
     if (grant.ownerUid !== ownerUid || grant.status !== 'active' ||
-      typeof grant.viewerUid !== 'string' || typeof grant.deviceId !== 'string') {
-      throw new Error('PAIRING_UNAVAILABLE');
+      typeof grant.viewerUid !== 'string' || typeof grant.deviceId !== 'string') throw new Error('PAIRING_UNAVAILABLE');
+    const key = crypto.createHash('sha256').update([ownerUid, grant.viewerUid, grant.deviceId].join(':')).digest('hex');
+    const lockRef = db.collection('activeDeviceGrantLocks').doc(key);
+    const sessionRef = typeof grant.sessionId === 'string' ? db.collection('deviceSessions').doc(grant.sessionId) : null;
+    const [lockSnapshot, sessionSnapshot] = await Promise.all([
+      transaction.get(lockRef), sessionRef ? transaction.get(sessionRef) : Promise.resolve(null)
+    ]);
+    transaction.update(grantRef, { status: 'revoked', revokedAt: now });
+    if (lockSnapshot.exists && lockSnapshot.data().grantId === grantId) transaction.delete(lockRef);
+    if (sessionSnapshot && sessionSnapshot.exists) {
+      const session = sessionSnapshot.data();
+      transaction.update(sessionRef, { grantIds: (Array.isArray(session.grantIds) ? session.grantIds : []).filter(id => id !== grantId) });
     }
-    transaction.update(grantRef, {
-      status: 'revoked',
-      revokedAt: now
-    });
     return { grantId, status: 'revoked', revokedAt: now };
   });
 }
@@ -420,6 +454,8 @@ module.exports = {
   createSharingSessionTransaction,
   createPairingInviteTransaction,
   INVITE_TTL_MS,
+  PENDING_REQUEST_TTL_MS,
+  GRANT_TTL_MS,
   REDEMPTION_WINDOW_MS,
   MAX_VIEWER_REDEMPTION_ATTEMPTS,
   MAX_INVITE_FAILED_ATTEMPTS,
