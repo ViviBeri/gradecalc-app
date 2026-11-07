@@ -6,6 +6,8 @@ const {
   ALLOWED_SCOPES,
   bindGrantToSessionTransaction,
   INVITE_TTL_MS,
+  PENDING_REQUEST_TTL_MS,
+  GRANT_TTL_MS,
   REDEMPTION_WINDOW_MS,
   MAX_VIEWER_REDEMPTION_ATTEMPTS,
   MAX_INVITE_FAILED_ATTEMPTS,
@@ -354,6 +356,7 @@ test('only the owning account can approve a pending request for an active device
     db, requestId: 'request-a', ownerUid: 'owner-a', grantId: 'grant-a', now: 100000
   });
   assert.equal(approved.viewerUid, 'viewer-b');
+  assert.equal(records.get('deviceGrants/grant-flow').expiresAt, 100002 + GRANT_TTL_MS);
   assert.deepEqual(approved.scopes, ['battery']);
   assert.equal(records.get('pairingRequests/request-a').status, 'approved');
   assert.equal(records.get('deviceGrants/grant-a').status, 'active');
@@ -612,6 +615,7 @@ test('sharing session starts only for an active owner device and stops with tele
   });
   assert.equal(stopped.status, 'stopped');
   assert.equal(records.get('deviceSessions/' + sessionId).status, 'stopped');
+  assert.equal(records.get('deviceGrants/grant-flow').status, 'revoked');
   assert.equal(records.has('deviceTelemetry/owner-a_phone-a'), false);
   await assert.rejects(stopSharingSessionTransaction({
     db, ownerUid: 'owner-a', sessionId, now: 110001
@@ -714,6 +718,7 @@ test('full pairing lifecycle requires approval and session binding before scoped
   });
   assert.equal(redeemed.status, 'pending');
   assert.equal(records.has('deviceGrants/grant-flow'), false);
+  assert.equal(records.get('pairingRequests/request-flow').expiresAt, 100001 + PENDING_REQUEST_TTL_MS);
 
   const approved = await confirmPairingRequestTransaction({
     db, requestId: 'request-flow', ownerUid: 'owner-a',
