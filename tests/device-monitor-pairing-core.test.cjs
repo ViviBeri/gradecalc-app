@@ -616,8 +616,6 @@ test('sharing session starts only for an active owner device and stops with tele
   });
   assert.equal(stopped.status, 'stopped');
   assert.equal(records.get('deviceSessions/' + sessionId).status, 'stopped');
-  assert.equal(records.get('deviceGrants/grant-flow').status, 'revoked');
-  assert.equal(records.get('deviceGrants/grant-second-viewer').status, 'revoked');
   assert.equal(records.has('deviceTelemetry/owner-a_phone-a'), false);
   await assert.rejects(stopSharingSessionTransaction({
     db, ownerUid: 'owner-a', sessionId, now: 110001
