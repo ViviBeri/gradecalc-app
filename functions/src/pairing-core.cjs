@@ -150,14 +150,20 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
     }
     if (limit.attempts >= MAX_VIEWER_REDEMPTION_ATTEMPTS) return { denied: true };
     const nextLimit = { windowStart, attempts: limit.attempts + 1 };
-    if (limitSnapshot.exists) transaction.update(limitRef, nextLimit);
-    else transaction.create(limitRef, nextLimit);
+    const writeLimit = () => {
+      if (limitSnapshot.exists) transaction.update(limitRef, nextLimit);
+      else transaction.create(limitRef, nextLimit);
+    };
 
-    if (!snapshot.exists) return { denied: true };
+    if (!snapshot.exists) {
+      writeLimit();
+      return { denied: true };
+    }
     const invite = snapshot.data();
+    const failedAttempts = Number.isSafeInteger(invite.failedAttempts) && invite.failedAttempts >= 0
+      ? invite.failedAttempts : 0;
     const failInvite = () => {
-      const failedAttempts = Number.isSafeInteger(invite.failedAttempts) && invite.failedAttempts >= 0
-        ? invite.failedAttempts : 0;
+      writeLimit();
       if (failedAttempts < MAX_INVITE_FAILED_ATTEMPTS) {
         transaction.update(inviteRef, { failedAttempts: failedAttempts + 1 });
       }
@@ -185,6 +191,7 @@ async function redeemInviteTransaction({ db, inviteId, secret, viewerUid, reques
       return failInvite();
     }
 
+    writeLimit();
     transaction.update(inviteRef, { consumedAt: now });
     transaction.create(requestRef, {
       inviteId,
