@@ -17,8 +17,8 @@ All calls require a verified Firebase Auth ID token. Reject anonymous accounts. 
 | `createPairingInvite` | Owner | Verify ownership of active device; create random high-entropy secret; persist only a server-side hash; expire quickly; return raw code once for manual transfer. |
 | `redeemPairingInvite` | Viewer | Accept code in request body (never URL/query); rate-limit attempts; constant-time hash comparison; reject expired, consumed, revoked, or self-pairing codes; create a pending request only. |
 | `confirmPairingRequest` | Owner | Require a fresh owner-authenticated confirmation on the originating device; display viewer identity and requested scopes; create a narrowly scoped grant only after explicit approval. |
-| `revokeDeviceGrant` | Owner | Verify exact device ownership and grant relationship; mark grant revoked and invalidate its session. |
-| `stopDeviceSharing` | Owner | End the active session, revoke session-bound grants as product policy requires, and delete or expire the latest telemetry. |
+| `revokeDeviceGrant` | Owner | Verify exact device ownership and grant relationship; revoke only the selected viewer grant without stopping other viewers. |
+| `stopDeviceSharing` | Owner | End the active session, revoke every grant bound to that session, release active-grant relationship locks, and delete the latest telemetry. |
 | `publishDeviceTelemetry` | Owner device | Verify active sharing session and device ownership; validate strict allowlist and bounds; attach server timestamp and expiry; reject stale session IDs and arbitrary fields. |
 
 No operation may return pairing secrets after creation. Never log raw codes, precise location payloads, auth tokens, or media. Pairing codes must not be placed in URLs, analytics, crash reports, browser history, or referrers.
@@ -26,8 +26,8 @@ No operation may return pairing secrets after creation. Never log raw codes, pre
 ## Data contract
 
 - Pairing invite: invite ID, secret hash, owner UID, device ID, createdAt, expiresAt, consumedAt, revokedAt, and a server-maintained `failedAttempts` counter.\n- Viewer redemption throttle: a hashed viewer UID plus fixed 15-minute window start and attempt count in `pairingRedemptionLimits`; never store raw invite secrets or viewer identifiers in document IDs.
-- Pending request: request ID, invite ID, viewer UID, viewer display label (untrusted presentation only), requested scopes, createdAt, expiresAt, status.
-- Grant: owner UID, viewer UID, device ID, explicit scopes, createdAt, expiresAt, revokedAt, active session ID.
+- Pending request: request ID, invite ID, viewer UID, viewer display label (untrusted presentation only), requested scopes, createdAt, expiresAt (24 hours after redemption), status.
+- Grant: owner UID, viewer UID, device ID, explicit scopes, createdAt, expiresAt (30 days after approval), revokedAt, active session ID. Enforce one active grant per owner/viewer/device using a transactionally maintained relationship lock.
 - Telemetry: owner UID, device ID, session ID, updatedAt, expiresAt, and allowlisted values only.
 
 Allowed scopes are individual values: `location`, `battery`, `network`, `device`, `permissionStatus`, `appStatus`. The owner must approve each requested scope. No wildcard scope.
@@ -56,11 +56,11 @@ Telemetry validation:
 - Short invite expiry (initial proposal: 5 minutes); single-use redemption.
 - Cryptographically secure random invite material with sufficient entropy; store a keyed or salted cryptographic hash, never plaintext.
 - Allow at most 5 failed attempts per invitation and 10 redemption attempts per authenticated viewer in each fixed 15-minute window. Enforce both counters in the same Firestore transaction as redemption to prevent concurrent bypass.\n- Increment viewer attempt counts for every redemption request, including missing or invalid invitations. Increment invite failure counts for failed validation where the invite document exists.\n- Return the same `PAIRING_UNAVAILABLE` error for invalid, expired, consumed, revoked, self-pairing, and throttled invitations. Never expose remaining attempts or counter values to clients.\n- Keep rate-limit documents short-lived using Firestore TTL as cleanup only; authorization checks use the stored window start and count, not TTL.
-- Prevent owner self-pairing and duplicate active grants.
+- Prevent owner self-pairing and duplicate active grants. Pending requests have a 24-hour approval window; approved grants expire 30 days after approval, independently of the five-minute invitation lifetime.
 - Require fresh owner confirmation; pending requests expire automatically.
 - Use server-side expiry checks on every read/write path. Firestore TTL is cleanup, not authorization.
 - Set a short telemetry freshness window and remove expired snapshots. Never treat an old snapshot as live.
-- Revocation, account deletion, device revocation, session stop, and invite expiry all invalidate associated access.
+- Revoking one grant removes only that viewer's access. Stopping a session revokes all grants bound to it and clears their relationship locks. Revocation, account deletion, device revocation, session stop, and expiry invalidate associated access.
 - Avoid scheduled cleanup dependencies where TTL can handle deletion; TTL must never be the only security control.
 
 ## Required emulator test matrix
@@ -76,6 +76,8 @@ Telemetry validation:
 9. Viewer cannot read another device, another owner's device, or unapproved scopes.
 10. Viewer cannot write telemetry or modify a grant.
 11. Revoked grants and stopped sessions immediately deny reads and writes.
+14. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
+15. Stopping a session revokes every grant bound to it; revoking one grant preserves other viewers.
 12. Old session IDs, expired telemetry, unknown fields, oversized values, and invalid coordinates are rejected.
 13. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
 
