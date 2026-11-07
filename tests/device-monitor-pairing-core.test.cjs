@@ -342,6 +342,7 @@ test('only the owning account can approve a pending request for an active device
         async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
         create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); },
         update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+        set(ref, value) { writes.push(() => records.set(ref.key, value)); }
       };
       const result = await callback(tx);
       writes.forEach(write => write());
@@ -356,7 +357,7 @@ test('only the owning account can approve a pending request for an active device
     db, requestId: 'request-a', ownerUid: 'owner-a', grantId: 'grant-a', now: 100000
   });
   assert.equal(approved.viewerUid, 'viewer-b');
-  assert.equal(records.get('deviceGrants/grant-flow').expiresAt, 100002 + GRANT_TTL_MS);
+  assert.equal(records.get('deviceGrants/grant-a').expiresAt, 100000 + GRANT_TTL_MS);
   assert.deepEqual(approved.scopes, ['battery']);
   assert.equal(records.get('pairingRequests/request-a').status, 'approved');
   assert.equal(records.get('deviceGrants/grant-a').status, 'active');
