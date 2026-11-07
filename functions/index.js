@@ -136,6 +136,13 @@ exports.readDeviceTelemetry = callable(async (request, viewerUid) => {
       throw new HttpsError('permission-denied', 'Telemetry access denied.');
     }
 
+    const deviceRef = db.collection('users').doc(grant.ownerUid)
+      .collection('devices').doc(grant.deviceId);
+    const deviceSnapshot = await transaction.get(deviceRef);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) {
+      throw new HttpsError('permission-denied', 'Telemetry access denied.');
+    }
+
     const telemetryRef = db.collection('deviceTelemetry')
       .doc(grant.ownerUid + '_' + grant.deviceId);
     const telemetrySnapshot = await transaction.get(telemetryRef);
