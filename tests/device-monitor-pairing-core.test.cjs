@@ -5,7 +5,7 @@ const test = require('node:test');
 const {
   ALLOWED_SCOPES,
   bindGrantToSessionTransaction,
-  INVITE_TTL_MS,
+  INVITE_TTL_MS,\n  REDEMPTION_WINDOW_MS,\n  MAX_VIEWER_REDEMPTION_ATTEMPTS,\n  MAX_INVITE_FAILED_ATTEMPTS,
   createInviteSecret,
   confirmPairingRequestTransaction,
   canReadTelemetry,
@@ -239,6 +239,73 @@ test('invite redemption rejects replay, wrong secrets, and self-pairing', async 
   }), /PAIRING_UNAVAILABLE/);
 });
 
+
+test('pairing redemption throttles failed invite attempts and viewer accounts transactionally', async () => {
+  const secret = createInviteSecret();
+  const records = new Map([
+    ['pairingInvites/invite-rate', {
+      secretHash: hashInviteSecret(secret), ownerUid: 'owner-a', deviceId: 'phone-a',
+      scopes: ['battery'], expiresAt: 900000, consumedAt: null, revokedAt: null
+    }],
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) {
+        const key = name + '/' + id;
+        return { key, collection(child) {
+          return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+        } };
+      } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+
+  for (let attempt = 1; attempt <= MAX_INVITE_FAILED_ATTEMPTS; attempt++) {
+    await assert.rejects(redeemInviteTransaction({
+      db, inviteId: 'invite-rate', secret: createInviteSecret(), viewerUid: 'viewer-rate',
+      requestId: 'bad-' + attempt, now: 100000
+    }), /PAIRING_UNAVAILABLE/);
+  }
+  assert.equal(records.get('pairingInvites/invite-rate').failedAttempts, MAX_INVITE_FAILED_ATTEMPTS);
+  await assert.rejects(redeemInviteTransaction({
+    db, inviteId: 'invite-rate', secret, viewerUid: 'viewer-rate',
+    requestId: 'blocked-invite', now: 100001
+  }), /PAIRING_UNAVAILABLE/);
+  const viewerKey = require('node:crypto').createHash('sha256').update('viewer-rate').digest('hex');
+  const accountLimit = records.get('pairingRedemptionLimits/' + viewerKey + '_' + Math.floor(100000 / REDEMPTION_WINDOW_MS) * REDEMPTION_WINDOW_MS);
+  assert.equal(accountLimit.attempts, MAX_INVITE_FAILED_ATTEMPTS + 1);
+
+  for (let attempt = 2; attempt <= MAX_VIEWER_REDEMPTION_ATTEMPTS; attempt++) {
+    await assert.rejects(redeemInviteTransaction({
+      db, inviteId: 'missing-' + attempt, secret, viewerUid: 'viewer-account',
+      requestId: 'missing-request-' + attempt, now: 200000
+    }), /PAIRING_UNAVAILABLE/);
+  }
+  await assert.rejects(redeemInviteTransaction({
+    db, inviteId: 'missing-final', secret, viewerUid: 'viewer-account',
+    requestId: 'missing-final-request', now: 200001
+  }), /PAIRING_UNAVAILABLE/);
+  const accountKey = require('node:crypto').createHash('sha256').update('viewer-account').digest('hex');
+  const accountWindow = Math.floor(200000 / REDEMPTION_WINDOW_MS) * REDEMPTION_WINDOW_MS;
+  assert.equal(records.get('pairingRedemptionLimits/' + accountKey + '_' + accountWindow).attempts, MAX_VIEWER_REDEMPTION_ATTEMPTS);
+
+  await assert.rejects(redeemInviteTransaction({
+    db, inviteId: 'missing-new-window', secret, viewerUid: 'viewer-account',
+    requestId: 'new-window-request', now: accountWindow + REDEMPTION_WINDOW_MS
+  }), /PAIRING_UNAVAILABLE/);
+  assert.equal(records.get('pairingRedemptionLimits/' + accountKey + '_' + (accountWindow + REDEMPTION_WINDOW_MS)).attempts, 1);
+});
 
 test('only the owning account can approve a pending request for an active device', async () => {
   const request = {
