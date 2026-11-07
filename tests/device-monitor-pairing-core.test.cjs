@@ -616,6 +616,7 @@ test('sharing session starts only for an active owner device and stops with tele
   assert.equal(stopped.status, 'stopped');
   assert.equal(records.get('deviceSessions/' + sessionId).status, 'stopped');
   assert.equal(records.get('deviceGrants/grant-flow').status, 'revoked');
+  assert.equal(records.get('deviceGrants/grant-second-viewer').status, 'revoked');
   assert.equal(records.has('deviceTelemetry/owner-a_phone-a'), false);
   await assert.rejects(stopSharingSessionTransaction({
     db, ownerUid: 'owner-a', sessionId, now: 110001
@@ -747,12 +748,37 @@ test('full pairing lifecycle requires approval and session binding before scoped
   assert.equal(canReadTelemetry(authorization), true);
   assert.equal(canReadTelemetry({ ...authorization, scope: 'location' }), false);
 
+  records.set('pairingRequests/request-second-viewer', {
+    ownerUid: 'owner-a', viewerUid: 'viewer-c', deviceId: 'phone-a',
+    scopes: ['battery'], status: 'pending', expiresAt: 200000
+  });
+  await confirmPairingRequestTransaction({
+    db, requestId: 'request-second-viewer', ownerUid: 'owner-a',
+    grantId: 'grant-second-viewer', now: 100006
+  });
+  await bindGrantToSessionTransaction({
+    db, grantId: 'grant-second-viewer', ownerUid: 'owner-a', sessionId, now: 100006
+  });
+  await assert.rejects(confirmPairingRequestTransaction({
+    db, requestId: 'request-duplicate', ownerUid: 'owner-a',
+    grantId: 'grant-duplicate', now: 100006
+  }), /PAIRING_UNAVAILABLE/);
+  records.set('pairingRequests/request-duplicate', {
+    ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
+    scopes: ['battery'], status: 'pending', expiresAt: 200000
+  });
+  await assert.rejects(confirmPairingRequestTransaction({
+    db, requestId: 'request-duplicate', ownerUid: 'owner-a',
+    grantId: 'grant-duplicate', now: 100006
+  }), /PAIRING_UNAVAILABLE/);
+
   await revokeDeviceGrantTransaction({
     db, grantId: 'grant-flow', ownerUid: 'owner-a', now: 100007
   });
   assert.equal(canReadTelemetry({
     ...authorization, grant: records.get('deviceGrants/grant-flow'), now: 100008
   }), false);
+  assert.equal(records.get('deviceGrants/grant-second-viewer').status, 'active');
 
   await stopSharingSessionTransaction({
     db, ownerUid: 'owner-a', sessionId, now: 100009
