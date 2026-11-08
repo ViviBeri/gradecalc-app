@@ -173,3 +173,54 @@ test('concurrent owner approvals cannot create duplicate active grants', { skip:
     await deleteApp(app);
   }
 });
+
+
+test('revoking one viewer preserves other grants in the active session', { skip: !enabled }, async () => {
+  const app = initializeApp({ projectId }, 'monitor-revoke-one-grant-test');
+  try {
+    const db = getFirestore(app);
+    const ownerUid = 'revoke-owner';
+    const deviceId = 'revoke-phone';
+    const sessionId = 'session-revoke-123456';
+    const revokedGrantId = 'grant-revoke-one';
+    const retainedGrantId = 'grant-retain-two';
+    const relationshipId = viewerUid => require('node:crypto')
+      .createHash('sha256')
+      .update([ownerUid, viewerUid, deviceId].join(':'))
+      .digest('hex');
+    const sessionRef = db.collection('deviceSessions').doc(sessionId);
+    const revokedGrantRef = db.collection('deviceGrants').doc(revokedGrantId);
+    const retainedGrantRef = db.collection('deviceGrants').doc(retainedGrantId);
+    await sessionRef.set({
+      ownerUid, deviceId, sessionId, status: 'active',
+      scopes: ['battery'], expiresAt: Date.now() + 60000,
+      stoppedAt: null, grantIds: [revokedGrantId, retainedGrantId]
+    });
+    await revokedGrantRef.set({
+      ownerUid, viewerUid: 'revoke-viewer', deviceId, sessionId,
+      scopes: ['battery'], status: 'active', expiresAt: Date.now() + 60000,
+      revokedAt: null
+    });
+    await retainedGrantRef.set({
+      ownerUid, viewerUid: 'retained-viewer', deviceId, sessionId,
+      scopes: ['battery'], status: 'active', expiresAt: Date.now() + 60000,
+      revokedAt: null
+    });
+    await db.collection('activeDeviceGrantLocks').doc(relationshipId('revoke-viewer'))
+      .set({ grantId: revokedGrantId, ownerUid, viewerUid: 'revoke-viewer', deviceId });
+    await db.collection('activeDeviceGrantLocks').doc(relationshipId('retained-viewer'))
+      .set({ grantId: retainedGrantId, ownerUid, viewerUid: 'retained-viewer', deviceId });
+
+    await revokeDeviceGrantTransaction({
+      db, grantId: revokedGrantId, ownerUid, now: Date.now()
+    });
+
+    assert.equal((await revokedGrantRef.get()).data().status, 'revoked');
+    assert.equal((await retainedGrantRef.get()).data().status, 'active');
+    assert.deepEqual((await sessionRef.get()).data().grantIds, [retainedGrantId]);
+    assert.equal((await db.collection('activeDeviceGrantLocks').doc(relationshipId('revoke-viewer')).get()).exists, false);
+    assert.equal((await db.collection('activeDeviceGrantLocks').doc(relationshipId('retained-viewer')).get()).data().grantId, retainedGrantId);
+  } finally {
+    await deleteApp(app);
+  }
+});
