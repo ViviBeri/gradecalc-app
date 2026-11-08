@@ -224,3 +224,56 @@ test('revoking one viewer preserves other grants in the active session', { skip:
     await deleteApp(app);
   }
 });
+
+
+test('device revocation immediately blocks active viewer reads and telemetry writes', { skip: !enabled }, async () => {
+  const app = initializeApp({ projectId }, 'monitor-device-revocation-test');
+  try {
+    const db = getFirestore(app);
+    const ownerUid = 'device-revoke-owner';
+    const viewerUid = 'device-revoke-viewer';
+    const deviceId = 'device-revoke-phone';
+    const sessionId = 'session-device-revoke-123';
+    const grantId = 'grant-device-revoke-123';
+    const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(deviceId);
+    const sessionRef = db.collection('deviceSessions').doc(sessionId);
+    const grantRef = db.collection('deviceGrants').doc(grantId);
+    await deviceRef.set({ revoked: false, platform: 'android' });
+    await sessionRef.set({
+      ownerUid, deviceId, sessionId, status: 'active',
+      scopes: ['battery'], expiresAt: Date.now() + 60000,
+      stoppedAt: null, grantIds: [grantId]
+    });
+    await grantRef.set({
+      ownerUid, viewerUid, deviceId, sessionId, scopes: ['battery'],
+      status: 'active', expiresAt: Date.now() + 60000, revokedAt: null
+    });
+    await db.collection('deviceTelemetry').doc(ownerUid + '_' + deviceId).set({
+      ownerUid, deviceId, sessionId, snapshot: { battery: { level: 0.5, charging: false } },
+      updatedAt: Date.now(), expiresAt: Date.now() + 60000
+    });
+    const callables = buildCallables({
+      db,
+      HttpsErrorClass: class TestHttpsError extends Error {
+        constructor(code, message) { super(message); this.code = code; }
+      },
+      onCallImpl: (_options, handler) => handler
+    });
+    const request = {
+      auth: { uid: viewerUid, token: { firebase: { sign_in_provider: 'password' } } },
+      data: { grantId, sessionId, scope: 'battery' }
+    };
+    assert.deepEqual((await callables.readDeviceTelemetry(request)).snapshot, {
+      battery: { level: 0.5, charging: false }
+    });
+    await deviceRef.update({ revoked: true });
+    await assert.rejects(callables.readDeviceTelemetry(request),
+      error => error.code === 'permission-denied');
+    await assert.rejects(publishTelemetryTransaction({
+      db, ownerUid, deviceId, sessionId,
+      snapshot: { battery: { level: 0.4, charging: true } }
+    }), /SHARING_UNAVAILABLE/);
+  } finally {
+    await deleteApp(app);
+  }
+});
