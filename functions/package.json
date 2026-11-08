@@ -6,7 +6,7 @@
     "node": "20"
   },
   "scripts": {
-    "test": "node --test ../tests/device-monitor-pairing-core.test.cjs"
+    "test": "node --test ../tests/device-monitor-pairing-core.test.cjs ../tests/device-monitor-callable-factory.test.cjs ../tests/device-monitor-callable-security.test.cjs"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0",
