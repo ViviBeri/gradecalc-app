@@ -796,7 +796,7 @@ test('callable backend keeps privileged operations authenticated and App Check p
     'bindGrantToSession', 'revokeDeviceGrant', 'startDeviceSharing',
     'stopDeviceSharing', 'publishDeviceTelemetry', 'readDeviceTelemetry'
   ]) {
-    assert.ok(source.includes(`exports.${operation} = callable(`));
+    assert.ok(source.includes(`const ${operation} = callable(`));
   }
   assert.ok(source.includes('enforceAppCheck: true'));
   assert.ok(source.includes('consumeAppCheckToken: true'));
