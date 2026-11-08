@@ -463,11 +463,20 @@ test('owner binds an active viewer grant to one matching sharing session', async
     ['deviceSessions/' + sessionId, {
       ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
       scopes: ['battery', 'location'], status: 'active', expiresAt: 400000
-    }]
+    }],
+    ['users/owner-a/devices/phone-a', { revoked: false }]
   ]);
   const db = {
     collection(name) {
-      return { doc(id) { return { key: name + '/' + id }; } };
+      return { doc(id) {
+        const key = name + '/' + id;
+        return {
+          key,
+          collection(child) {
+            return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+          }
+        };
+      } };
     },
     async runTransaction(callback) {
       const writes = [];
@@ -488,6 +497,15 @@ test('owner binds an active viewer grant to one matching sharing session', async
   });
   assert.equal(bound.status, 'bound');
   assert.equal(records.get('deviceGrants/grant-a').sessionId, sessionId);
+  records.set('deviceGrants/grant-b', {
+    ownerUid: 'owner-a', viewerUid: 'viewer-c', deviceId: 'phone-a',
+    scopes: ['battery'], status: 'active', expiresAt: 500000, sessionId: null
+  });
+  records.set('users/owner-a/devices/phone-a', { revoked: true });
+  await assert.rejects(bindGrantToSessionTransaction({
+    db, grantId: 'grant-b', ownerUid: 'owner-a', sessionId, now: 100001
+  }), /SHARING_UNAVAILABLE/);
+  records.set('users/owner-a/devices/phone-a', { revoked: false });
   await assert.rejects(bindGrantToSessionTransaction({
     db, grantId: 'grant-a', ownerUid: 'owner-a', sessionId, now: 100001
   }), /SHARING_UNAVAILABLE/);
