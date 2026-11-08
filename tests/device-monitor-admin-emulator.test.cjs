@@ -47,7 +47,12 @@ test('Admin SDK pairing, callable reads, and sharing lifecycle run against Fires
       db, ownerUid, deviceId, sessionId, scopes, now: now + 4
     });
     assert.equal(session.sessionId, sessionId);
-    await bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId, now: now + 5 });
+    await deviceRef.update({ revoked: true });
+    await assert.rejects(bindGrantToSessionTransaction({
+      db, grantId, ownerUid, sessionId, now: now + 5
+    }), /SHARING_UNAVAILABLE/);
+    await deviceRef.update({ revoked: false });
+    await bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId, now: now + 6 });
     const battery = { level: 0.6, charging: false };
     await publishTelemetryTransaction({
       db, ownerUid, deviceId, sessionId, snapshot: { battery }, now: now + 6
