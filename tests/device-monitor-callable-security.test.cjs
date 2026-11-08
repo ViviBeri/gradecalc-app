@@ -28,7 +28,8 @@ test('all privileged operations are created through the shared callable guard', 
 });
 
 test('viewer telemetry reads verify grant, session, device state, and expiry', () => {
-  assert.match(source, /canReadTelemetry\(\{/);\n  assert.match(source, /session\.grantIds\.includes\(grantId\)/);
+  assert.match(source, /canReadTelemetry\(\{/);
+  assert.match(source, /session\.grantIds\.includes\(grantId\)/);
   assert.match(source, /deviceSnapshot\.data\(\)\.revoked !== false/);
   assert.match(source, /telemetry\.expiresAt <= Date\.now\(\)/);
   assert.match(source, /Object\.prototype\.hasOwnProperty\.call\(telemetry\.snapshot, scope\)/);
