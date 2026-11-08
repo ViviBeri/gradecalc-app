@@ -46,7 +46,8 @@ test('authenticated users can manage only their own valid device metadata', { sk
   }));
   await assertSucceeds(getDoc(ref));
   await assertSucceeds(updateDoc(ref, { deviceName: 'My Android', revoked: true }));
-  await assertSucceeds(deleteDoc(ref));
+  await assertFails(deleteDoc(ref));
+  await assertSucceeds(getDoc(ref));
 });
 
 test('one authenticated account cannot read, create, update, or delete another account device', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
@@ -104,6 +105,11 @@ test('a revoked device record cannot be reactivated', { skip: !process.env.FIRES
   }));
   await assertSucceeds(updateDoc(ref, { revoked: true }));
   await assertFails(updateDoc(ref, { revoked: false }));
+  await assertFails(deleteDoc(ref));
+  await assertFails(setDoc(ref, {
+    deviceName: 'Replacement phone', platform: 'android',
+    createdAt: serverTimestamp(), revoked: false
+  }));
 });
 
 test('device metadata rejects invalid names, platforms, and pre-revoked creation', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
