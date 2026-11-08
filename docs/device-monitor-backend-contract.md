@@ -47,7 +47,7 @@ Telemetry validation:
 ## Authorization rules
 
 - Owner writes are accepted only for their own device and current active session.
-- Viewer reads require a matching active grant for the exact owner UID, viewer UID, device ID, active session, and requested scope.
+- Viewer reads require a matching active grant for the exact owner UID, viewer UID, device ID, active session, and requested scope. The session's bounded `grantIds` list must also contain the grant being used for the read.
 - Viewer writes are always denied.
 - Revocation and Stop must block subsequent reads/writes immediately, not merely hide the dashboard UI.
 - Clients cannot create, redeem, confirm, or modify grants through direct Firestore writes.
