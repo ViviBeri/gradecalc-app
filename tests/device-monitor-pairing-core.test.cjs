@@ -790,7 +790,7 @@ test('full pairing lifecycle requires approval and session binding before scoped
 test('callable backend keeps privileged operations authenticated and App Check protected', () => {
   const fs = require('node:fs');
   const path = require('node:path');
-  const source = fs.readFileSync(path.join(__dirname, '../functions/index.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '../functions/src/callable-factory.cjs'), 'utf8');
   for (const operation of [
     'createPairingInvite', 'redeemPairingInvite', 'confirmPairingRequest',
     'bindGrantToSession', 'revokeDeviceGrant', 'startDeviceSharing',
