@@ -277,3 +277,38 @@ test('device revocation immediately blocks active viewer reads and telemetry wri
     await deleteApp(app);
   }
 });
+
+
+test('session grant limit rejects the next viewer without changing existing bindings', { skip: !enabled }, async () => {
+  const app = initializeApp({ projectId }, 'monitor-session-grant-limit-test');
+  try {
+    const db = getFirestore(app);
+    const ownerUid = 'grant-limit-owner';
+    const deviceId = 'grant-limit-phone';
+    const sessionId = 'session-grant-limit-123';
+    await db.collection('users').doc(ownerUid).collection('devices').doc(deviceId)
+      .set({ revoked: false, platform: 'android' });
+    const sessionRef = db.collection('deviceSessions').doc(sessionId);
+    const grantIds = Array.from({ length: 20 }, (_, index) => 'limit-grant-' + index);
+    await sessionRef.set({
+      ownerUid, deviceId, sessionId, status: 'active', scopes: ['battery'],
+      expiresAt: Date.now() + 60000, stoppedAt: null, grantIds
+    });
+    await db.collection('deviceGrants').doc('limit-grant-overflow').set({
+      ownerUid, viewerUid: 'overflow-viewer', deviceId, scopes: ['battery'],
+      status: 'active', createdAt: Date.now(), expiresAt: Date.now() + 60000,
+      revokedAt: null, sessionId: null
+    });
+
+    await assert.rejects(bindGrantToSessionTransaction({
+      db, grantId: 'limit-grant-overflow', ownerUid, sessionId
+    }), /SHARING_UNAVAILABLE/);
+
+    const session = (await sessionRef.get()).data();
+    const grant = (await db.collection('deviceGrants').doc('limit-grant-overflow').get()).data();
+    assert.deepEqual(session.grantIds, grantIds);
+    assert.equal(grant.sessionId, null);
+  } finally {
+    await deleteApp(app);
+  }
+});
