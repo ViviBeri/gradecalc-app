@@ -22,6 +22,7 @@ jobs:
       - name: Install temporary Firestore emulator test dependencies
         run: npm install --no-save --package-lock=false firebase-tools @firebase/rules-unit-testing firebase
       - run: node tests.js
-      - run: node --test tests/*.test.cjs
+      - name: Run Node test suites
+        run: NODE_PATH=functions/node_modules node --test tests/*.test.cjs
       - name: Test Firestore security rules in emulator
-        run: npx firebase emulators:exec --only firestore --project demo-gradecalc "env FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node --test tests/firestore-emulator.test.cjs tests/device-monitor-admin-emulator.test.cjs"
+        run: npx firebase emulators:exec --only firestore --project demo-gradecalc "env NODE_PATH=functions/node_modules FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node --test tests/firestore-emulator.test.cjs tests/device-monitor-admin-emulator.test.cjs"
