@@ -335,6 +335,15 @@ async function bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId,
     if (!grantSnapshot.exists || !sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
     const grant = grantSnapshot.data();
     const session = sessionSnapshot.data();
+    if (typeof grant.deviceId !== 'string' || session.deviceId !== grant.deviceId) {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
+    const deviceRef = db.collection('users').doc(ownerUid)
+      .collection('devices').doc(grant.deviceId);
+    const deviceSnapshot = await transaction.get(deviceRef);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
     let grantScopes;
     let sessionScopes;
     try {
