@@ -58,13 +58,13 @@ Telemetry validation:
 ## Abuse controls and lifecycle
 
 - Short invite expiry (initial proposal: 5 minutes); single-use redemption.
-- Cryptographically secure random invite material with sufficient entropy; store a keyed or salted cryptographic hash, never plaintext.
+- Generate 32 bytes of cryptographically secure random invite material and store only its SHA-256 hash; the high-entropy secret must never be stored in plaintext.
 - Allow at most 5 failed attempts per invitation and 10 redemption attempts per authenticated viewer in each fixed 15-minute window. Enforce both counters in the same Firestore transaction as redemption to prevent concurrent bypass.
 - Increment viewer attempt counts for every redemption request, including missing or invalid invitations. Increment invite failure counts for failed validation where the invite document exists.
 - Return the same `PAIRING_UNAVAILABLE` error for invalid, expired, consumed, revoked, self-pairing, and throttled invitations. Never expose remaining attempts or counter values to clients.
 - Keep rate-limit documents short-lived using Firestore TTL as cleanup only; authorization checks use the stored window start and count, not TTL.
 - Prevent owner self-pairing and duplicate active grants. Pending requests have a 24-hour approval window; approved grants expire 30 days after approval, independently of the five-minute invitation lifetime.
-- Require fresh owner confirmation; pending requests expire automatically.
+- Require an explicit owner approval action; pending requests expire automatically. The current backend verifies the owner's authenticated UID but cannot prove that approval originated from the physical device being shared. The future owner UI must display the viewer identity and requested scopes on that device before invoking approval; do not claim device-bound confirmation until an attested device/session mechanism exists.
 - Use server-side expiry checks on every read/write path. Firestore TTL is cleanup, not authorization.
 - Set a short telemetry freshness window and remove expired snapshots. Never treat an old snapshot as live.
 - Revoking one grant removes only that viewer's access. Stopping a session revokes all grants bound to it and clears their relationship locks. Revocation, account deletion, device revocation, session stop, and expiry invalidate associated access.
