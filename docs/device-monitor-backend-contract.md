@@ -83,10 +83,11 @@ Telemetry validation:
 9. Viewer cannot read another device, another owner's device, or unapproved scopes.
 10. Viewer cannot write telemetry or modify a grant.
 11. Revoked grants and stopped sessions immediately deny reads and writes.
-14. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
-15. Stopping a session revokes every grant bound to it; revoking one grant preserves other viewers.
-12. Old session IDs, expired telemetry, unknown fields, oversized values, and invalid coordinates are rejected.
-13. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
+12. Stopping a session revokes every grant bound to it; revoking one grant preserves other viewers.
+13. A session cannot bind more than 20 viewer grants; overflow attempts leave existing bindings unchanged.
+14. Old session IDs, expired telemetry, unknown fields, oversized values, and invalid coordinates are rejected.
+15. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
+16. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
 
 ## Rollout gates
 
