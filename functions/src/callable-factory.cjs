@@ -130,6 +130,9 @@ const readDeviceTelemetry = callable(async (request, viewerUid) => {
 
     const grant = grantSnapshot.data();
     const session = sessionSnapshot.data();
+    if (!Array.isArray(session.grantIds) || !session.grantIds.includes(grantId)) {
+      throw new HttpsError('permission-denied', 'Telemetry access denied.');
+    }
     if (!canReadTelemetry({
       grant, session, viewerUid, ownerUid: grant.ownerUid,
       deviceId: grant.deviceId, scope, sessionId
