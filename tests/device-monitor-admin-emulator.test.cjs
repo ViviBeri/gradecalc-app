@@ -90,6 +90,9 @@ test('Admin SDK pairing, callable reads, and sharing lifecycle run against Fires
       data: { grantId, sessionId, scope: 'battery' } };
     const scopedRead = await readHandler(readRequest);
     assert.deepEqual(scopedRead.snapshot, { battery });
+    await sessionRef.update({ grantIds: [] });
+    await assert.rejects(readHandler(readRequest), error => error.code === 'permission-denied');
+    await sessionRef.update({ grantIds: [grantId] });
     await assert.rejects(readHandler({
       ...readRequest,
       auth: { uid: 'other-viewer', token: { firebase: { sign_in_provider: 'password' } } }
