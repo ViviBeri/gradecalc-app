@@ -14,6 +14,7 @@ class TestHttpsError extends Error {
 function harness() {
   const registrations = [];
   const db = {
+    runTransaction() { throw new Error('test transaction reached'); },
     collection() {
       return { doc() { return { id: 'generated-id' }; } };
     }
