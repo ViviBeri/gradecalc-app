@@ -755,6 +755,11 @@ test('full pairing lifecycle requires approval and session binding before scoped
     db, requestId: 'request-second-viewer', ownerUid: 'owner-a',
     grantId: 'grant-second-viewer', now: 100006
   });
+  records.set('users/owner-a/devices/phone-a', { revoked: true });
+  await assert.rejects(bindGrantToSessionTransaction({
+    db, grantId: 'grant-second-viewer', ownerUid: 'owner-a', sessionId, now: 100006
+  }), /SHARING_UNAVAILABLE/);
+  records.set('users/owner-a/devices/phone-a', { revoked: false });
   await bindGrantToSessionTransaction({
     db, grantId: 'grant-second-viewer', ownerUid: 'owner-a', sessionId, now: 100006
   });
