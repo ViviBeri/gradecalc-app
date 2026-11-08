@@ -5,7 +5,7 @@ const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const source = fs.readFileSync(path.join(__dirname, '../functions/index.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../functions/src/callable-factory.cjs'), 'utf8');
 
 test('callable factory enforces App Check and derives identity from verified authentication', () => {
   assert.match(source, /onCallImpl\(\{\s*enforceAppCheck:\s*true,\s*consumeAppCheckToken:\s*true\s*\}/);
