@@ -26,7 +26,7 @@ This scope does not authorize hidden capture or background collection. Camera an
 3. The owner creates a one-time pairing invitation. The invitation is high entropy, short-lived, single-use, stored as a cryptographic hash, and bound to the owner's UID and device ID.
 4. The viewer signs in separately and redeems the invitation once. The owner confirms the viewer identity on the device before access is granted.
 5. The server records a narrow owner-to-viewer grant. The viewer can read only the selected device's current permitted telemetry.
-6. Stopping sharing or revoking a viewer invalidates the grant immediately. Expired telemetry is deleted by a scheduled retention process.
+6. Stopping sharing or revoking a viewer invalidates the grant immediately. Expired telemetry is removed by Firestore TTL when configured; authorization always checks the expiry timestamp and never relies on TTL for access control.
 
 A URL by itself is never an authorization credential. Do not put raw pairing secrets in query strings, analytics, logs, or referrers.
 
