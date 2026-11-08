@@ -30,7 +30,9 @@ service cloud.firestore {
         && request.resource.data.platform == resource.data.platform
         && (!resource.data.revoked || request.resource.data.revoked == true)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceName', 'revoked']);
-      allow delete: if isOwner();
+      // Device IDs must remain tombstoned after revocation; deleting and recreating
+      // a record could reactivate grants tied to the same device ID.
+      allow delete: if false;
     }
 
     // Everything else, including pairing codes and location data, stays denied.
