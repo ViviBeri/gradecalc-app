@@ -123,3 +123,45 @@ test('Admin SDK pairing, callable reads, and sharing lifecycle run against Fires
     await deleteApp(app);
   }
 });
+
+
+test('concurrent owner approvals cannot create duplicate active grants', { skip: !enabled }, async () => {
+  const app = initializeApp({ projectId }, 'monitor-concurrency-test');
+  try {
+    const db = getFirestore(app);
+    const deviceId = 'concurrent-phone';
+    const ownerUid = 'concurrent-owner';
+    const viewerUid = 'concurrent-viewer';
+    await db.collection('users').doc(ownerUid).collection('devices').doc(deviceId)
+      .set({ revoked: false, platform: 'android' });
+    const requestData = {
+      ownerUid, viewerUid, deviceId, scopes: ['battery'],
+      status: 'pending', expiresAt: Date.now() + 60000
+    };
+    await Promise.all([
+      db.collection('pairingRequests').doc('concurrent-request-a').set(requestData),
+      db.collection('pairingRequests').doc('concurrent-request-b').set(requestData)
+    ]);
+    const outcomes = await Promise.allSettled([
+      confirmPairingRequestTransaction({
+        db, requestId: 'concurrent-request-a', ownerUid,
+        grantId: 'concurrent-grant-a'
+      }),
+      confirmPairingRequestTransaction({
+        db, requestId: 'concurrent-request-b', ownerUid,
+        grantId: 'concurrent-grant-b'
+      })
+    ]);
+    assert.equal(outcomes.filter(result => result.status === 'fulfilled').length, 1);
+    assert.equal(outcomes.filter(result => result.status === 'rejected' &&
+      result.reason.message === 'PAIRING_UNAVAILABLE').length, 1);
+    const grants = await db.collection('deviceGrants')
+      .where('ownerUid', '==', ownerUid)
+      .where('viewerUid', '==', viewerUid)
+      .where('deviceId', '==', deviceId)
+      .where('status', '==', 'active').get();
+    assert.equal(grants.size, 1);
+  } finally {
+    await deleteApp(app);
+  }
+});
