@@ -2,8 +2,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { initializeApp, getApps, deleteApp } = require('firebase-admin/app');
+const { initializeApp, deleteApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const { buildCallables } = require('../functions/src/callable-factory.cjs');
 const {
   createInviteSecret, createPairingInviteTransaction, redeemInviteTransaction,
   confirmPairingRequestTransaction, createSharingSessionTransaction,
@@ -19,7 +20,7 @@ const deviceId = 'emulator-phone';
 const sessionId = 'session-emulator-123456';
 const now = Date.now();
 
-test('Admin SDK pairing and sharing lifecycle runs against Firestore emulator', { skip: !enabled }, async () => {
+test('Admin SDK pairing, callable reads, and sharing lifecycle run against Firestore emulator', { skip: !enabled }, async () => {
   const app = initializeApp({ projectId }, 'monitor-lifecycle-test');
   try {
     const db = getFirestore(app);
@@ -69,6 +70,29 @@ test('Admin SDK pairing and sharing lifecycle runs against Firestore emulator', 
       sessionId, scope: 'location', now: now + 7
     }), false);
     assert.deepEqual((await telemetryRef.get()).data().snapshot, { battery });
+
+    const handlers = [];
+    class TestHttpsError extends Error {
+      constructor(code, message) { super(message); this.code = code; }
+    }
+    const callables = buildCallables({
+      db,
+      HttpsErrorClass: TestHttpsError,
+      onCallImpl: (_options, handler) => { handlers.push(handler); return handler; }
+    });
+    const readHandler = callables.readDeviceTelemetry;
+    const readRequest = { auth: { uid: viewerUid, token: { firebase: { sign_in_provider: 'password' } } },
+      data: { grantId, sessionId, scope: 'battery' } };
+    const scopedRead = await readHandler(readRequest);
+    assert.deepEqual(scopedRead.snapshot, { battery });
+    await assert.rejects(readHandler({
+      ...readRequest,
+      auth: { uid: 'other-viewer', token: { firebase: { sign_in_provider: 'password' } } }
+    }), error => error.code === 'permission-denied');
+    await assert.rejects(readHandler({
+      ...readRequest, data: { ...readRequest.data, scope: 'location' }
+    }), error => error.code === 'permission-denied');
+
     await assert.rejects(publishTelemetryTransaction({
       db, ownerUid, deviceId, sessionId,
       snapshot: { location: { latitude: 11.9, longitude: 79.8, accuracy: 20 } },
@@ -76,6 +100,7 @@ test('Admin SDK pairing and sharing lifecycle runs against Firestore emulator', 
     }), /SHARING_UNAVAILABLE/);
     await revokeDeviceGrantTransaction({ db, grantId, ownerUid, now: now + 9 });
     assert.equal((await grantRef.get()).data().status, 'revoked');
+    await assert.rejects(readHandler(readRequest), error => error.code === 'permission-denied');
     await stopSharingSessionTransaction({ db, ownerUid, sessionId, now: now + 10 });
     assert.equal((await sessionRef.get()).data().status, 'stopped');
     assert.equal((await telemetryRef.get()).exists, false);
