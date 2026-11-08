@@ -16,8 +16,13 @@ const {
   stopSharingSessionTransaction
 } = require('./src/pairing-core.cjs');
 
-if (getApps().length === 0) initializeApp();
-const db = getFirestore();
+
+
+function buildCallables({ db, onCallImpl = onCall, HttpsErrorClass = HttpsError }) {
+  if (!db || typeof db.collection !== 'function') {
+    throw new TypeError('A Firestore database is required');
+  }
+  const HttpsError = HttpsErrorClass;
 
 function authenticatedUid(request) {
   const uid = request.auth && request.auth.uid;
@@ -37,7 +42,7 @@ function requiredString(value, name, max = 128) {
 }
 
 function callable(handler) {
-  return onCall({ enforceAppCheck: true, consumeAppCheckToken: true }, async request => {
+  return onCallImpl({ enforceAppCheck: true, consumeAppCheckToken: true }, async request => {
     try {
       const uid = authenticatedUid(request);
       return await handler(request, uid);
@@ -55,7 +60,7 @@ function callable(handler) {
   });
 }
 
-exports.createPairingInvite = callable(async (request, ownerUid) => {
+const createPairingInvite = callable(async (request, ownerUid) => {
   const deviceId = requiredString(request.data && request.data.deviceId, 'deviceId');
   const secret = createInviteSecret();
   const inviteId = db.collection('pairingInvites').doc().id;
@@ -66,31 +71,31 @@ exports.createPairingInvite = callable(async (request, ownerUid) => {
   return { ...result, secret };
 });
 
-exports.redeemPairingInvite = callable(async (request, viewerUid) => {
+const redeemPairingInvite = callable(async (request, viewerUid) => {
   const inviteId = requiredString(request.data && request.data.inviteId, 'inviteId');
   const secret = requiredString(request.data && request.data.secret, 'secret', 128);
   const requestId = db.collection('pairingRequests').doc().id;
   return redeemInviteTransaction({ db, inviteId, secret, viewerUid, requestId });
 });
 
-exports.confirmPairingRequest = callable(async (request, ownerUid) => {
+const confirmPairingRequest = callable(async (request, ownerUid) => {
   const requestId = requiredString(request.data && request.data.requestId, 'requestId');
   const grantId = db.collection('deviceGrants').doc().id;
   return confirmPairingRequestTransaction({ db, requestId, ownerUid, grantId });
 });
 
-exports.bindGrantToSession = callable(async (request, ownerUid) => {
+const bindGrantToSession = callable(async (request, ownerUid) => {
   const grantId = requiredString(request.data && request.data.grantId, 'grantId');
   const sessionId = requiredString(request.data && request.data.sessionId, 'sessionId');
   return bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId });
 });
 
-exports.revokeDeviceGrant = callable(async (request, ownerUid) => {
+const revokeDeviceGrant = callable(async (request, ownerUid) => {
   const grantId = requiredString(request.data && request.data.grantId, 'grantId');
   return revokeDeviceGrantTransaction({ db, grantId, ownerUid });
 });
 
-exports.startDeviceSharing = callable(async (request, ownerUid) => {
+const startDeviceSharing = callable(async (request, ownerUid) => {
   const deviceId = requiredString(request.data && request.data.deviceId, 'deviceId');
   const sessionId = db.collection('deviceSessions').doc().id;
   return createSharingSessionTransaction({
@@ -98,12 +103,12 @@ exports.startDeviceSharing = callable(async (request, ownerUid) => {
   });
 });
 
-exports.stopDeviceSharing = callable(async (request, ownerUid) => {
+const stopDeviceSharing = callable(async (request, ownerUid) => {
   const sessionId = requiredString(request.data && request.data.sessionId, 'sessionId');
   return stopSharingSessionTransaction({ db, ownerUid, sessionId });
 });
 
-exports.publishDeviceTelemetry = callable(async (request, ownerUid) => {
+const publishDeviceTelemetry = callable(async (request, ownerUid) => {
   const deviceId = requiredString(request.data && request.data.deviceId, 'deviceId');
   const sessionId = requiredString(request.data && request.data.sessionId, 'sessionId');
   return publishTelemetryTransaction({
@@ -111,7 +116,7 @@ exports.publishDeviceTelemetry = callable(async (request, ownerUid) => {
   });
 });
 
-exports.readDeviceTelemetry = callable(async (request, viewerUid) => {
+const readDeviceTelemetry = callable(async (request, viewerUid) => {
   const grantId = requiredString(request.data && request.data.grantId, 'grantId');
   const sessionId = requiredString(request.data && request.data.sessionId, 'sessionId');
   const scope = requiredString(request.data && request.data.scope, 'scope', 32);
@@ -163,3 +168,15 @@ exports.readDeviceTelemetry = callable(async (request, viewerUid) => {
     };
   });
 });
+
+  return {
+    createPairingInvite, redeemPairingInvite, confirmPairingRequest,
+    bindGrantToSession, revokeDeviceGrant, startDeviceSharing,
+    stopDeviceSharing, publishDeviceTelemetry, readDeviceTelemetry
+  };
+}
+
+if (getApps().length === 0) initializeApp();
+const db = getFirestore();
+Object.assign(exports, buildCallables({ db }));
+exports.buildCallables = buildCallables;
