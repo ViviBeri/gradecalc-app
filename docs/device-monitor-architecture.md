@@ -72,7 +72,7 @@ Do not transmit a location reading when system Location Services are off or perm
 - [x] Existing Firestore rules deny pairing and telemetry paths.
 - [ ] Authenticated owner sign-in and session management.
 - [x] Emulator coverage confirms pairing invitations, device grants, and telemetry remain denied to owners, viewers, and anonymous clients until trusted server flows exist.
-- [ ] One-time pairing invitation and owner confirmation.
-- [ ] Scoped viewer dashboard with immediate revocation.
-- [x] Backend enforces session and telemetry expiry; emulator coverage for callable authorization and full remote read lifecycle remains pending.
+- [x] Trusted backend implements one-time pairing invitations, redemption, and owner confirmation; emulator lifecycle coverage verifies the transaction flow.\n- [ ] Owner-facing pairing UI and physical-device confirmation flow.
+- [ ] Scoped viewer dashboard with immediate revocation (callable authorization is tested; viewer UI is not implemented).
+- [x] Backend enforces session and telemetry expiry; Admin SDK emulator tests cover scoped callable reads, stale telemetry, revoked grants/devices, stopped and expired sessions.\n- [x] Emulator test covers concurrent approval attempts and prevents duplicate active owner/viewer/device grants.
 - [ ] Physical Android permission and lifecycle verification.
