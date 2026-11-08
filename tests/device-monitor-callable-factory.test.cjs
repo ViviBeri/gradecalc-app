@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildCallables } = require('../functions/index.js');
+const { buildCallables } = require('../functions/src/callable-factory.cjs');
 
 class TestHttpsError extends Error {
   constructor(code, message) {
