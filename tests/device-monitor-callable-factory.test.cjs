@@ -16,7 +16,7 @@ function harness() {
   const db = {
     runTransaction() { throw new Error('test transaction reached'); },
     collection() {
-      return { doc() { return { id: 'generated-id' }; } };
+      return { doc() { return { id: 'generated-id', collection() { return { doc() { return { id: 'nested-id' }; } }; } }; } };
     }
   };
   const callables = buildCallables({
