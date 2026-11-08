@@ -11,6 +11,7 @@ const {
   REDEMPTION_WINDOW_MS,
   MAX_VIEWER_REDEMPTION_ATTEMPTS,
   MAX_INVITE_FAILED_ATTEMPTS,
+  MAX_GRANTS_PER_SESSION,
   createInviteSecret,
   confirmPairingRequestTransaction,
   canReadTelemetry,
@@ -509,6 +510,47 @@ test('owner binds an active viewer grant to one matching sharing session', async
   await assert.rejects(bindGrantToSessionTransaction({
     db, grantId: 'grant-a', ownerUid: 'owner-a', sessionId, now: 100001
   }), /SHARING_UNAVAILABLE/);
+});
+
+test('sharing sessions enforce a bounded viewer grant count', async () => {
+  const sessionId = 'session-cap-identifier';
+  const grantIds = Array.from({ length: MAX_GRANTS_PER_SESSION }, (_, index) => 'grant-' + index);
+  const records = new Map([
+    ['deviceGrants/grant-over-limit', {
+      ownerUid: 'owner-a', viewerUid: 'viewer-over', deviceId: 'phone-a',
+      scopes: ['battery'], status: 'active', expiresAt: 500000, sessionId: null
+    }],
+    ['deviceSessions/' + sessionId, {
+      ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
+      scopes: ['battery'], status: 'active', expiresAt: 400000, grantIds
+    }],
+    ['users/owner-a/devices/phone-a', { revoked: false }]
+  ]);
+  const db = {
+    collection(name) {
+      return { doc(id) {
+        const key = name + '/' + id;
+        return { key, collection(child) {
+          return { doc(childId) { return { key: key + '/' + child + '/' + childId }; } };
+        } };
+      } };
+    },
+    async runTransaction(callback) {
+      const writes = [];
+      const tx = {
+        async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
+        update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); }
+      };
+      const result = await callback(tx);
+      writes.forEach(write => write());
+      return result;
+    }
+  };
+  await assert.rejects(bindGrantToSessionTransaction({
+    db, grantId: 'grant-over-limit', ownerUid: 'owner-a', sessionId, now: 100000
+  }), /SHARING_UNAVAILABLE/);
+  assert.equal(records.get('deviceGrants/grant-over-limit').sessionId, null);
+  assert.equal(records.get('deviceSessions/' + sessionId).grantIds.length, MAX_GRANTS_PER_SESSION);
 });
 
 test('viewer telemetry reads require an active matching grant, session, and scope', () => {
