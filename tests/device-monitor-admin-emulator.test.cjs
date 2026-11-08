@@ -93,6 +93,11 @@ test('Admin SDK pairing, callable reads, and sharing lifecycle run against Fires
       ...readRequest, data: { ...readRequest.data, scope: 'location' }
     }), error => error.code === 'permission-denied');
 
+    await telemetryRef.update({ expiresAt: Date.now() - 1 });
+    const staleRead = await readHandler(readRequest);
+    assert.deepEqual(staleRead.snapshot, null);
+    await telemetryRef.update({ snapshot: { battery }, expiresAt: Date.now() + 60000 });
+
     await assert.rejects(publishTelemetryTransaction({
       db, ownerUid, deviceId, sessionId,
       snapshot: { location: { latitude: 11.9, longitude: 79.8, accuracy: 20 } },
@@ -106,6 +111,10 @@ test('Admin SDK pairing, callable reads, and sharing lifecycle run against Fires
     assert.equal((await telemetryRef.get()).exists, false);
     await assert.rejects(publishTelemetryTransaction({
       db, ownerUid, deviceId, sessionId, snapshot: { battery }, now: now + 11
+    }), /SHARING_UNAVAILABLE/);
+    await deviceRef.update({ revoked: true });
+    await assert.rejects(createSharingSessionTransaction({
+      db, ownerUid, deviceId, sessionId: 'session-revoked-device', scopes, now: Date.now() + 12
     }), /SHARING_UNAVAILABLE/);
   } finally {
     await deleteApp(app);
