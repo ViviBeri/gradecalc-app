@@ -103,6 +103,9 @@ test('Admin SDK pairing, callable reads, and sharing lifecycle run against Fires
       snapshot: { location: { latitude: 11.9, longitude: 79.8, accuracy: 20 } },
       now: now + 8
     }), /SHARING_UNAVAILABLE/);
+    await sessionRef.update({ expiresAt: Date.now() - 1 });
+    await assert.rejects(readHandler(readRequest), error => error.code === 'permission-denied');
+    await sessionRef.update({ expiresAt: Date.now() + 60000 });
     await revokeDeviceGrantTransaction({ db, grantId, ownerUid, now: now + 9 });
     assert.equal((await grantRef.get()).data().status, 'revoked');
     await assert.rejects(readHandler(readRequest), error => error.code === 'permission-denied');
