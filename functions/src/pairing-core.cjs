@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const INVITE_TTL_MS = 5 * 60 * 1000;
 const PENDING_REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
 const GRANT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_GRANTS_PER_SESSION = 20;
 const ALLOWED_SCOPES = Object.freeze([
   'location',
   'battery',
@@ -364,7 +365,7 @@ async function bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId,
       throw new Error('SHARING_UNAVAILABLE');
     }
     const grantIds = Array.isArray(session.grantIds) ? session.grantIds : [];
-    if (grantIds.includes(grantId)) throw new Error('SHARING_UNAVAILABLE');
+    if (grantIds.length >= MAX_GRANTS_PER_SESSION || grantIds.includes(grantId)) throw new Error('SHARING_UNAVAILABLE');
     transaction.update(grantRef, { sessionId });
     transaction.update(sessionRef, { grantIds: [...grantIds, grantId] });
     return { grantId, sessionId, status: 'bound' };
@@ -471,6 +472,7 @@ module.exports = {
   REDEMPTION_WINDOW_MS,
   MAX_VIEWER_REDEMPTION_ATTEMPTS,
   MAX_INVITE_FAILED_ATTEMPTS,
+  MAX_GRANTS_PER_SESSION,
   createInviteSecret,
   confirmPairingRequestTransaction,
   hashInviteSecret,
