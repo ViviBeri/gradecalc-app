@@ -466,8 +466,10 @@ test('owner binds an active viewer grant to one matching sharing session', async
       ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
       scopes: ['battery', 'location'], status: 'active', expiresAt: 400000
     }],
-    ['users/owner-a/devices/phone-a', { revoked: false }]
+    ['users/owner-a/devices/phone-a', { revoked: false }],
+    ['activeDeviceSessions/' + activeSessionKey, { ownerUid: 'owner-a', deviceId: 'phone-a', sessionId }]
   ]);
+  const activeSessionKey = require('node:crypto').createHash('sha256').update(['owner-a', 'phone-a'].join(':')).digest('hex');
   const db = {
     collection(name) {
       return { doc(id) {
@@ -588,8 +590,10 @@ test('telemetry publishing requires an active owner session and rejects ungrante
   };
   const records = new Map([
     ['users/owner-a/devices/phone-a', { revoked: false }],
-    ['deviceSessions/' + sessionId, session]
+    ['deviceSessions/' + sessionId, session],
+    ['activeDeviceSessions/' + activeSessionKey, { ownerUid: 'owner-a', deviceId: 'phone-a', sessionId }]
   ]);
+  const activeSessionKey = require('node:crypto').createHash('sha256').update(['owner-a', 'phone-a'].join(':')).digest('hex');
   const db = {
     collection(name) {
       return {
