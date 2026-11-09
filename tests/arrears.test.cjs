@@ -137,3 +137,17 @@ test('arrear attempt forms expose polite status messages and assertive validatio
   assert.match(source, /updated\.setAttribute\('role', 'status'\)/);
   assert.match(source, /updated\.setAttribute\('aria-live', 'polite'\)/);
 });
+
+
+test('saving an attempt restores focus to its success announcement', () => {
+  assert.match(source, /updated\.setAttribute\('tabindex', '-1'\)/);
+  assert.match(source, /updated\.focus\(\)/);
+});
+
+test('removing an arrear record moves focus to a remaining action or tracker heading', () => {
+  assert.match(source, /var removedIndex = cards\.indexOf\(card\)/);
+  assert.match(source, /remainingButtons\[Math\.min\(removedIndex, remainingButtons\.length - 1\)\]/);
+  assert.match(source, /focusTarget\.focus\(\)/);
+  assert.match(source, /heading\.setAttribute\('tabindex', '-1'\)/);
+  assert.match(source, /heading\.focus\(\)/);
+});
