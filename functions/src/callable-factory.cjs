@@ -142,7 +142,15 @@ const readDeviceTelemetry = callable(async (request, viewerUid) => {
 
     const deviceRef = db.collection('users').doc(grant.ownerUid)
       .collection('devices').doc(grant.deviceId);
-    const deviceSnapshot = await transaction.get(deviceRef);
+    const activeSessionKey = require('node:crypto').createHash('sha256')
+      .update([grant.ownerUid, grant.deviceId].join(':')).digest('hex');
+    const activeSessionRef = db.collection('activeDeviceSessions').doc(activeSessionKey);
+    const [deviceSnapshot, activeSessionSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(activeSessionRef)
+    ]);
+    if (!activeSessionSnapshot.exists || activeSessionSnapshot.data().sessionId !== sessionId) {
+      throw new HttpsError('permission-denied', 'Telemetry access denied.');
+    }
     if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) {
       throw new HttpsError('permission-denied', 'Telemetry access denied.');
     }
