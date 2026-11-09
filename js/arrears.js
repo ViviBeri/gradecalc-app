@@ -222,14 +222,30 @@
           updated.className = 'arrear-form-message is-success';
           updated.setAttribute('role', 'status');
           updated.setAttribute('aria-live', 'polite');
+          updated.setAttribute('tabindex', '-1');
+          updated.focus();
         }
       });
     });
     mount.querySelectorAll('[data-remove-arrear]').forEach(function (button) {
       button.addEventListener('click', function () {
         if (!root.confirm || root.confirm('Remove this arrear record and its attempt history?')) {
+          var card = button.closest('[data-arrear-id]');
+          var cards = Array.prototype.slice.call(mount.querySelectorAll('[data-arrear-id]'));
+          var removedIndex = cards.indexOf(card);
           removeRecord(button.getAttribute('data-remove-arrear'));
           render();
+          var remainingButtons = mount.querySelectorAll('[data-remove-arrear]');
+          var focusTarget = remainingButtons[Math.min(removedIndex, remainingButtons.length - 1)];
+          if (focusTarget) {
+            focusTarget.focus();
+          } else {
+            var heading = mount.querySelector('.card-title');
+            if (heading) {
+              heading.setAttribute('tabindex', '-1');
+              heading.focus();
+            }
+          }
         }
       });
     });
