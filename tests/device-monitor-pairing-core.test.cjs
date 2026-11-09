@@ -654,6 +654,7 @@ test('sharing session starts only for an active owner device and stops with tele
       const tx = {
         async get(ref) { const value = records.get(ref.key); return { exists: value !== undefined, data: () => value }; },
         create(ref, value) { writes.push(() => { if (records.has(ref.key)) throw new Error('already-exists'); records.set(ref.key, value); }); },
+        set(ref, value) { writes.push(() => records.set(ref.key, value)); },
         update(ref, value) { writes.push(() => records.set(ref.key, { ...records.get(ref.key), ...value })); },
         delete(ref) { writes.push(() => records.delete(ref.key)); }
       };
