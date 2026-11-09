@@ -32,6 +32,7 @@ No operation may return pairing secrets after creation. Never log raw codes, pre
 - Viewer redemption throttle: a hashed viewer UID plus fixed 15-minute window start and attempt count in `pairingRedemptionLimits`; never store raw invite secrets or viewer identifiers in document IDs.
 - Pending request: request ID, invite ID, viewer UID, viewer display label (untrusted presentation only), requested scopes, createdAt, expiresAt (24 hours after redemption), status.
 - Grant: owner UID, viewer UID, device ID, explicit scopes, createdAt, expiresAt (30 days after approval), revokedAt, active session ID. Enforce one active grant per owner/viewer/device using a transactionally maintained relationship lock.
+- Active session lock: deterministic owner/device key, current session ID, and expiry. Create it transactionally with session creation; reject a second unexpired active session; release it only when the matching session stops. Expired or stopped sessions may have their stale lock replaced.
 - Telemetry: owner UID, device ID, session ID, updatedAt, expiresAt, and allowlisted values only.
 
 Allowed scopes are individual values: `location`, `battery`, `network`, `device`, `permissionStatus`, `appStatus`. The owner must approve each requested scope. No wildcard scope.
@@ -88,6 +89,7 @@ Telemetry validation:
 14. Old session IDs, expired telemetry, unknown fields, oversized values, and invalid coordinates are rejected.
 15. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
 16. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
+17. A device cannot create a second active sharing session; stopping the current session releases its lock.
 
 ## Rollout gates
 
