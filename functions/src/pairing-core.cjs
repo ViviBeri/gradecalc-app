@@ -364,7 +364,14 @@ async function bindGrantToSessionTransaction({ db, grantId, ownerUid, sessionId,
     }
     const deviceRef = db.collection('users').doc(ownerUid)
       .collection('devices').doc(grant.deviceId);
-    const deviceSnapshot = await transaction.get(deviceRef);
+    const activeSessionKey = crypto.createHash('sha256').update([ownerUid, grant.deviceId].join(':')).digest('hex');
+    const activeSessionRef = db.collection('activeDeviceSessions').doc(activeSessionKey);
+    const [deviceSnapshot, activeSessionSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(activeSessionRef)
+    ]);
+    if (!activeSessionSnapshot.exists || activeSessionSnapshot.data().sessionId !== sessionId) {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
     if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) {
       throw new Error('SHARING_UNAVAILABLE');
     }
@@ -436,11 +443,14 @@ async function publishTelemetryTransaction({ db, ownerUid, deviceId, sessionId, 
   const telemetryRef = db.collection('deviceTelemetry').doc(ownerUid + '_' + deviceId);
 
   return db.runTransaction(async transaction => {
-    const [deviceSnapshot, sessionSnapshot] = await Promise.all([
-      transaction.get(deviceRef), transaction.get(sessionRef)
+    const activeSessionKey = crypto.createHash('sha256').update([ownerUid, deviceId].join(':')).digest('hex');
+    const activeSessionRef = db.collection('activeDeviceSessions').doc(activeSessionKey);
+    const [deviceSnapshot, sessionSnapshot, activeSessionSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(sessionRef), transaction.get(activeSessionRef)
     ]);
     if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false ||
-      !sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
+      !sessionSnapshot.exists || !activeSessionSnapshot.exists ||
+      activeSessionSnapshot.data().sessionId !== sessionId) throw new Error('SHARING_UNAVAILABLE');
     const session = sessionSnapshot.data();
     if (session.ownerUid !== ownerUid || session.deviceId !== deviceId ||
       session.status !== 'active' || session.sessionId !== sessionId ||
