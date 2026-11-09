@@ -269,13 +269,31 @@ async function createSharingSessionTransaction({ db, ownerUid, deviceId, session
   const approvedScopes = normalizeScopes(scopes);
   const deviceRef = db.collection('users').doc(ownerUid).collection('devices').doc(deviceId);
   const sessionRef = db.collection('deviceSessions').doc(sessionId);
+  const activeSessionKey = crypto.createHash('sha256').update([ownerUid, deviceId].join(':')).digest('hex');
+  const activeSessionRef = db.collection('activeDeviceSessions').doc(activeSessionKey);
   return db.runTransaction(async transaction => {
-    const deviceSnapshot = await transaction.get(deviceRef);
-    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false) throw new Error('SHARING_UNAVAILABLE');
-    const sessionSnapshot = await transaction.get(sessionRef);
-    if (sessionSnapshot.exists) throw new Error('SHARING_UNAVAILABLE');
+    const [deviceSnapshot, sessionSnapshot, activeSnapshot] = await Promise.all([
+      transaction.get(deviceRef), transaction.get(sessionRef), transaction.get(activeSessionRef)
+    ]);
+    if (!deviceSnapshot.exists || deviceSnapshot.data().revoked !== false || sessionSnapshot.exists) {
+      throw new Error('SHARING_UNAVAILABLE');
+    }
+    if (activeSnapshot.exists) {
+      const active = activeSnapshot.data();
+      if (typeof active.sessionId === 'string') {
+        const previousRef = db.collection('deviceSessions').doc(active.sessionId);
+        const previousSnapshot = await transaction.get(previousRef);
+        if (previousSnapshot.exists) {
+          const previous = previousSnapshot.data();
+          if (previous.status === 'active' && typeof previous.expiresAt === 'number' && previous.expiresAt > now) {
+            throw new Error('SHARING_UNAVAILABLE');
+          }
+        }
+      }
+    }
     const session = { ownerUid, deviceId, sessionId, scopes: approvedScopes, status: 'active', createdAt: now, expiresAt: now + sessionTtlMs, stoppedAt: null, grantIds: [] };
     transaction.create(sessionRef, session);
+    transaction.set(activeSessionRef, { ownerUid, deviceId, sessionId, expiresAt: session.expiresAt });
     return { sessionId, scopes: approvedScopes, expiresAt: session.expiresAt };
   });
 }
@@ -294,7 +312,11 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
     const refs = ids.map(id => db.collection('deviceGrants').doc(id));
     const grantSnapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
     const telemetryRef = db.collection('deviceTelemetry').doc(ownerUid + '_' + session.deviceId);
-    const telemetrySnapshot = await transaction.get(telemetryRef);
+    const activeSessionKey = crypto.createHash('sha256').update([ownerUid, session.deviceId].join(':')).digest('hex');
+    const activeSessionRef = db.collection('activeDeviceSessions').doc(activeSessionKey);
+    const [telemetrySnapshot, activeSessionSnapshot] = await Promise.all([
+      transaction.get(telemetryRef), transaction.get(activeSessionRef)
+    ]);
     const locks = [];
     for (let i = 0; i < grantSnapshots.length; i++) {
       if (!grantSnapshots[i].exists) continue;
@@ -318,6 +340,7 @@ async function stopSharingSessionTransaction({ db, ownerUid, sessionId, now = Da
       if (lockSnapshots[i].exists && lockSnapshots[i].data().grantId === locks[i].grantId) transaction.delete(locks[i].ref);
     }
     if (telemetrySnapshot.exists && telemetrySnapshot.data().sessionId === sessionId) transaction.delete(telemetryRef);
+    if (activeSessionSnapshot.exists && activeSessionSnapshot.data().sessionId === sessionId) transaction.delete(activeSessionRef);
     return { sessionId, status: 'stopped', stoppedAt: now };
   });
 }
