@@ -312,3 +312,33 @@ test('session grant limit rejects the next viewer without changing existing bind
     await deleteApp(app);
   }
 });
+
+
+test('a device cannot start a second active sharing session until the first stops', { skip: !enabled }, async () => {
+  const app = initializeApp({ projectId }, 'monitor-active-session-lock-test');
+  try {
+    const db = getFirestore(app);
+    const ownerUid = 'active-session-owner';
+    const deviceId = 'active-session-phone';
+    await db.collection('users').doc(ownerUid).collection('devices').doc(deviceId)
+      .set({ revoked: false, platform: 'android' });
+    const firstSessionId = 'session-active-first-123';
+    const secondSessionId = 'session-active-second-123';
+    await createSharingSessionTransaction({
+      db, ownerUid, deviceId, sessionId: firstSessionId, scopes: ['battery']
+    });
+    await assert.rejects(createSharingSessionTransaction({
+      db, ownerUid, deviceId, sessionId: secondSessionId, scopes: ['battery']
+    }), /SHARING_UNAVAILABLE/);
+    await stopSharingSessionTransaction({ db, ownerUid, sessionId: firstSessionId });
+    await createSharingSessionTransaction({
+      db, ownerUid, deviceId, sessionId: secondSessionId, scopes: ['battery']
+    });
+    const activeKey = require('node:crypto').createHash('sha256')
+      .update([ownerUid, deviceId].join(':')).digest('hex');
+    assert.equal((await db.collection('activeDeviceSessions').doc(activeKey).get()).data().sessionId,
+      secondSessionId);
+  } finally {
+    await deleteApp(app);
+  }
+});
