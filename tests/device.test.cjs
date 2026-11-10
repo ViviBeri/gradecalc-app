@@ -114,19 +114,19 @@ async function run() {
   assert.equal(consentBlocked.ids['device-enroll-form'].hidden, true, 'enrollment stays locked until consent is recorded');
 
   let permissionCalls = 0;
-  const consentBlocked = createHarness({ android: true, capacitor: { Plugins: {
+  const androidConsent = createHarness({ android: true, capacitor: { Plugins: {
     GradeCalcMonitor: { requestSetupPermissions: async () => {
       permissionCalls++;
       return { granted: true, notifications: 'granted' };
     } }
   } } });
-  await consentBlocked.ids['device-consent-continue'].listeners.click();
+  await androidConsent.ids['device-consent-continue'].listeners.click();
   assert.equal(permissionCalls, 0, 'notification permission is not requested before explicit consent');
-  assert.equal(consentBlocked.storage.has('gradecalc_device_setup_consent_v1'), false, 'unchecked consent is not persisted');
-  consentBlocked.ids['device-consent-confirm'].checked = true;
-  await consentBlocked.ids['device-consent-continue'].listeners.click();
+  assert.equal(androidConsent.storage.has('gradecalc_device_setup_consent_v1'), false, 'unchecked consent is not persisted');
+  androidConsent.ids['device-consent-confirm'].checked = true;
+  await androidConsent.ids['device-consent-continue'].listeners.click();
   assert.equal(permissionCalls, 1, 'Android notification permission is requested after consent');
-  assert.equal(consentBlocked.storage.get('gradecalc_device_setup_consent_v1'), 'accepted', 'consent is saved only after permission setup succeeds');
+  assert.equal(androidConsent.storage.get('gradecalc_device_setup_consent_v1'), 'accepted', 'consent is saved only after permission setup succeeds');
 
   const deniedConsent = createHarness({ android: true, capacitor: { Plugins: {
     GradeCalcMonitor: { requestSetupPermissions: async () => ({ granted: false }) }
