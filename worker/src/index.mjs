@@ -1,6 +1,6 @@
 'use strict';
 
-const ALLOWED_SCOPES = Object.freeze(['battery', 'device', 'permissionStatus', 'appStatus']);
+const ALLOWED_SCOPES = Object.freeze(['battery', 'device', 'permissionStatus', 'appStatus', 'media']);
 const PLATFORMS = Object.freeze(['web', 'android', 'ios', 'unknown']);
 const PERMISSION_STATES = Object.freeze(['granted', 'denied', 'prompt', 'unavailable']);
 const INVITE_TTL_MS = 5 * 60 * 1000;
@@ -261,6 +261,81 @@ async function handle(request, env) {
       env.DB.prepare('DELETE FROM telemetry WHERE device_id = ? AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND owner_id = ?)').bind(deviceId, deviceId, owner.id)
     ]);
     return json({ revoked: true }, 200, headers);
+  }
+
+  if (request.method === 'POST' && path === '/v1/media') {
+    const device = await deviceFromRequest(request, env);
+    if (!device || device.status !== 'active') return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers);
+    let scopes;
+    try { scopes = normalizeScopes(JSON.parse(device.scopes_json)); } catch { return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers); }
+    if (!scopes.includes('media')) return json({ error: 'MEDIA_NOT_AUTHORIZED' }, 403, headers);
+    if (!env.MEDIA) return json({ error: 'MEDIA_STORAGE_UNAVAILABLE' }, 503, headers);
+    const contentType = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+    const maxBytes = contentType.startsWith('image/') ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+    const declaredLength = Number(request.headers.get('content-length') || 0);
+    if (!allowedTypes.includes(contentType) || (declaredLength && declaredLength > maxBytes)) {
+      return json({ error: 'INVALID_MEDIA' }, 400, headers);
+    }
+    const data = await request.arrayBuffer();
+    if (!data.byteLength || data.byteLength > maxBytes) return json({ error: 'INVALID_MEDIA' }, 400, headers);
+    const mediaId = randomToken(16);
+    const objectKey = device.owner_id + '/' + device.id + '/' + mediaId;
+    const filename = (request.headers.get('x-file-name') || 'shared-media').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 100);
+    await env.MEDIA.put(objectKey, data, { httpMetadata: { contentType } });
+    try {
+      await env.DB.prepare(
+        'INSERT INTO media_objects (id, owner_id, device_id, object_key, filename, content_type, byte_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(mediaId, device.owner_id, device.id, objectKey, filename, contentType, data.byteLength, now).run();
+    } catch {
+      await env.MEDIA.delete(objectKey);
+      return json({ error: 'MEDIA_SAVE_FAILED' }, 503, headers);
+    }
+    return json({ mediaId, filename, contentType, bytes: data.byteLength, createdAt: now }, 201, headers);
+  }
+
+  if (request.method === 'GET' && path === '/v1/media') {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const rows = await env.DB.prepare(
+      'SELECT id, device_id AS deviceId, filename, content_type AS contentType, byte_size AS bytes, created_at AS createdAt FROM media_objects WHERE owner_id = ? ORDER BY created_at DESC LIMIT 200'
+    ).bind(owner.id).all();
+    return json({ media: rows.results || [] }, 200, headers);
+  }
+
+  const mediaMatch = /^\\/v1\\/media\\/([A-Za-z0-9_-]{20,32})$/.exec(path);
+  if (request.method === 'GET' && mediaMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const item = await env.DB.prepare(
+      'SELECT object_key, filename, content_type, byte_size FROM media_objects WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(mediaMatch[1], owner.id).first();
+    if (!item) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    const object = await env.MEDIA.get(item.object_key);
+    if (!object) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    const safeName = item.filename.replace(/[^A-Za-z0-9._-]/g, '_');
+    return new Response(object.body, {
+      status: 200,
+      headers: {
+        ...headers,
+        'content-type': item.content_type,
+        'content-length': String(item.byte_size),
+        'content-disposition': 'attachment; filename="' + safeName + '"',
+        'cache-control': 'private, no-store'
+      }
+    });
+  }
+
+  if (request.method === 'DELETE' && mediaMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const item = await env.DB.prepare(
+      'SELECT object_key FROM media_objects WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(mediaMatch[1], owner.id).first();
+    if (!item) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    await env.MEDIA.delete(item.object_key);
+    await env.DB.prepare('DELETE FROM media_objects WHERE id = ? AND owner_id = ?').bind(mediaMatch[1], owner.id).run();
+    return json({ deleted: true }, 200, headers);
   }
 
   if (request.method === 'POST' && path === '/v1/device/stop') {
