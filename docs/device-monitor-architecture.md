@@ -48,10 +48,10 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - Pairing secrets expire after five minutes and are single-use.
 - Limit redemption attempts and return indistinguishable errors for invalid/expired/reused secrets.
 - Owner approval must occur on the physical device being shared; an authenticated dashboard session alone is not proof of physical approval.
-- Viewer reads require an active, unexpired grant for the exact device and scope.
+- Dashboard reads require the owner bearer token and are limited to devices registered under that owner. A device token cannot access the dashboard or another device.
 - Revocation and Stop must immediately block subsequent reads/writes.
 - Telemetry timestamps and expiry are server-controlled.
-- Firestore TTL is cleanup only, never authorization.
+- D1 scheduled cleanup removes expired telemetry and stale pending enrollments; media is retained until explicit owner deletion.
 - Keep media out of telemetry documents. Use the separate R2 media API only after the client adds an explicit Share action, private token storage, retention controls, and viewer deletion.
 - Android force-stop prevents background execution until the user launches the app again. Do not promise operation through force-stop, OEM battery restrictions, or denied permissions.
 
@@ -64,12 +64,12 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - [x] Dashboard preview shows device and permission status without activating camera/microphone.
 - [x] Camera/microphone controls are owner-initiated and stop on page hide.
 - [x] Firestore remains deny-by-default.
-- [x] Pairing transaction core and authorization tests exist.
-- [ ] Firebase client configuration and anonymous-auth persistence.
-- [ ] Device registry integration and enrollment UI.
-- [ ] On-device owner confirmation UI.
+- [x] Worker API validation, one-time invite, dual-approval, and revocation foundations exist.
+- [ ] Cloudflare Worker URL, setup secret, D1, and R2 deployment configuration.
+- [ ] Owner/device token persistence and enrollment UI.
+- [ ] On-device and dashboard-owner approval UI.
 - [ ] Multi-device dashboard backed by authenticated data.
 - [ ] Live telemetry publishing and scoped reads.
 - [ ] Native Android lifecycle/foreground-service implementation.
-- [ ] Remote media upload, retention, and deletion.
+- [ ] Client media upload, retained media gallery, download, and explicit deletion.
 - [ ] CI green on the feature branch.
