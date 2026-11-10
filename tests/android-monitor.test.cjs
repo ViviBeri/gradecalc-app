@@ -16,6 +16,8 @@ test('Android sharing uses a visible foreground notification and explicit stop a
   assert.match(service, /addAction\([^\n]+Stop sharing/);
   assert.match(service, /ACTION_STOP_LOCAL/);
   assert.match(plugin, /POST_NOTIFICATIONS/);
+  assert.match(plugin, /state == PermissionState.PROMPT/);
+  assert.match(plugin, /Notification permission was denied/);
 });
 
 test('Android device credentials are encrypted with the Android Keystore', () => {
