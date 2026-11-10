@@ -9,7 +9,7 @@ test.before(async () => {
 });
 
 test('device scopes exclude location and network', () => {
-  assert.deepEqual(worker.ALLOWED_SCOPES, ['battery', 'device', 'permissionStatus', 'appStatus']);
+  assert.deepEqual(worker.ALLOWED_SCOPES, ['battery', 'device', 'permissionStatus', 'appStatus', 'media']);
   assert.throws(() => worker.normalizeScopes(['location']), TypeError);
   assert.throws(() => worker.normalizeScopes(['network']), TypeError);
   assert.throws(() => worker.normalizeScopes(['battery', 'battery']), TypeError);
@@ -49,13 +49,16 @@ test('permission telemetry is status-only and app heartbeat is bounded', () => {
   }, ['appStatus']), false);
 });
 
-test('telemetry rejects location, network and ungranted scopes', () => {
+test('telemetry rejects location, network, media payloads and ungranted scopes', () => {
   assert.equal(worker.validateSnapshot({
     location: { latitude: 11.9, longitude: 79.8 }
   }, ['battery']), false);
   assert.equal(worker.validateSnapshot({
     network: { online: true }
   }, ['battery']), false);
+  assert.equal(worker.validateSnapshot({
+    media: { file: 'photo.jpg' }
+  }, ['media']), false, 'media bytes never enter telemetry');
   assert.equal(worker.validateSnapshot({
     battery: { level: 0.5, charging: false },
     device: { platform: 'android', appVersion: '1.0' }
