@@ -10,3 +10,7 @@ migrations_dir = "migrations"
 
 [triggers]
 crons = ["*/15 * * * *"]
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "gradecalc-device-media"
