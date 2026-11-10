@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS invites (
   scopes_json TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL,
-  redeemed_at INTEGER
+  redeemed_at INTEGER,
+  redemption_id TEXT UNIQUE
 );
 
 CREATE INDEX IF NOT EXISTS idx_invites_owner_created
