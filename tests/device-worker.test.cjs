@@ -14,6 +14,10 @@ test('D1 schema enforces a single owner and two-sided device approval', () => {
   assert.match(schema, /singleton INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK\(singleton = 1\)/);
   assert.match(schema, /device_approved_at INTEGER/);
   assert.match(schema, /owner_approved_at INTEGER/);
+  assert.match(schema, /redemption_id TEXT UNIQUE/);
+  const workerSource = fs.readFileSync('worker/src/index.mjs', 'utf8');
+  assert.match(workerSource, /redemption_id = \?/);
+  assert.match(workerSource, /redemption_id = \?\)/);
   assert.match(schema, /CREATE TABLE IF NOT EXISTS media_objects/);
   assert.match(schema, /object_key TEXT NOT NULL UNIQUE/);
 });
