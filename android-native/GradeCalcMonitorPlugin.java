@@ -2,6 +2,7 @@ package com.viviberi.gradecalc;
 
 import android.Manifest;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
@@ -12,6 +13,9 @@ import com.getcapacitor.PermissionState;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
+import org.json.JSONArray;
+import java.util.HashSet;
+import java.util.Set;
 
 @CapacitorPlugin(
     name = "GradeCalcMonitor",
@@ -20,6 +24,13 @@ import com.getcapacitor.annotation.PermissionCallback;
     }
 )
 public final class GradeCalcMonitorPlugin extends Plugin {
+    private static final Set<String> ALLOWED_SCOPES = new HashSet<String>() {{
+        add("battery");
+        add("device");
+        add("permissionStatus");
+        add("appStatus");
+    }};
+
     @PluginMethod
     public void startMonitoring(PluginCall call) {
         if (Build.VERSION.SDK_INT >= 33) {
@@ -48,21 +59,55 @@ public final class GradeCalcMonitorPlugin extends Plugin {
     private void startService(PluginCall call) {
         String apiUrl = call.getString("apiUrl", "");
         String token = call.getString("deviceToken", "");
-        if (!apiUrl.startsWith("https://") || !token.matches("[A-Za-z0-9_-]{43}")) {
+        JSONArray scopes = call.getArray("scopes");
+        if (!isValidApiUrl(apiUrl) || !token.matches("[A-Za-z0-9_-]{43}")) {
             call.reject("A valid HTTPS API URL and enrolled device token are required.");
             return;
         }
-        Intent intent = new Intent(getContext(), GradeCalcMonitorService.class);
-        intent.setAction(GradeCalcMonitorService.ACTION_START);
-        intent.putExtra("apiUrl", apiUrl);
-        intent.putExtra("deviceToken", token);
-        org.json.JSONArray scopes = call.getArray("scopes");
-        if (scopes == null || scopes.length() == 0) { call.reject("At least one approved sharing scope is required."); return; }
-        intent.putExtra("scopesJson", scopes.toString());
-        ContextCompat.startForegroundService(getContext(), intent);
-        JSObject result = new JSObject();
-        result.put("active", true);
-        call.resolve(result);
+        if (scopes == null || scopes.length() == 0 || !hasAllowedScope(scopes)) {
+            call.reject("At least one supported status-sharing scope is required.");
+            return;
+        }
+
+        try {
+            // Persist secrets directly through the native bridge; never place them in Intent extras.
+            GradeCalcSecureStore.put(getContext(), "apiUrl", apiUrl);
+            GradeCalcSecureStore.put(getContext(), "deviceToken", token);
+            GradeCalcSecureStore.put(getContext(), "scopes", scopes.toString());
+            Intent intent = new Intent(getContext(), GradeCalcMonitorService.class);
+            intent.setAction(GradeCalcMonitorService.ACTION_START);
+            ContextCompat.startForegroundService(getContext(), intent);
+            JSObject result = new JSObject();
+            result.put("active", true);
+            call.resolve(result);
+        } catch (Exception error) {
+            GradeCalcSecureStore.clear(getContext());
+            call.reject("Android secure storage or foreground service could not start.");
+        }
+    }
+
+    private boolean isValidApiUrl(String value) {
+        try {
+            Uri uri = Uri.parse(value);
+            return "https".equalsIgnoreCase(uri.getScheme()) &&
+                uri.getHost() != null && !uri.getHost().isEmpty() &&
+                uri.getUserInfo() == null && uri.getQuery() == null && uri.getFragment() == null;
+        } catch (Exception error) {
+            return false;
+        }
+    }
+
+    private boolean hasAllowedScope(JSONArray scopes) {
+        try {
+            Set<String> seen = new HashSet<>();
+            for (int i = 0; i < scopes.length(); i++) {
+                String scope = scopes.getString(i);
+                if (!ALLOWED_SCOPES.contains(scope) || !seen.add(scope)) return false;
+            }
+            return true;
+        } catch (Exception error) {
+            return false;
+        }
     }
 
     @PluginMethod
