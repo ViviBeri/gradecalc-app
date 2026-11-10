@@ -72,6 +72,17 @@
     });
   }
 
+  function scopeDescription(scopes) {
+    var labels = {
+      battery: 'Battery level and charging state',
+      device: 'Device platform and app version',
+      permissionStatus: 'Camera and microphone permission status',
+      appStatus: 'App activity heartbeat',
+      media: 'Photos and audio shared manually'
+    };
+    return (scopes || []).map(function (scope) { return labels[scope] || scope; }).join(', ') || 'No sharing scopes';
+  }
+
   function platformValue() {
     var platform = navigator.userAgentData && navigator.userAgentData.platform || navigator.platform || '';
     if (/android/i.test(platform) || /android/i.test(navigator.userAgent || '')) return 'android';
@@ -170,6 +181,8 @@
     }
     if (form) form.hidden = true;
     if (controls) controls.hidden = false;
+    var scopesNode = document.getElementById('device-sharing-scopes');
+    if (scopesNode) scopesNode.textContent = 'Requested sharing: ' + scopeDescription(settings.deviceScopes) + '. No location or network details are included.';
     try {
       var state = await api.getDeviceStatus();
       var name = document.getElementById('device-display-name');
@@ -184,7 +197,7 @@
         }
         if (!state.deviceApprovedAt) {
           document.getElementById('device-approve').hidden = false;
-          setStatus('Review the requested sharing scopes and approve this phone here. Dashboard approval is also required.');
+          setStatus('Review the sharing scopes shown above. Approve this phone here; dashboard owner approval is also required.');
         } else {
           document.getElementById('device-approve').hidden = true;
           setStatus('Phone approval recorded. Waiting for the dashboard owner to approve this device.');
@@ -199,7 +212,7 @@
         document.getElementById('device-approve').hidden = true;
         document.getElementById('device-stop-sharing').hidden = false;
         document.getElementById('device-resume-sharing').hidden = true;
-        setStatus('Device connected. Telemetry updates while GradeCalc is open; background Android support is not enabled yet.');
+        setStatus('Device connected. Android background status sharing runs with a visible notification when supported.');
         startTelemetry();
       } else if (state.status === 'paused') {
         stopNativeMonitoring();
@@ -407,6 +420,10 @@
     sharingControls.appendChild(stop);
     sharingControls.appendChild(resume);
     enrollmentCard.appendChild(sharingControls);
+
+    var scopesStatus = element('p', 'target-intro', 'No sharing scopes selected yet.');
+    scopesStatus.id = 'device-sharing-scopes';
+    enrollmentCard.appendChild(scopesStatus);
 
     var pairingStatus = element('p', 'projection-share-status',
       'Remote connection is unavailable until the private Worker is deployed and configured.');
