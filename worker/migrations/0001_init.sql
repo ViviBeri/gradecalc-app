@@ -3,7 +3,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS owners (
   id TEXT PRIMARY KEY,
   token_hash TEXT NOT NULL UNIQUE,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  singleton INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK(singleton = 1)
 );
 
 CREATE TABLE IF NOT EXISTS invites (
