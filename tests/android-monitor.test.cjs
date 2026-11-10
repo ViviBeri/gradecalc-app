@@ -20,6 +20,18 @@ test('Android sharing uses a visible foreground notification and explicit stop a
   assert.match(plugin, /Notification permission was denied/);
 });
 
+test('first-run setup requires informed consent and Android notification permission', () => {
+  assert.match(plugin, /requestSetupPermissions/);
+  assert.match(plugin, /requestPermissionForAlias\("notifications"/);
+  assert.match(plugin, /finishSetupPermissionRequest/);
+  assert.match(deviceUi, /device-consent-setup/);
+  assert.match(deviceUi, /device-consent-confirm/);
+  assert.match(deviceUi, /requestSetupPermissions\(\)/);
+  assert.match(deviceUi, /hasDeviceSetupConsent\(\)/);
+  assert.match(deviceUi, /Camera and microphone permissions are not requested now/);
+  assert.match(deviceUi, /Continue and allow notifications/);
+});
+
 test('Android device credentials are encrypted with the Android Keystore', () => {
   assert.match(secureStore, /AndroidKeyStore/);
   assert.match(secureStore, /AES\/GCM\/NoPadding/);

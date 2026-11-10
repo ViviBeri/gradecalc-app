@@ -9,6 +9,12 @@
   var statusTimer = null;
   var nativeMonitoringStarted = false;
   var deviceNameKey = 'gradecalc_device_name';
+  var deviceConsentKey = 'gradecalc_device_setup_consent_v1';
+
+  function hasDeviceSetupConsent() {
+    try { return localStorage.getItem(deviceConsentKey) === 'accepted'; }
+    catch (error) { return false; }
+  }
   var api = window.GradeCalcDeviceApi;
 
   function element(tag, className, text) {
@@ -121,7 +127,7 @@
 
   async function startNativeMonitoring(settings) {
     var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GradeCalcMonitor;
-    if (!plugin || nativeMonitoringStarted || !settings.apiUrl || !settings.deviceToken) return;
+    if (!plugin || !hasDeviceSetupConsent() || nativeMonitoringStarted || !settings.apiUrl || !settings.deviceToken) return;
     if (!settings.deviceScopes.some(function (scope) {
       return ['battery', 'device', 'permissionStatus', 'appStatus'].includes(scope);
     })) return;
@@ -173,6 +179,15 @@
     }
     var form = document.getElementById('device-enroll-form');
     var controls = document.getElementById('device-sharing-controls');
+    var setupCard = document.getElementById('device-consent-setup');
+    if (!hasDeviceSetupConsent()) {
+      if (setupCard) setupCard.hidden = false;
+      if (form) form.hidden = true;
+      if (controls) controls.hidden = true;
+      setStatus('Review the device-sharing permissions and consent notice before enrolling this phone.');
+      return;
+    }
+    if (setupCard) setupCard.hidden = true;
     if (!settings.deviceToken) {
       if (form) form.hidden = false;
       if (controls) controls.hidden = true;
@@ -257,6 +272,58 @@
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', 'tab-devices');
     panel.tabIndex = 0;
+
+    var setupCard = element('div', 'card');
+    setupCard.id = 'device-consent-setup';
+    setupCard.appendChild(element('div', 'card-title', 'Device sharing setup and permissions'));
+    setupCard.appendChild(element('p', 'target-intro',
+      'Android does not allow apps to grant runtime permissions during APK installation. On your first setup, GradeCalc will ask for notification permission so active sharing can remain visible.'));
+    setupCard.appendChild(element('p', 'target-intro',
+      'Battery, device version, and approved app-status details are shared only after this phone and your private dashboard both approve the connection. No location or network details are collected.'));
+    setupCard.appendChild(element('p', 'target-intro',
+      'Camera and microphone permissions are not requested now. Android will ask only after you tap the camera or microphone control. Captures stay on this phone until you separately tap Share.'));
+    var consentLabel = element('label', 'target-intro');
+    consentLabel.style.cssText = 'display:flex;align-items:flex-start;gap:9px;margin:12px 0';
+    var consentCheck = element('input', '');
+    consentCheck.type = 'checkbox';
+    consentCheck.id = 'device-consent-confirm';
+    consentCheck.required = true;
+    consentCheck.style.cssText = 'width:18px;height:18px;flex:0 0 auto;margin-top:1px';
+    consentLabel.appendChild(consentCheck);
+    consentLabel.appendChild(document.createTextNode('I have reviewed the permissions and agree to enable the device companion setup on this phone.'));
+    setupCard.appendChild(consentLabel);
+    var setupButton = element('button', 'btn-primary', 'Continue and allow notifications');
+    setupButton.type = 'button';
+    setupButton.id = 'device-consent-continue';
+    setupButton.style.cssText = 'width:100%';
+    var setupStatus = element('p', 'projection-share-status', 'You can keep using the calculator without enabling device sharing.');
+    setupStatus.id = 'device-consent-status';
+    setupButton.addEventListener('click', async function () {
+      if (!consentCheck.checked) {
+        setupStatus.textContent = 'Review the notice and confirm the checkbox before continuing.';
+        return;
+      }
+      setupButton.disabled = true;
+      try {
+        var nativePlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GradeCalcMonitor;
+        if (platformValue() === 'android' && nativePlugin) {
+          var permissionResult = await nativePlugin.requestSetupPermissions();
+          if (!permissionResult || permissionResult.granted !== true) {
+            throw new Error('Notification permission is required before device sharing can be enabled.');
+          }
+        }
+        localStorage.setItem(deviceConsentKey, 'accepted');
+        setupCard.hidden = true;
+        await refreshDeviceState();
+      } catch (error) {
+        setupStatus.textContent = error.message || 'Setup could not be completed. Check Android notification permission in Settings.';
+      } finally {
+        setupButton.disabled = false;
+      }
+    });
+    setupCard.appendChild(setupButton);
+    setupCard.appendChild(setupStatus);
+    setupCard.hidden = hasDeviceSetupConsent();
 
     var deviceCard = element('div', 'card');
     deviceCard.appendChild(element('div', 'card-title', 'This device'));
@@ -438,6 +505,7 @@
     privacy.appendChild(element('p', 'target-intro',
       'No location or network data is collected. Camera and microphone are never activated by this screen. Any photo or audio upload must follow a visible capture and separate Share action. On Android, approved status scopes can continue through a visible foreground service when supported; browser telemetry runs only while the app is visible. Android may restrict background updates.'));
 
+    panel.appendChild(setupCard);
     panel.appendChild(deviceCard);
     panel.appendChild(batteryCard);
     panel.appendChild(enrollmentCard);
