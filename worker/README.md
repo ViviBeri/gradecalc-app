@@ -45,7 +45,7 @@ Set ALLOWED_ORIGINS as a plain Worker variable in wrangler.toml or the Cloudflar
 - POST /v1/telemetry — device bearer token; allowlisted telemetry only
 - GET /v1/devices — owner bearer token; latest non-expired snapshots
 - DELETE /v1/devices/{deviceId} — owner bearer token; revoke and clear telemetry
-- POST /v1/device/stop — device bearer token; pause sharing and clear telemetry
+- POST /v1/device/stop — device bearer token; pause sharing and clear telemetry\n- POST /v1/devices/{deviceId}/stop — owner bearer token; pause one device and clear telemetry
 - POST /v1/device/resume — device bearer token; resume only after an on-device action\n- POST /v1/media — active device bearer token with media scope; upload an owner-selected photo/audio file\n- GET /v1/media — owner bearer token; list retained media\n- GET /v1/media/{mediaId} — owner bearer token; download a retained media file\n- DELETE /v1/media/{mediaId} — owner bearer token; permanently delete the selected media\n- POST /v1/media — active device token with media scope; upload one owner-selected photo/audio file\n- GET /v1/media — owner bearer token; list retained media\n- GET /v1/media/{mediaId} — owner bearer token; download a retained media file\n- DELETE /v1/media/{mediaId} — owner bearer token; permanently delete the selected media
 
 ## Security boundaries
