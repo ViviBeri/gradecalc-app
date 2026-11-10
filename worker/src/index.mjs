@@ -213,9 +213,10 @@ async function handle(request, env) {
     const device = await deviceFromRequest(request, env);
     if (!device || device.status !== 'pending') return json({ error: 'APPROVAL_UNAVAILABLE' }, 403, headers);
     await env.DB.prepare(
-      'UPDATE devices SET status = \'active\', approved_at = ?, last_seen_at = ? WHERE id = ? AND status = \'pending\''
+      'UPDATE devices SET device_approved_at = ?, status = CASE WHEN owner_approved_at IS NOT NULL THEN \'active\' ELSE \'pending\' END, last_seen_at = ? WHERE id = ? AND status = \'pending\''
     ).bind(now, now, device.id).run();
-    return json({ deviceId: device.id, status: 'active' }, 200, headers);
+    const refreshed = await env.DB.prepare('SELECT status FROM devices WHERE id = ?').bind(device.id).first();
+    return json({ deviceId: device.id, status: refreshed.status }, 200, headers);
   }
 
   if (request.method === 'POST' && path === '/v1/telemetry') {
@@ -239,11 +240,11 @@ async function handle(request, env) {
     const owner = await ownerFromRequest(request, env);
     if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
     const rows = await env.DB.prepare(
-      'SELECT d.id, d.name, d.platform, d.app_version AS appVersion, d.status, d.created_at AS createdAt, d.approved_at AS approvedAt, d.last_seen_at AS lastSeenAt, t.snapshot_json AS snapshotJson, t.updated_at AS updatedAt, t.expires_at AS expiresAt FROM devices d LEFT JOIN telemetry t ON t.device_id = d.id AND t.expires_at > ? WHERE d.owner_id = ? AND d.status != \'revoked\' ORDER BY d.created_at DESC'
+      'SELECT d.id, d.name, d.platform, d.app_version AS appVersion, d.status, d.created_at AS createdAt, d.device_approved_at AS deviceApprovedAt, d.owner_approved_at AS ownerApprovedAt, d.last_seen_at AS lastSeenAt, t.snapshot_json AS snapshotJson, t.updated_at AS updatedAt, t.expires_at AS expiresAt FROM devices d LEFT JOIN telemetry t ON t.device_id = d.id AND t.expires_at > ? WHERE d.owner_id = ? AND d.status != \'revoked\' ORDER BY d.created_at DESC'
     ).bind(now, owner.id).all();
     return json({ devices: (rows.results || []).map(row => ({
       id: row.id, name: row.name, platform: row.platform, appVersion: row.appVersion,
-      status: row.status, createdAt: row.createdAt, approvedAt: row.approvedAt,
+      status: row.status, createdAt: row.createdAt, deviceApprovedAt: row.deviceApprovedAt, ownerApprovedAt: row.ownerApprovedAt,
       lastSeenAt: row.lastSeenAt, online: row.status === 'active' &&
         typeof row.lastSeenAt === 'number' && row.lastSeenAt > now - TELEMETRY_TTL_MS,
       telemetry: row.snapshotJson ? JSON.parse(row.snapshotJson) : null,
@@ -252,6 +253,233 @@ async function handle(request, env) {
   }
 
   const revokeMatch = /^\/v1\/devices\/([A-Za-z0-9_-]{20,32})$/.exec(path);
+  const ownerApprovalMatch = new RegExp('^/v1/devices/([A-Za-z0-9_-]{20,32})/approve
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const deviceId = revokeMatch[1];
+    await env.DB.batch([
+      env.DB.prepare('UPDATE devices SET status = \'revoked\' WHERE id = ? AND owner_id = ?').bind(deviceId, owner.id),
+      env.DB.prepare('DELETE FROM telemetry WHERE device_id = ? AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND owner_id = ?)').bind(deviceId, deviceId, owner.id)
+    ]);
+    return json({ revoked: true }, 200, headers);
+  }
+
+  if (request.method === 'POST' && path === '/v1/media') {
+    const device = await deviceFromRequest(request, env);
+    if (!device || device.status !== 'active') return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers);
+    let scopes;
+    try { scopes = normalizeScopes(JSON.parse(device.scopes_json)); } catch { return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers); }
+    if (!scopes.includes('media')) return json({ error: 'MEDIA_NOT_AUTHORIZED' }, 403, headers);
+    if (!env.MEDIA) return json({ error: 'MEDIA_STORAGE_UNAVAILABLE' }, 503, headers);
+    const contentType = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+    const maxBytes = contentType.startsWith('image/') ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+    const declaredLength = Number(request.headers.get('content-length') || 0);
+    if (!allowedTypes.includes(contentType) || !Number.isSafeInteger(declaredLength) || declaredLength < 1 || declaredLength > maxBytes) {
+      return json({ error: 'INVALID_MEDIA' }, 400, headers);
+    }
+    const data = await request.arrayBuffer();
+    if (!data.byteLength || data.byteLength !== declaredLength || data.byteLength > maxBytes) return json({ error: 'INVALID_MEDIA' }, 400, headers);
+    const mediaId = randomToken(16);
+    const objectKey = device.owner_id + '/' + device.id + '/' + mediaId;
+    const filename = (request.headers.get('x-file-name') || 'shared-media').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 100);
+    await env.MEDIA.put(objectKey, data, { httpMetadata: { contentType } });
+    try {
+      await env.DB.prepare(
+        'INSERT INTO media_objects (id, owner_id, device_id, object_key, filename, content_type, byte_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(mediaId, device.owner_id, device.id, objectKey, filename, contentType, data.byteLength, now).run();
+    } catch {
+      await env.MEDIA.delete(objectKey);
+      return json({ error: 'MEDIA_SAVE_FAILED' }, 503, headers);
+    }
+    return json({ mediaId, filename, contentType, bytes: data.byteLength, createdAt: now }, 201, headers);
+  }
+
+  if (request.method === 'GET' && path === '/v1/media') {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const rows = await env.DB.prepare(
+      'SELECT id, device_id AS deviceId, filename, content_type AS contentType, byte_size AS bytes, created_at AS createdAt FROM media_objects WHERE owner_id = ? ORDER BY created_at DESC LIMIT 200'
+    ).bind(owner.id).all();
+    return json({ media: rows.results || [] }, 200, headers);
+  }
+
+  const mediaMatch = new RegExp('^/v1/media/([A-Za-z0-9_-]{20,32})
+  if (request.method === 'GET' && mediaMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const item = await env.DB.prepare(
+      'SELECT object_key, filename, content_type, byte_size FROM media_objects WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(mediaMatch[1], owner.id).first();
+    if (!item) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    const object = await env.MEDIA.get(item.object_key);
+    if (!object) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    const safeName = item.filename.replace(/[^A-Za-z0-9._-]/g, '_');
+    return new Response(object.body, {
+      status: 200,
+      headers: {
+        ...headers,
+        'content-type': item.content_type,
+        'content-length': String(item.byte_size),
+        'content-disposition': 'attachment; filename="' + safeName + '"',
+        'cache-control': 'private, no-store'
+      }
+    });
+  }
+
+  if (request.method === 'DELETE' && mediaMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const item = await env.DB.prepare(
+      'SELECT object_key FROM media_objects WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(mediaMatch[1], owner.id).first();
+    if (!item) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    await env.MEDIA.delete(item.object_key);
+    await env.DB.prepare('DELETE FROM media_objects WHERE id = ? AND owner_id = ?').bind(mediaMatch[1], owner.id).run();
+    return json({ deleted: true }, 200, headers);
+  }
+
+  if (request.method === 'POST' && path === '/v1/device/stop') {
+    const device = await deviceFromRequest(request, env);
+    if (!device || device.status !== 'active') return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers);
+    await env.DB.batch([
+      env.DB.prepare('UPDATE devices SET status = \'paused\' WHERE id = ? AND status = \'active\'').bind(device.id),
+      env.DB.prepare('DELETE FROM telemetry WHERE device_id = ?').bind(device.id)
+    ]);
+    return json({ status: 'paused' }, 200, headers);
+  }
+
+  if (request.method === 'POST' && path === '/v1/device/resume') {
+    const device = await deviceFromRequest(request, env);
+    if (!device || device.status !== 'paused') return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers);
+    await env.DB.prepare(
+      'UPDATE devices SET status = \'active\', last_seen_at = ? WHERE id = ? AND status = \'paused\''
+    ).bind(now, device.id).run();
+    return json({ status: 'active' }, 200, headers);
+  }
+
+  return json({ error: 'NOT_FOUND' }, 404, headers);
+}
+
+export { ALLOWED_SCOPES, constantTimeEqual, normalizeScopes, randomToken, sha256Hex, validateSnapshot };
+export default {
+  async fetch(request, env) {
+    try {
+      return await handle(request, env);
+    } catch (error) {
+      const headers = corsHeaders(request, env) || {};
+      if (error instanceof TypeError) return json({ error: 'INVALID_REQUEST' }, 400, headers);
+      return json({ error: 'SERVICE_UNAVAILABLE' }, 503, headers);
+    }
+  },
+  async scheduled(event, env) {
+    const now = Date.now();
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM telemetry WHERE expires_at <= ?').bind(now),
+      env.DB.prepare("DELETE FROM devices WHERE status = 'pending' AND created_at < ?").bind(now - 24 * 60 * 60 * 1000),
+      env.DB.prepare('DELETE FROM invites WHERE expires_at < ? AND id NOT IN (SELECT invite_id FROM devices)').bind(now - 24 * 60 * 60 * 1000)
+    ]);
+  }
+};
+).exec(path);
+  if (request.method === 'GET' && mediaMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const item = await env.DB.prepare(
+      'SELECT object_key, filename, content_type, byte_size FROM media_objects WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(mediaMatch[1], owner.id).first();
+    if (!item) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    const object = await env.MEDIA.get(item.object_key);
+    if (!object) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    const safeName = item.filename.replace(/[^A-Za-z0-9._-]/g, '_');
+    return new Response(object.body, {
+      status: 200,
+      headers: {
+        ...headers,
+        'content-type': item.content_type,
+        'content-length': String(item.byte_size),
+        'content-disposition': 'attachment; filename="' + safeName + '"',
+        'cache-control': 'private, no-store'
+      }
+    });
+  }
+
+  if (request.method === 'DELETE' && mediaMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const item = await env.DB.prepare(
+      'SELECT object_key FROM media_objects WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(mediaMatch[1], owner.id).first();
+    if (!item) return json({ error: 'MEDIA_NOT_FOUND' }, 404, headers);
+    await env.MEDIA.delete(item.object_key);
+    await env.DB.prepare('DELETE FROM media_objects WHERE id = ? AND owner_id = ?').bind(mediaMatch[1], owner.id).run();
+    return json({ deleted: true }, 200, headers);
+  }
+
+  if (request.method === 'POST' && path === '/v1/device/stop') {
+    const device = await deviceFromRequest(request, env);
+    if (!device || device.status !== 'active') return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers);
+    await env.DB.batch([
+      env.DB.prepare('UPDATE devices SET status = \'paused\' WHERE id = ? AND status = \'active\'').bind(device.id),
+      env.DB.prepare('DELETE FROM telemetry WHERE device_id = ?').bind(device.id)
+    ]);
+    return json({ status: 'paused' }, 200, headers);
+  }
+
+  if (request.method === 'POST' && path === '/v1/device/resume') {
+    const device = await deviceFromRequest(request, env);
+    if (!device || device.status !== 'paused') return json({ error: 'DEVICE_UNAVAILABLE' }, 403, headers);
+    await env.DB.prepare(
+      'UPDATE devices SET status = \'active\', last_seen_at = ? WHERE id = ? AND status = \'paused\''
+    ).bind(now, device.id).run();
+    return json({ status: 'active' }, 200, headers);
+  }
+
+  return json({ error: 'NOT_FOUND' }, 404, headers);
+}
+
+export { ALLOWED_SCOPES, constantTimeEqual, normalizeScopes, randomToken, sha256Hex, validateSnapshot };
+export default {
+  async fetch(request, env) {
+    try {
+      return await handle(request, env);
+    } catch (error) {
+      const headers = corsHeaders(request, env) || {};
+      if (error instanceof TypeError) return json({ error: 'INVALID_REQUEST' }, 400, headers);
+      return json({ error: 'SERVICE_UNAVAILABLE' }, 503, headers);
+    }
+  },
+  async scheduled(event, env) {
+    const now = Date.now();
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM telemetry WHERE expires_at <= ?').bind(now),
+      env.DB.prepare("DELETE FROM devices WHERE status = 'pending' AND created_at < ?").bind(now - 24 * 60 * 60 * 1000),
+      env.DB.prepare('DELETE FROM invites WHERE expires_at < ? AND id NOT IN (SELECT invite_id FROM devices)').bind(now - 24 * 60 * 60 * 1000)
+    ]);
+  }
+};
+).exec(path);
+  if (request.method === 'POST' && ownerApprovalMatch) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    const deviceId = ownerApprovalMatch[1];
+    const device = await env.DB.prepare(
+      'SELECT id, status, device_approved_at FROM devices WHERE id = ? AND owner_id = ? LIMIT 1'
+    ).bind(deviceId, owner.id).first();
+    if (!device || device.status !== 'pending') return json({ error: 'APPROVAL_UNAVAILABLE' }, 404, headers);
+    await env.DB.prepare(
+      'UPDATE devices SET owner_approved_at = ?, status = CASE WHEN device_approved_at IS NOT NULL THEN \'active\' ELSE \'pending\' END WHERE id = ? AND owner_id = ? AND status = \'pending\''
+    ).bind(now, deviceId, owner.id).run();
+    const refreshed = await env.DB.prepare('SELECT status FROM devices WHERE id = ? AND owner_id = ?').bind(deviceId, owner.id).first();
+    return json({ deviceId, status: refreshed.status }, 200, headers);
+  }
+
+  if (request.method === 'GET' && path === '/v1/device/status') {
+    const device = await deviceFromRequest(request, env);
+    if (!device) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    return json({ deviceId: device.id, status: device.status }, 200, headers);
+  }
+
   if (request.method === 'DELETE' && revokeMatch) {
     const owner = await ownerFromRequest(request, env);
     if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
