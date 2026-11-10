@@ -95,16 +95,16 @@ jobs:
           ]
           for permission in permissions:
               if permission not in source:
-                  source = source.replace("<application", permission + "\\n    <application", 1)
+                  source = source.replace("<application", permission + "\n    <application", 1)
           service = '<service android:name=".GradeCalcMonitorService" android:exported="false" android:foregroundServiceType="dataSync" />'
           if service not in source:
-              source = source.replace("</application>", "    " + service + "\\n</application>")
+              source = source.replace("</application>", "    " + service + "\n</application>")
           manifest.write_text(source)
           gradle = Path("android/app/build.gradle")
           build = gradle.read_text()
           dependency = "implementation 'androidx.core:core:1.15.0'"
           if dependency not in build:
-              build = build.replace("dependencies {", "dependencies {\\n    " + dependency, 1)
+              build = build.replace("dependencies {", "dependencies {\n    " + dependency, 1)
           gradle.write_text(build)
           PY
 
