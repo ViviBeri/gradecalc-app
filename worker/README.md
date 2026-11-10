@@ -24,7 +24,7 @@ These are service limits, not a guarantee of uninterrupted service. Keep the cal
 7. Initialize the dashboard once with the setup secret. The browser generates an owner token and sends only its SHA-256 hash to the Worker. Store the raw owner token locally; never put it in a URL or log.
 8. Generate a five-minute invitation. The phone redeems it once, stores its device token locally, and explicitly approves enrollment on the phone before telemetry is accepted.
 
-Example commands:
+Run these commands from the worker/ directory. Example:
 
 ```sh
 npx wrangler d1 create gradecalc-device-api
