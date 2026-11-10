@@ -86,7 +86,8 @@ Telemetry validation:
 13. A session cannot bind more than 20 viewer grants; overflow attempts leave existing bindings unchanged.
 14. Old session IDs, expired telemetry, unknown fields, oversized values, and any location or network payload are rejected.
 15. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
-16. Location and network scopes cannot be requested, approved, published, or read.\n17. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
+16. Location and network scopes cannot be requested, approved, published, or read.
+17. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
 18. A device cannot create a second active sharing session; stopping the current session releases its lock.
 
 ## Rollout gates
