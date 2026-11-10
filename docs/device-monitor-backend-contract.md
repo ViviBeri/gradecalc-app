@@ -35,12 +35,10 @@ No operation may return pairing secrets after creation. Anonymous Auth is not an
 - Active session lock: deterministic owner/device key, current session ID, and expiry. Create it transactionally with session creation; reject a second unexpired active session; release it only when the matching session stops. Expired or stopped sessions may have their stale lock replaced.
 - Telemetry: owner UID, device ID, session ID, updatedAt, expiresAt, and allowlisted values only.
 
-Allowed scopes are individual values: `location`, `battery`, `network`, `device`, `permissionStatus`, `appStatus`. The owner must approve each requested scope. No wildcard scope.
+Allowed scopes are individual values: `battery`, `device`, `permissionStatus`, and `appStatus`. Location and network scopes are deliberately excluded. The owner must approve each requested scope. No wildcard scope.
 
 Telemetry validation:
-- Location: finite latitude [-90, 90], longitude [-180, 180], and finite non-negative accuracy; only when the owner enabled location sharing. The location object contains no client-supplied timestamp; the telemetry envelope carries the server-side `updatedAt` and `expiresAt` values.
 - Battery: finite level [0, 1], boolean charging.
-- Network: boolean online and a coarse enumerated effective type; no IP, SSID, BSSID, carrier, or network identifiers.
 - Device: coarse platform enum and app version string with strict length; no hardware identifiers or fingerprint.
 - Permission status: camera/microphone enum only; never media streams, images, or audio.
 - App status: active sharing session heartbeat only.
@@ -86,10 +84,10 @@ Telemetry validation:
 11. Revoked grants and stopped sessions immediately deny reads and writes.
 12. Stopping a session revokes every grant bound to it; revoking one grant preserves other viewers.
 13. A session cannot bind more than 20 viewer grants; overflow attempts leave existing bindings unchanged.
-14. Old session IDs, expired telemetry, unknown fields, oversized values, and invalid coordinates are rejected.
+14. Old session IDs, expired telemetry, unknown fields, oversized values, and any location or network payload are rejected.
 15. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
-16. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
-17. A device cannot create a second active sharing session; stopping the current session releases its lock.
+16. Location and network scopes cannot be requested, approved, published, or read.\n17. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
+18. A device cannot create a second active sharing session; stopping the current session releases its lock.
 
 ## Rollout gates
 
