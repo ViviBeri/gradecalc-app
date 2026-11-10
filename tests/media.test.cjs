@@ -78,6 +78,7 @@ function harness(options = {}) {
       GradeCalcDeviceApi: options.api
     },
     MediaRecorder: FakeMediaRecorder,
+    File: class FakeFile extends Blob { constructor(parts, name, options) { super(parts, options); this.name = name; } },
     URL: { createObjectURL: () => { created += 1; return 'blob:audio'; }, revokeObjectURL: url => revoked.push(url) },
     Blob, console,
     setTimeout: () => 1,
