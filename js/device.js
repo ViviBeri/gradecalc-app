@@ -436,7 +436,7 @@
     var privacy = element('div', 'card');
     privacy.appendChild(element('div', 'card-title', 'Privacy'));
     privacy.appendChild(element('p', 'target-intro',
-      'No location or network data is collected. Camera and microphone are never activated by this screen. Any photo or audio upload must follow a visible capture and separate Share action. Telemetry currently updates only while the app is open.'));
+      'No location or network data is collected. Camera and microphone are never activated by this screen. Any photo or audio upload must follow a visible capture and separate Share action. On Android, approved status scopes can continue through a visible foreground service when supported; browser telemetry runs only while the app is visible. Android may restrict background updates.'));
 
     panel.appendChild(deviceCard);
     panel.appendChild(batteryCard);
