@@ -65,6 +65,14 @@ test('telemetry rejects location, network, media payloads and ungranted scopes',
   }, ['battery']), false);
 });
 
+test('API path matching accepts only exact device and media identifiers', () => {
+  const id = 'abcdefghijklmnopqrstuv';
+  assert.equal(worker.pathId('/v1/devices/' + id + '/approve', '/v1/devices/', '/approve'), id);
+  assert.equal(worker.pathId('/v1/media/' + id, '/v1/media/'), id);
+  assert.equal(worker.pathId('/v1/devices/' + id + '/approve/extra', '/v1/devices/', '/approve'), null);
+  assert.equal(worker.pathId('/v1/media/../../owners', '/v1/media/'), null);
+});
+
 test('random enrollment tokens have high entropy and URL-safe encoding', () => {
   const first = worker.randomToken();
   const second = worker.randomToken();
