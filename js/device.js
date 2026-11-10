@@ -204,7 +204,8 @@
         }
         document.getElementById('device-stop-sharing').hidden = true;
         document.getElementById('device-resume-sharing').hidden = true;
-        stopTimers();
+        if (telemetryTimer && typeof window.clearInterval === 'function') window.clearInterval(telemetryTimer);
+        telemetryTimer = null;
       } else if (state.status === 'active') {
         startNativeMonitoring(settings);
         if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
