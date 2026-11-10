@@ -9,6 +9,7 @@ class FakeElement {
     this.tagName = tag;
     this.children = [];
     this.attributes = {};
+    this.dataset = {};
     this.listeners = {};
     this.style = {};
     this.hidden = false;
