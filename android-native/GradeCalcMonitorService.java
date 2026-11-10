@@ -62,6 +62,8 @@ public final class GradeCalcMonitorService extends Service {
                 }
                 GradeCalcSecureStore.put(this, "apiUrl", apiUrl);
                 GradeCalcSecureStore.put(this, "deviceToken", token);
+                String scopesJson = intent.getStringExtra("scopesJson");
+                if (scopesJson != null) GradeCalcSecureStore.put(this, "scopes", scopesJson);
             } catch (Exception error) {
                 stopSelf();
                 return START_NOT_STICKY;
@@ -95,11 +97,22 @@ public final class GradeCalcMonitorService extends Service {
             boolean charging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                 status == BatteryManager.BATTERY_STATUS_FULL;
             String version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            org.json.JSONArray scopes = new org.json.JSONArray(GradeCalcSecureStore.get(this, "scopes"));
             JSONObject snapshot = new JSONObject();
-            snapshot.put("battery", new JSONObject().put("level", fraction).put("charging", charging));
-            snapshot.put("device", new JSONObject().put("platform", "android")
-                .put("appVersion", version == null ? "1.0.0" : version.substring(0, Math.min(32, version.length()))));
-            snapshot.put("appStatus", new JSONObject().put("active", true));
+            for (int i = 0; i < scopes.length(); i++) {
+                String scope = scopes.getString(i);
+                if ("battery".equals(scope)) snapshot.put("battery", new JSONObject().put("level", fraction).put("charging", charging));
+                if ("device".equals(scope)) snapshot.put("device", new JSONObject().put("platform", "android")
+                    .put("appVersion", version == null ? "1.0.0" : version.substring(0, Math.min(32, version.length()))));
+                if ("appStatus".equals(scope)) snapshot.put("appStatus", new JSONObject().put("active", true));
+                if ("permissionStatus".equals(scope)) {
+                    boolean camera = checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                    boolean microphone = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                    snapshot.put("permissionStatus", new JSONObject().put("camera", camera ? "granted" : "denied")
+                        .put("microphone", microphone ? "granted" : "denied"));
+                }
+            }
+            if (snapshot.length() == 0) return;
             byte[] body = new JSONObject().put("snapshot", snapshot).toString().getBytes(StandardCharsets.UTF_8);
             HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl.replaceAll("/+$", "") + "/v1/telemetry").openConnection();
             connection.setRequestMethod("POST");
