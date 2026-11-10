@@ -463,7 +463,7 @@ test('owner binds an active viewer grant to one matching sharing session', async
     }],
     ['deviceSessions/' + sessionId, {
       ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
-      scopes: ['battery', 'location'], status: 'active', expiresAt: 400000
+      scopes: ['battery', 'device'], status: 'active', expiresAt: 400000
     }],
     ['users/owner-a/devices/phone-a', { revoked: false }],
     ['activeDeviceSessions/' + activeSessionKey, { ownerUid: 'owner-a', deviceId: 'phone-a', sessionId }]
@@ -562,7 +562,7 @@ test('viewer telemetry reads require an active matching grant, session, and scop
   };
   const session = {
     ownerUid: 'owner-a', deviceId: 'phone-a', sessionId: 'session-identifier-1234',
-    scopes: ['battery', 'location'], status: 'active', expiresAt: 400000, stoppedAt: null
+    scopes: ['battery', 'device'], status: 'active', expiresAt: 400000, stoppedAt: null
   };
   const args = {
     grant, session, viewerUid: 'viewer-b', ownerUid: 'owner-a', deviceId: 'phone-a',
@@ -582,6 +582,7 @@ test('viewer telemetry reads require an active matching grant, session, and scop
 
 test('telemetry publishing requires an active owner session and rejects ungranted fields', async () => {
   const sessionId = 'session-identifier-1234';
+  const activeSessionKey = require('node:crypto').createHash('sha256').update(['owner-a', 'phone-a'].join(':')).digest('hex');
   const session = {
     ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
     scopes: ['battery'], status: 'active', expiresAt: 500000, revokedAt: null
@@ -591,7 +592,6 @@ test('telemetry publishing requires an active owner session and rejects ungrante
     ['deviceSessions/' + sessionId, session],
     ['activeDeviceSessions/' + activeSessionKey, { ownerUid: 'owner-a', deviceId: 'phone-a', sessionId }]
   ]);
-  const activeSessionKey = require('node:crypto').createHash('sha256').update(['owner-a', 'phone-a'].join(':')).digest('hex');
   const db = {
     collection(name) {
       return {
