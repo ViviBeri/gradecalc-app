@@ -57,8 +57,8 @@
   function normalizeApiUrl(value) {
     var url;
     try { url = new URL(String(value || '').trim()); } catch { throw new TypeError('Enter a valid Worker URL.'); }
-    if (url.protocol !== 'https:' && url.hostname !== 'localhost') {
-      throw new TypeError('The Worker URL must use HTTPS.');
+    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]'))) {
+      throw new TypeError('The Worker URL must use HTTPS, except for local HTTP development.');
     }
     if (url.username || url.password || url.search || url.hash) {
       throw new TypeError('The Worker URL cannot contain credentials, query parameters, or fragments.');
