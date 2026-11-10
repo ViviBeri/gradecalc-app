@@ -14,7 +14,8 @@ class FakeElement {
     this.hidden = false;
     this.disabled = false;
     this.textContent = '';
-    this.href = '';
+    this.value = '';
+    this.id = '';
   }
   appendChild(child) { this.children.push(child); return child; }
   setAttribute(name, value) { this.attributes[name] = value; }
@@ -26,11 +27,15 @@ function createHarness(options = {}) {
   const ids = {};
   const tabBar = new FakeElement('div');
   const body = new FakeElement('div');
-  let watchCallback;
-  let errorCallback;
-  let nextWatchId = 41;
-  const cleared = [];
   const documentListeners = {};
+  const windowListeners = {};
+  const battery = options.battery || {
+    level: 0.76,
+    charging: true,
+    listeners: {},
+    addEventListener(name, callback) { this.listeners[name] = callback; },
+    removeEventListener(name) { delete this.listeners[name]; }
+  };
   const document = {
     readyState: 'complete',
     hidden: false,
@@ -39,20 +44,11 @@ function createHarness(options = {}) {
     getElementById: id => ids[id] || null,
     addEventListener: (name, callback) => { documentListeners[name] = callback; }
   };
-  const navigator = {
-    geolocation: options.noGeolocation ? null : {
-      watchPosition(success, failure) {
-        if (options.watchThrows) throw new Error('Geolocation unavailable');
-        watchCallback = success;
-        errorCallback = failure;
-        return nextWatchId;
-      },
-      clearWatch(id) { cleared.push(id); }
-    }
+  const navigator = options.noBattery ? {} : {
+    getBattery: () => options.batteryReject ? Promise.reject(new Error('Unavailable')) : Promise.resolve(battery)
   };
   const window = {
-    isSecureContext: options.secure !== false,
-    addEventListener: () => {},
+    addEventListener: (name, callback) => { windowListeners[name] = callback; },
     switchTab: () => {}
   };
   const storage = new Map(Object.entries(options.storage || {}));
@@ -63,10 +59,7 @@ function createHarness(options = {}) {
       storage.set(key, String(value));
     }
   };
-  const context = {
-    document, navigator, window, localStorage, console,
-    Date, encodeURIComponent,
-  };
+  const context = { document, navigator, window, localStorage, console, Date };
   vm.runInNewContext(fs.readFileSync('js/device.js', 'utf8'), context);
   function indexTree(node) {
     if (node.id) ids[node.id] = node;
@@ -74,80 +67,51 @@ function createHarness(options = {}) {
   }
   body.children.forEach(indexTree);
   tabBar.children.forEach(indexTree);
-  return { ids, tabBar, body, cleared, navigator, window, storage, document, documentListeners,
-    emitPosition: position => watchCallback(position),
-    emitError: error => errorCallback(error) };
+  return { ids, tabBar, body, battery, document, documentListeners, windowListeners, storage };
 }
 
-const h = createHarness({ storage: { gradecalc_device_name: 'Study phone' } });
-assert.equal(h.ids['device-local-name'].value, 'Study phone', 'saved local device name is restored');
-assert.equal(h.ids['device-display-name'].textContent, 'Study phone', 'saved name appears in device identity');
-h.ids['device-local-name'].value = 'Beri phone';
-h.ids['device-save-name'].click();
-assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone', 'device name saves locally');
-assert.equal(h.ids['device-display-name'].textContent, 'Beri phone', 'device identity updates after saving');
-assert.match(h.ids['device-name-status'].textContent, /saved on this device/);
-h.ids['device-local-name'].value = '   ';
-h.ids['device-save-name'].click();
-assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
-h.ids['device-local-name'].value = 'x'.repeat(61);
-h.ids['device-save-name'].click();
-assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/, 'names longer than 60 characters are rejected');
+async function run() {
+  const h = createHarness({ storage: { gradecalc_device_name: 'Study phone' } });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(h.ids['device-local-name'].value, 'Study phone');
+  assert.equal(h.ids['device-display-name'].textContent, 'Study phone');
+  assert.equal(h.ids['device-battery-status'].textContent, '76% · Charging');
+  h.ids['device-local-name'].value = 'Beri phone';
+  h.ids['device-save-name'].click();
+  assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone');
+  assert.equal(h.ids['device-display-name'].textContent, 'Beri phone');
+  assert.match(h.ids['device-name-status'].textContent, /saved on this device/);
+  h.ids['device-local-name'].value = '   ';
+  h.ids['device-save-name'].click();
+  assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
+  h.ids['device-local-name'].value = 'x'.repeat(61);
+  h.ids['device-save-name'].click();
+  assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
 
-const storageFailure = createHarness({ storageWriteFails: true });
-storageFailure.ids['device-local-name'].value = 'Backup phone';
-storageFailure.ids['device-save-name'].click();
-assert.match(storageFailure.ids['device-name-status'].textContent, /could not save/, 'storage failures are shown clearly');
-assert.ok(h.ids['device-start-location'], 'device tab builds a location preview control');
-assert.equal(h.ids['device-stop-location'].disabled, true, 'stop is disabled before consent');
-assert.equal(h.ids['device-location-status'].textContent, 'Location permission has not been requested.');
+  const storageFailure = createHarness({ storageWriteFails: true });
+  storageFailure.ids['device-local-name'].value = 'Backup phone';
+  storageFailure.ids['device-save-name'].click();
+  assert.match(storageFailure.ids['device-name-status'].textContent, /could not save/);
+  assert.ok(storageFailure.ids['device-add-device'].disabled, 'remote pairing stays disabled until secure enrollment is connected');
 
-h.ids['device-start-location'].click();
-assert.equal(h.ids['device-start-location'].disabled, true, 'start is disabled while requesting location');
-assert.equal(h.ids['device-stop-location'].disabled, false, 'stop is available while location is active');
-h.emitPosition({ coords: { latitude: 11.93, longitude: 79.83, accuracy: 12 }, timestamp: 1000 });
-assert.match(h.ids['device-location-details'].textContent, /Latitude 11\.93000/);
-assert.match(h.ids['device-location-details'].textContent, /Accuracy about 12 m/);
-assert.match(h.ids['device-open-map'].href, /openstreetmap\.org/);
-assert.equal(h.ids['device-open-map'].hidden, false);
+  const noBattery = createHarness({ noBattery: true });
+  await Promise.resolve();
+  assert.match(noBattery.ids['device-battery-status'].textContent, /Not available/);
 
-h.ids['device-stop-location'].click();
-assert.deepEqual(h.cleared, [41], 'stop clears the active geolocation watch');
-h.emitPosition({ coords: { latitude: 1, longitude: 2, accuracy: 5 }, timestamp: 2000 });
-assert.match(h.ids['device-location-details'].textContent, /only while you actively share/, 'late location callbacks are ignored after stop');
-assert.equal(h.ids['device-stop-location'].disabled, true);
-assert.equal(h.ids['device-start-location'].disabled, false);
-assert.equal(h.ids['device-open-map'].hidden, true);
-assert.match(h.ids['device-location-status'].textContent, /uploaded or saved/);
+  const backgrounded = createHarness();
+  await Promise.resolve();
+  backgrounded.document.hidden = true;
+  backgrounded.documentListeners.visibilitychange();
+  assert.equal(Object.keys(backgrounded.battery.listeners).length, 0, 'hiding the page removes battery listeners');
 
-const backgrounded = createHarness();
-backgrounded.ids['device-start-location'].click();
-backgrounded.document.hidden = true;
-backgrounded.documentListeners.visibilitychange();
-assert.deepEqual(backgrounded.cleared, [41], 'hiding the page stops foreground location access');
-assert.equal(backgrounded.ids['device-stop-location'].disabled, true);
-assert.equal(backgrounded.ids['device-start-location'].disabled, false);
+  const deviceSource = fs.readFileSync('js/device.js', 'utf8');
+  assert.doesNotMatch(deviceSource, /geolocation|Location|latitude|longitude|openstreetmap/i);
+  assert.doesNotMatch(deviceSource, /navigator\.connection|effectiveType|SSID|BSSID/i);
+  console.log('Device feature tests passed (local device label, battery preview, pairing guard, and privacy exclusions).');
+}
 
-const denied = createHarness();
-denied.ids['device-start-location'].click();
-denied.emitError({ code: 1 });
-assert.deepEqual(denied.cleared, [41], 'permission failure clears the watch');
-assert.match(denied.ids['device-location-status'].textContent, /permission was denied/);
-assert.equal(denied.ids['device-start-location'].disabled, false);
-
-const insecure = createHarness({ secure: false });
-insecure.ids['device-start-location'].click();
-assert.match(insecure.ids['device-location-status'].textContent, /secure HTTPS/);
-assert.equal(insecure.ids['device-stop-location'].disabled, true);
-
-const startFailure = createHarness({ watchThrows: true });
-startFailure.ids['device-start-location'].click();
-assert.equal(startFailure.ids['device-start-location'].disabled, false, 'start is re-enabled if the browser throws');
-assert.equal(startFailure.ids['device-stop-location'].disabled, true, 'stop remains disabled if location never starts');
-assert.match(startFailure.ids['device-location-status'].textContent, /could not start location access/);
-
-const unsupported = createHarness({ noGeolocation: true });
-unsupported.ids['device-start-location'].click();
-assert.match(unsupported.ids['device-location-status'].textContent, /does not support location/);
-
-console.log('Device feature tests passed (consent, location update, map link, stop, denial, HTTPS and unsupported browser).');
+run().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
