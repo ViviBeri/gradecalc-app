@@ -291,16 +291,17 @@ export default {
     try {
       return await handle(request, env);
     } catch (error) {
-      if (error instanceof TypeError) return json({ error: 'INVALID_REQUEST' }, 400);
-      return json({ error: 'SERVICE_UNAVAILABLE' }, 503);
+      const headers = corsHeaders(request, env) || {};
+      if (error instanceof TypeError) return json({ error: 'INVALID_REQUEST' }, 400, headers);
+      return json({ error: 'SERVICE_UNAVAILABLE' }, 503, headers);
     }
   },
   async scheduled(event, env) {
     const now = Date.now();
     await env.DB.batch([
       env.DB.prepare('DELETE FROM telemetry WHERE expires_at <= ?').bind(now),
-      env.DB.prepare('DELETE FROM invites WHERE expires_at < ?').bind(now - 24 * 60 * 60 * 1000),
-      env.DB.prepare("DELETE FROM devices WHERE status = 'pending' AND created_at < ?").bind(now - 24 * 60 * 60 * 1000)
+      env.DB.prepare("DELETE FROM devices WHERE status = 'pending' AND created_at < ?").bind(now - 24 * 60 * 60 * 1000),
+      env.DB.prepare('DELETE FROM invites WHERE expires_at < ? AND id NOT IN (SELECT invite_id FROM devices)').bind(now - 24 * 60 * 60 * 1000)
     ]);
   }
 };
