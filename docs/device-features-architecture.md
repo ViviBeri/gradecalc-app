@@ -31,8 +31,8 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 
 ### Phase 2 — Private dashboard and identity
 - [ ] Configure the Cloudflare Worker URL, setup secret, D1 database, and private R2 bucket.
-- [ ] Use persistent local owner/device tokens with secure storage.
-- [ ] Register device metadata using random owner/device bearer tokens; persist tokens securely.
+- [x] Persist owner/device bearer tokens in origin-local IndexedDB; hardware-backed Android Keystore storage remains pending.
+- [x] Register device metadata using random owner/device bearer tokens and retain device tokens locally.
 - [x] Keep Firestore rules deny-by-default; the Worker is the selected remote backend.
 - [ ] Verify Worker, D1, and R2 free-tier quotas before deployment.
 
@@ -41,17 +41,17 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 - [x] Server-side hash-only secret storage.
 - [x] Short expiry, one-time redemption, invite creation limits, and two-sided approval.
 - [x] Scoped device access, revocation, pause/resume, and media API foundations.
-- [ ] Device-side invitation UI.
-- [ ] Device enrollment UI and one-time code redemption.
-- [ ] On-device approval and separate dashboard-owner approval UI.
-- [ ] Persistent dashboard session and device list.
-- [ ] Per-device revoke and Stop controls.
+- [x] Device-side invitation entry UI.
+- [x] Device enrollment UI and one-time code redemption.
+- [x] On-device approval and separate dashboard-owner approval UI.
+- [x] Persistent dashboard session and device list.
+- [x] Per-device revoke and Pause/Stop controls.
 
 ### Phase 4 — Live telemetry
 - [x] Strict allowlist for battery, device, permission status, and app heartbeat.
 - [x] Location/network payloads rejected by backend validation.
-- [ ] Device telemetry publisher and owner dashboard reader.
-- [ ] Server-side timestamps and freshness labels in the dashboard.
+- [x] Device telemetry publisher and owner dashboard reader (app-open only; backend deployment pending).
+- [x] Server-side timestamps and freshness labels in the dashboard.
 - [ ] Reconnect handling and bounded retries.
 - [ ] Verify behavior after app restart, network loss, Android Doze, and force-stop.
 
@@ -60,7 +60,7 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 - [ ] Use foreground service notification where required.
 - [ ] Respect force-stop, OS permission revocation, battery optimization, and OEM restrictions.
 - [ ] Keep camera and microphone owner-initiated and visibly active.
-- [ ] Integrate private R2 media upload/download/delete with a separate media scope and explicit on-device Share action.
+- [x] Integrate private R2 media upload/download/delete with a separate media scope and explicit on-device Share action (end-to-end verification pending).
 - [ ] Do not place images or audio in telemetry documents.
 
 ## Security model
