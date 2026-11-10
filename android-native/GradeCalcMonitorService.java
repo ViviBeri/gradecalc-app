@@ -57,19 +57,19 @@ public final class GradeCalcMonitorService extends Service {
             return START_NOT_STICKY;
         }
         if (intent != null && ACTION_START.equals(intent.getAction())) {
-            String apiUrl = intent.getStringExtra("apiUrl");
-            String token = intent.getStringExtra("deviceToken");
             try {
-                if (apiUrl == null || token == null || !apiUrl.startsWith("https://") ||
-                    !token.matches("[A-Za-z0-9_-]{43}")) {
+                String apiUrl = GradeCalcSecureStore.get(this, "apiUrl");
+                String token = GradeCalcSecureStore.get(this, "deviceToken");
+                String scopesJson = GradeCalcSecureStore.get(this, "scopes");
+                if (apiUrl == null || !apiUrl.startsWith("https://") ||
+                    token == null || !token.matches("[A-Za-z0-9_-]{43}") ||
+                    scopesJson == null || scopesJson.isEmpty()) {
+                    GradeCalcSecureStore.clear(this);
                     stopSelf();
                     return START_NOT_STICKY;
                 }
-                GradeCalcSecureStore.put(this, "apiUrl", apiUrl);
-                GradeCalcSecureStore.put(this, "deviceToken", token);
-                String scopesJson = intent.getStringExtra("scopesJson");
-                if (scopesJson != null) GradeCalcSecureStore.put(this, "scopes", scopesJson);
             } catch (Exception error) {
+                GradeCalcSecureStore.clear(this);
                 stopSelf();
                 return START_NOT_STICKY;
             }
