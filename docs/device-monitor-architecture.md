@@ -23,7 +23,7 @@
 
 ## Backend status
 
-The Firebase callable backend under functions/ is retained as a local security-test prototype only. Firebase Cloud Functions require the Blaze billing plan, so that path is not compatible with the zero-budget requirement. The replacement deployment target is the Cloudflare Worker and D1 implementation under worker/. It is also a prototype only: no Worker is deployed, no D1 database is configured, and the browser/Android clients do not yet call it. Firestore remains deny-by-default.
+The Firebase callable backend under functions/ is retained as a local security-test prototype only. Firebase Cloud Functions require the Blaze billing plan, so that path is not compatible with the zero-budget requirement. The replacement deployment target is the Cloudflare Worker and D1 implementation under worker/. It is a prototype only: no Worker is deployed, no D1 database or R2 bucket is configured, and end-to-end requests have not been verified. The browser dashboard and Android app now contain API clients. Firestore remains deny-by-default.
 
 The Worker uses random owner and device bearer tokens rather than account registration, phone numbers, or OTPs. Only token hashes are stored. A one-time invite, explicit approval on the sharing phone, and server-side authorization remain mandatory.
 
@@ -33,10 +33,10 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 
 1. Configure the Cloudflare Worker and D1 database on the Free plan; do not enable a paid plan.
 2. Set the deployment-only setup secret and exact allowed browser origins. Never commit either secret.
-3. Build owner-token initialization and persistent local token storage in the browser dashboard.
-4. Build invitation creation, redemption, and explicit on-device approval screens. Never put invitation secrets in URLs, logs, analytics, or referrers.
-5. Build the multi-device dashboard, freshness labels, per-device revoke, and Stop sharing controls.
-6. Add device-token persistence and the allowlisted telemetry publisher to the Android app.
+3. Complete browser owner-token initialization and device-token persistence; current prototype uses IndexedDB, not Android Keystore.
+4. Verify invitation creation, redemption, dual approval, and dashboard controls against a deployed test Worker. Never put invitation secrets in URLs, logs, analytics, or referrers.
+5. Verify multi-device listing, freshness labels, pause/revoke, and retained-media download/deletion against D1/R2.
+6. Complete Android Keystore-backed device-token storage and test the telemetry publisher.
 7. Add native Android lifecycle integration only where Android permits it. Camera/microphone remain owner-initiated and visible.
 8. Run Node tests and D1/Worker integration tests locally.
 9. Deploy only after CORS, token lifecycle, revocation, quota exhaustion, and physical Android tests pass. Keep the Firebase prototype undeployed.
@@ -46,13 +46,13 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - Never trust client-supplied owner/viewer UIDs.
 - Never store raw invitation secrets; store only a hash.
 - Pairing secrets expire after five minutes and are single-use.
-- Limit redemption attempts and return indistinguishable errors for invalid/expired/reused secrets.
-- Owner approval must occur on the physical device being shared; an authenticated dashboard session alone is not proof of physical approval.
+- Invitation codes use 256-bit entropy, expire after five minutes, and are single-use. Return the same error for invalid, expired, or reused codes.
+- Both the physical phone and dashboard owner must approve the pending device; neither approval alone activates it.
 - Dashboard reads require the owner bearer token and are limited to devices registered under that owner. A device token cannot access the dashboard or another device.
 - Revocation and Stop must immediately block subsequent reads/writes.
 - Telemetry timestamps and expiry are server-controlled.
 - D1 scheduled cleanup removes expired telemetry and stale pending enrollments; media is retained until explicit owner deletion.
-- Keep media out of telemetry documents. Use the separate R2 media API only after the client adds an explicit Share action, private token storage, retention controls, and viewer deletion.
+- Keep media out of telemetry documents. Upload only after a visible capture/gallery action and separate Share action. The private R2 API retains media until explicit dashboard-owner deletion.
 - Android force-stop prevents background execution until the user launches the app again. Do not promise operation through force-stop, OEM battery restrictions, or denied permissions.
 
 ## Acceptance checklist
@@ -61,7 +61,7 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - [x] Location and network data removed from the Devices tab and browser dashboard.
 - [x] Backend scope allowlist excludes location and network.
 - [x] Local device label and battery preview.
-- [x] Dashboard preview shows device and permission status without activating camera/microphone.
+- [x] Dashboard shows device and permission status without activating camera/microphone.
 - [x] Camera/microphone controls are owner-initiated and stop on page hide.
 - [x] Firestore remains deny-by-default.
 - [x] Worker API validation, one-time invite, dual-approval, and revocation foundations exist.
@@ -69,7 +69,7 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - [x] Owner/device token persistence and enrollment UI (IndexedDB; hardware-backed Android storage still pending).
 - [x] On-device and dashboard-owner approval UI.
 - [x] Multi-device dashboard backed by owner-token API calls.
-- [ ] Live telemetry publishing and scoped reads.
+- [x] Client telemetry publisher and scoped Worker API; end-to-end service verification remains pending.
 - [ ] Native Android lifecycle/foreground-service implementation.
 - [x] Client media upload, retained media gallery, download, and explicit deletion.
-- [ ] CI green on the feature branch.
+- [ ] Final CI run green on the latest feature-branch commit.
