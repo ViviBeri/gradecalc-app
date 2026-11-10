@@ -41,14 +41,19 @@ test('callable registrations require App Check and consume tokens', () => {
   }
 });
 
-test('callables reject missing and anonymous authentication before invoking handlers', async () => {
+test('callables reject missing authentication but accept a Firebase anonymous session', async () => {
   const { callables } = harness();
-  for (const auth of [undefined, { uid: 'anon', token: { firebase: { sign_in_provider: 'anonymous' } } }]) {
-    await assert.rejects(
-      callables.createPairingInvite({ auth, data: { deviceId: 'phone-a', scopes: ['battery'] } }),
-      error => error instanceof TestHttpsError && error.code === 'unauthenticated'
-    );
-  }
+  await assert.rejects(
+    callables.createPairingInvite({ data: { deviceId: 'phone-a', scopes: ['battery'] } }),
+    error => error instanceof TestHttpsError && error.code === 'unauthenticated'
+  );
+  await assert.rejects(
+    callables.createPairingInvite({
+      auth: { uid: 'anonymous-device', token: { firebase: { sign_in_provider: 'anonymous' } } },
+      data: { deviceId: 'phone-a', scopes: ['battery'] }
+    }),
+    error => error instanceof TestHttpsError && error.code === 'internal'
+  );
 });
 
 test('callables reject malformed arguments after authentication', async () => {
