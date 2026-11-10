@@ -7,3 +7,6 @@ binding = "DB"
 database_name = "gradecalc-device-api"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 migrations_dir = "migrations"
+
+[triggers]
+crons = ["*/15 * * * *"]
