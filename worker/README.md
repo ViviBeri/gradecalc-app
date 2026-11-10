@@ -9,7 +9,8 @@ Workers Free currently publishes 100,000 requests per day and 10 ms CPU per requ
 Official limits:
 - https://developers.cloudflare.com/workers/platform/limits/
 - https://developers.cloudflare.com/d1/platform/pricing/
-- https://developers.cloudflare.com/d1/platform/limits/\n- https://developers.cloudflare.com/r2/pricing/
+- https://developers.cloudflare.com/d1/platform/limits/
+- https://developers.cloudflare.com/r2/pricing/
 
 These are service limits, not a guarantee of uninterrupted service. Keep the calculator usable if the Worker is unavailable.
 
@@ -41,12 +42,23 @@ Set ALLOWED_ORIGINS as a plain Worker variable in wrangler.toml or the Cloudflar
 - POST /v1/setup — one-time owner bootstrap; requires X-Setup-Secret
 - POST /v1/invites — owner bearer token; returns a single-use code valid for five minutes
 - POST /v1/enroll — redeem code and create a pending device; returns a device token once
-- POST /v1/devices/approve — device bearer token; explicit on-device approval\n- POST /v1/devices/{deviceId}/approve — owner bearer token; separate dashboard approval\n- GET /v1/device/status — device bearer token; check pending/active/paused state
+- POST /v1/devices/approve — device bearer token; explicit on-device approval
+- POST /v1/devices/{deviceId}/approve — owner bearer token; separate dashboard approval
+- GET /v1/device/status — device bearer token; check pending/active/paused state
 - POST /v1/telemetry — device bearer token; allowlisted telemetry only
 - GET /v1/devices — owner bearer token; latest non-expired snapshots
 - DELETE /v1/devices/{deviceId} — owner bearer token; revoke and clear telemetry
-- POST /v1/device/stop — device bearer token; pause sharing and clear telemetry\n- POST /v1/devices/{deviceId}/stop — owner bearer token; pause one device and clear telemetry
-- POST /v1/device/resume — device bearer token; resume only after an on-device action\n- POST /v1/media — active device bearer token with media scope; upload an owner-selected photo/audio file\n- GET /v1/media — owner bearer token; list retained media\n- GET /v1/media/{mediaId} — owner bearer token; download a retained media file\n- DELETE /v1/media/{mediaId} — owner bearer token; permanently delete the selected media\n- POST /v1/media — active device token with media scope; upload one owner-selected photo/audio file\n- GET /v1/media — owner bearer token; list retained media\n- GET /v1/media/{mediaId} — owner bearer token; download a retained media file\n- DELETE /v1/media/{mediaId} — owner bearer token; permanently delete the selected media
+- POST /v1/device/stop — device bearer token; pause sharing and clear telemetry
+- POST /v1/devices/{deviceId}/stop — owner bearer token; pause one device and clear telemetry
+- POST /v1/device/resume — device bearer token; resume only after an on-device action
+- POST /v1/media — active device bearer token with media scope; upload an owner-selected photo/audio file
+- GET /v1/media — owner bearer token; list retained media
+- GET /v1/media/{mediaId} — owner bearer token; download a retained media file
+- DELETE /v1/media/{mediaId} — owner bearer token; permanently delete the selected media
+- POST /v1/media — active device token with media scope; upload one owner-selected photo/audio file
+- GET /v1/media — owner bearer token; list retained media
+- GET /v1/media/{mediaId} — owner bearer token; download a retained media file
+- DELETE /v1/media/{mediaId} — owner bearer token; permanently delete the selected media
 
 ## Security boundaries
 
