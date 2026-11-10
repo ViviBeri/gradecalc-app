@@ -1,6 +1,6 @@
 # Device Monitor — Cloudflare backend contract
 
-Status: prototype only. No Cloudflare Worker, D1 database, or R2 bucket is deployed. The browser dashboard and Android app do not yet call these endpoints.
+Status: integration prototype. The browser dashboard and Android client now call these endpoints, and the Android build workflow generates a native foreground service. No Cloudflare Worker, D1 database, or R2 bucket is deployed, so remote end-to-end operation is not yet available.
 
 ## Runtime and cost boundary
 
@@ -17,7 +17,7 @@ There is one private dashboard owner per Worker deployment.
 - A deployment-only SETUP_SECRET protects the one-time dashboard bootstrap.
 - The browser generates a random 256-bit owner token. The Worker stores only its SHA-256 hash in D1.
 - Each device receives a random 256-bit device token after redeeming a one-time invitation. The Worker stores only its SHA-256 hash.
-- Owner and device tokens are bearer credentials. The current browser client stores them in origin-local IndexedDB; never place them in URLs, analytics, logs, or referrers. IndexedDB is not hardware-backed Android Keystore storage, so replace device-token persistence with a native Keystore-backed adapter and complete an XSS/CSP review before production.
+- Owner and device tokens are bearer credentials. The browser client currently stores its active token in origin-local IndexedDB; never place tokens in URLs, analytics, logs, or referrers. The Android foreground service stores an additional device-token copy encrypted with Android Keystore AES-GCM. The foreground JavaScript client still uses IndexedDB, so exclusive Keystore-backed token handling and a complete XSS/CSP review remain required before production.
 - No email, phone number, OTP, or conventional user account is required.
 - Loss of the owner token currently has no recovery flow. Do not claim account recovery until a secure rotation/recovery mechanism exists.
 
@@ -108,5 +108,6 @@ Location and network data are excluded from every endpoint and schema. Reject un
 - R2 tests for private access, content-type/size limits, failed upload cleanup, download authorization, and deletion.
 - CORS tests for allowed and rejected origins.
 - Android tests for token persistence, explicit approval, media Share action, OS privacy indicators, app restart, Doze, and force-stop.
+- Validate Android foreground-service behavior on supported Android versions. The current dataSync foreground-service type is subject to Android OS time limits and is not guaranteed to run indefinitely.
 - Confirm Worker, D1, and R2 free-tier usage limits. Never enable paid billing.
 - Keep Firestore deny-by-default. The Firebase Functions code is retained only as a local prototype and is not the deployment backend.
