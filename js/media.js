@@ -6,6 +6,7 @@
   var recorder = null;
   var recordedChunks = [];
   var audioUrl = null;
+  var galleryUrl = null;
   var panel;
   var cameraRequest = 0;
   var micRequest = 0;
@@ -23,6 +24,45 @@
     if (!node) return;
     node.textContent = message;
     node.style.color = isError ? 'var(--red)' : 'var(--muted)';
+  }
+
+  function clearGalleryPhoto() {
+    var preview = document.getElementById('media-gallery-preview');
+    if (preview) {
+      preview.removeAttribute('src');
+      preview.hidden = true;
+    }
+    if (galleryUrl && URL && typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(galleryUrl);
+    }
+    galleryUrl = null;
+    var input = document.getElementById('media-gallery-input');
+    if (input) input.value = '';
+    status('media-gallery-status', 'No gallery photo selected.', false);
+  }
+
+  function selectGalleryPhoto(event) {
+    var input = event && event.target;
+    var file = input && input.files && input.files[0];
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      status('media-gallery-status', 'Choose an image file.', true);
+      input.value = '';
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      status('media-gallery-status', 'Choose an image smaller than 20 MB.', true);
+      input.value = '';
+      return;
+    }
+    if (galleryUrl) URL.revokeObjectURL(galleryUrl);
+    galleryUrl = URL.createObjectURL(file);
+    var preview = document.getElementById('media-gallery-preview');
+    if (preview) {
+      preview.src = galleryUrl;
+      preview.hidden = false;
+    }
+    status('media-gallery-status', 'Photo selected for this session only. It has not been uploaded or saved.', false);
   }
 
   function stopCamera() {
@@ -226,6 +266,41 @@
     cameraStatus.setAttribute('aria-live', 'polite');
     camera.appendChild(cameraStatus);
 
+    var gallery = element('div', 'card');
+    gallery.appendChild(element('div', 'card-title', 'Gallery photos'));
+    gallery.appendChild(element('p', 'target-intro',
+      'Choose a photo using Android’s system photo picker. The selection stays in this session and is not uploaded.'));
+    var galleryInput = element('input', '');
+    galleryInput.id = 'media-gallery-input';
+    galleryInput.type = 'file';
+    galleryInput.accept = 'image/*';
+    galleryInput.hidden = true;
+    galleryInput.addEventListener('change', selectGalleryPhoto);
+    var galleryActions = element('div', 'target-actions');
+    var galleryChoose = element('button', 'btn-primary', 'Choose from gallery');
+    galleryChoose.id = 'media-gallery-choose';
+    galleryChoose.type = 'button';
+    galleryChoose.addEventListener('click', function () { galleryInput.click(); });
+    var galleryClear = element('button', 'btn-secondary', 'Clear photo');
+    galleryClear.id = 'media-gallery-clear';
+    galleryClear.type = 'button';
+    galleryClear.addEventListener('click', clearGalleryPhoto);
+    galleryActions.appendChild(galleryChoose);
+    galleryActions.appendChild(galleryClear);
+    gallery.appendChild(galleryInput);
+    gallery.appendChild(galleryActions);
+    var galleryPreview = element('img', '');
+    galleryPreview.id = 'media-gallery-preview';
+    galleryPreview.alt = 'Selected gallery photo preview';
+    galleryPreview.hidden = true;
+    galleryPreview.style.cssText = 'width:100%;border-radius:12px;margin-top:10px';
+    gallery.appendChild(galleryPreview);
+    var galleryStatus = element('p', 'projection-share-status', 'No gallery photo selected.');
+    galleryStatus.id = 'media-gallery-status';
+    galleryStatus.setAttribute('role', 'status');
+    galleryStatus.setAttribute('aria-live', 'polite');
+    gallery.appendChild(galleryStatus);
+
     var mic = element('div', 'card');
     mic.appendChild(element('div', 'card-title', 'Microphone'));
     mic.appendChild(element('p', 'target-intro', 'Recording starts only when you tap Start recording. Audio stays in this session and is not uploaded.'));
@@ -255,6 +330,7 @@
     mic.appendChild(micStatus);
 
     panel.appendChild(camera);
+    panel.appendChild(gallery);
     panel.appendChild(mic);
     body.appendChild(panel);
   }
@@ -265,6 +341,7 @@
     stopMicrophone();
     var photo = document.getElementById('media-photo-preview');
     if (photo) { photo.removeAttribute('src'); photo.hidden = true; }
+    clearGalleryPhoto();
     var canvas = document.getElementById('media-photo-canvas');
     if (canvas) { canvas.width = 0; canvas.height = 0; }
     var audio = document.getElementById('media-audio-playback');
