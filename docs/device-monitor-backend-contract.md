@@ -4,13 +4,13 @@ Status: design only. No functions are deployed, no credentials are configured, a
 
 ## Runtime boundary
 
-Use Firebase Authentication for both owner and viewer identities. Use second-generation Firebase callable HTTPS functions for privileged pairing operations, with App Check enforcement where supported. Functions use the Admin SDK; clients never write pairing invitations or grants directly. The local monitor remains functional without an account and never uploads unless the owner explicitly starts a separate remote-sharing session.
+Use Firebase Authentication for owner and viewer identities. Use Firebase anonymous authentication so the dashboard and enrolled phones do not need user accounts, email addresses, phone numbers, or OTPs. Persist the browser's anonymous session across reloads where supported. Use second-generation Firebase callable HTTPS functions for privileged pairing operations, with App Check enforcement where supported. Functions use the Admin SDK; clients never write pairing invitations or grants directly. The local monitor remains functional without an account and never uploads unless the owner explicitly starts a separate remote-sharing session.
 
 Do not require a paid service for the local monitor. Before selecting a remote deployment plan, verify current Firebase plan limits and whether the required Functions runtime is available on the project's plan. Do not silently enable billing.
 
 ## Callable operations
 
-All calls require a verified Firebase Auth ID token. Reject anonymous accounts. Validate App Check tokens when enforcement is enabled. Derive owner/viewer UIDs only from verified auth context; never accept a UID supplied by the client as authority.
+All calls require a verified Firebase Auth ID token, including Firebase anonymous sessions. Anonymous authentication supplies a stable per-installation identity, not proof of ownership; pairing secrets, explicit owner approval, App Check, and server-side authorization remain mandatory. Reject requests without a verified auth context. Validate App Check tokens on every callable. Derive owner/viewer UIDs only from verified auth context; never accept a UID supplied by the client as authority.
 
 | Operation | Caller | Required behaviour |
 |---|---|---|
@@ -24,7 +24,7 @@ All calls require a verified Firebase Auth ID token. Reject anonymous accounts. 
 | `publishDeviceTelemetry` | Owner device | Verify active sharing session and device ownership; validate strict allowlist and bounds; attach server timestamp and expiry; reject stale session IDs and arbitrary fields. |
 | `readDeviceTelemetry` | Viewer | Require an active, unexpired grant bound to the exact owner, viewer, device, session, and requested scope; return only that scope and only fresh telemetry. |
 
-No operation may return pairing secrets after creation. Never log raw codes, precise location payloads, auth tokens, or media. Pairing codes must not be placed in URLs, analytics, crash reports, browser history, or referrers.
+No operation may return pairing secrets after creation. Anonymous Auth is not an authorization shortcut: possession of a valid one-time invite and explicit owner approval are still required. Never log raw codes, precise location payloads, auth tokens, or media. Pairing codes must not be placed in URLs, analytics, crash reports, browser history, or referrers.
 
 ## Data contract
 
@@ -73,7 +73,7 @@ Telemetry validation:
 
 ## Required emulator test matrix
 
-1. Unauthenticated and anonymous callers cannot invoke privileged operations.
+1. Unauthenticated callers cannot invoke privileged operations; anonymous Firebase sessions can proceed only through the same App Check, invite, approval, ownership, and scope checks as every other caller.
 2. Owner cannot create an invite for another user's device.
 3. Viewer cannot redeem an expired, consumed, revoked, malformed, or guessed code.
 4. Repeated failed attempts are throttled.
