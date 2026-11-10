@@ -70,6 +70,22 @@
         });
         actions.appendChild(approve);
       }
+      if (device.status === 'active') {
+        var pause = make('button', 'secondary', 'Pause sharing');
+        pause.type = 'button';
+        pause.addEventListener('click', async function () {
+          pause.disabled = true;
+          try {
+            await api.pauseDevice(device.id);
+            setStatus('Sharing paused. The phone can resume it from the Devices tab.');
+            await loadDashboard();
+          } catch (error) {
+            setStatus(error.message, true);
+            pause.disabled = false;
+          }
+        });
+        actions.appendChild(pause);
+      }
       if (device.status !== 'revoked') {
         var revoke = make('button', 'danger', 'Revoke device');
         revoke.type = 'button';
