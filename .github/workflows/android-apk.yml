@@ -19,6 +19,7 @@ on:
       - "sw.js"
       - "offline.html"
       - "capacitor.config.json"
+      - "android-native/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/android-apk.yml"
