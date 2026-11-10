@@ -43,7 +43,8 @@
       var card = make('article', 'remote-device-card');
       var top = make('div', 'remote-device-top');
       var title = make('h3', '', device.name || 'Unnamed device');
-      var status = make('span', 'device-state', device.status);
+      var displayStatus = device.status === 'active' ? (device.online ? 'Online' : 'Offline') : device.status;
+      var status = make('span', 'device-state', displayStatus);
       status.dataset.state = device.status;
       top.appendChild(title);
       top.appendChild(status);
