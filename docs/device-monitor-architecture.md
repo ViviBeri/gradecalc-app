@@ -23,24 +23,23 @@
 
 ## Backend status
 
-The trusted pairing backend and callable operations are scaffolding only. Firebase Functions are not deployed, Firebase project configuration is not present, App Check is not configured in the client, and Firestore remains deny-by-default. The backend requires Firebase Authentication and App Check.
+The Firebase callable backend under functions/ is retained as a local security-test prototype only. Firebase Cloud Functions require the Blaze billing plan, so that path is not compatible with the zero-budget requirement. The replacement deployment target is the Cloudflare Worker and D1 implementation under worker/. It is also a prototype only: no Worker is deployed, no D1 database is configured, and the browser/Android clients do not yet call it. Firestore remains deny-by-default.
 
-Anonymous Firebase Auth can provide a stable per-installation UID without a conventional account, but it does not prove device ownership. A one-time invite, explicit approval on the sharing phone, and server-side authorization are still mandatory.
+The Worker uses random owner and device bearer tokens rather than account registration, phone numbers, or OTPs. Only token hashes are stored. A one-time invite, explicit approval on the sharing phone, and server-side authorization remain mandatory.
 
 Do not claim live pairing, remote telemetry, or persistent background monitoring until the client, server, rules, and emulator suite work together.
 
 ## Required implementation sequence
 
-1. Add Firebase web configuration through a safe public config file or environment-specific build input; never commit Admin credentials.
-2. Initialize Firebase Auth with local persistence and anonymous sign-in for the browser dashboard and each installed device.
-3. Register device metadata under the authenticated anonymous UID.
-4. Build invitation creation and redemption screens. Show the secret once and transfer it without URL query parameters, analytics, or logs.
-5. Show pending viewer identity and exact requested scopes on the sharing phone. Require an explicit on-device confirmation before creating a grant.
-6. Add the multi-device dashboard, freshness labels, per-device revoke, and Stop sharing controls.
-7. Publish only allowlisted battery/device/permission/app-status telemetry over authenticated callables.
-8. Add native Android integration for background battery/app heartbeat only where Android permits it. Camera/microphone remain owner-initiated and visible.
-9. Run Node tests and Firestore emulator tests. Keep Firestore rules deny-by-default until all security tests pass.
-10. Verify the Firebase plan and App Check availability. Never enable billing or deploy production services without explicit authorization.
+1. Configure the Cloudflare Worker and D1 database on the Free plan; do not enable a paid plan.
+2. Set the deployment-only setup secret and exact allowed browser origins. Never commit either secret.
+3. Build owner-token initialization and persistent local token storage in the browser dashboard.
+4. Build invitation creation, redemption, and explicit on-device approval screens. Never put invitation secrets in URLs, logs, analytics, or referrers.
+5. Build the multi-device dashboard, freshness labels, per-device revoke, and Stop sharing controls.
+6. Add device-token persistence and the allowlisted telemetry publisher to the Android app.
+7. Add native Android lifecycle integration only where Android permits it. Camera/microphone remain owner-initiated and visible.
+8. Run Node tests and D1/Worker integration tests locally.
+9. Deploy only after CORS, token lifecycle, revocation, quota exhaustion, and physical Android tests pass. Keep the Firebase prototype undeployed.
 
 ## Security and lifecycle
 
