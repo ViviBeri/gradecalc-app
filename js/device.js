@@ -128,7 +128,7 @@
 
   async function stopNativeMonitoring() {
     var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GradeCalcMonitor;
-    if (!plugin || !nativeMonitoringStarted) return;
+    if (!plugin) return;
     try { await plugin.stopMonitoring(); } catch (error) { setStatus(error.message, true); }
     nativeMonitoringStarted = false;
   }
