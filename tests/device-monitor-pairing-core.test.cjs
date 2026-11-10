@@ -442,14 +442,15 @@ test('only the grant owner can revoke an active device grant', async () => {
 });
 
 
-test('backend contract requires verified authentication context for owner identity', () => {
+test('backend contract requires hashed bearer tokens and dual device approval', () => {
   const fs = require('node:fs');
   const path = require('node:path');
   const contract = fs.readFileSync(path.join(__dirname, '../docs/device-monitor-backend-contract.md'), 'utf8');
-  assert.match(contract, /derive owner\/viewer UIDs only from verified auth context/i);
-  assert.match(contract, /never accept a UID supplied by the client as authority/i);
-  assert.match(contract, /Revocation and Stop must block subsequent reads\/writes immediately/i);
-  assert.match(contract, /Viewer writes are always denied/i);
+  assert.match(contract, /random owner and device bearer tokens/i);
+  assert.match(contract, /only its SHA-256 hash/i);
+  assert.match(contract, /both approvals are recorded/i);
+  assert.match(contract, /Revocation immediately blocks subsequent telemetry and media uploads/i);
+  assert.match(contract, /Location and network data are excluded/i);
 });
 
 
