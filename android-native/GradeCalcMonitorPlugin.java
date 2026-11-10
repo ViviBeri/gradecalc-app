@@ -61,7 +61,7 @@ public final class GradeCalcMonitorPlugin extends Plugin {
     @PluginMethod
     public void stopMonitoring(PluginCall call) {
         Intent intent = new Intent(getContext(), GradeCalcMonitorService.class);
-        intent.setAction(GradeCalcMonitorService.ACTION_STOP);
+        intent.setAction(GradeCalcMonitorService.ACTION_STOP_LOCAL);
         getContext().startService(intent);
         call.resolve();
     }
