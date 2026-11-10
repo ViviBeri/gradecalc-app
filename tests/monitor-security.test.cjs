@@ -13,9 +13,9 @@ test('remote design requires anonymous identity, one-time approval, expiry, and 
   const design = fs.readFileSync('docs/device-monitor-architecture.md', 'utf8');
   assert.match(design, /Firebase anonymous authentication/i);
   assert.match(design, /one-time pairing invitation/i);
-  assert.match(design, /owner confirms the viewer identity/i);
+  assert.match(design, /explicit owner approval/i);
   assert.match(design, /immediately/i);
   assert.match(design, /short-lived/i);
   assert.match(design, /scope/i);
-  assert.match(design, /Location and network data are excluded/i);
+  assert.match(design, /No location collection/i);
 });
