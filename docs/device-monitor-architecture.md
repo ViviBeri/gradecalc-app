@@ -17,7 +17,7 @@
 
 `monitor/index.html` contains private dashboard initialization, one-time invitation creation, dual approval, multi-device listing, pause/revoke controls, and retained-media download/deletion. It displays only the current browser's platform, battery (when supported), and camera/microphone permission states locally; it never opens local sensors.
 
-`js/device.js` adds a Devices tab with local device naming, battery preview, one-time invitation redemption, on-device approval, sharing pause/resume, and battery/device/permission telemetry while the app is open. Native Android background service support is not implemented.
+`js/device.js` adds a Devices tab with local device naming, battery preview, one-time invitation redemption, on-device approval, sharing pause/resume, and scoped telemetry. In the Android APK, the native foreground service publishes approved battery/device/permission/app-status scopes on a 60-second cycle with a persistent, user-visible notification after dual approval. Browser telemetry runs only while the app is visible. Android lifecycle behavior still requires physical-device verification; Doze, OS service limits, force-stop, and OEM battery policies can interrupt updates.
 
 `js/media.js` contains visible, user-initiated camera, microphone, and gallery selection controls with separate Share actions. The API client uploads only after the owner taps Share and the device has the media scope. Media streams stop when the page is hidden or the feature is closed.
 
@@ -27,7 +27,7 @@ The Firebase callable backend under functions/ is retained as a local security-t
 
 The Worker uses random owner and device bearer tokens rather than account registration, phone numbers, or OTPs. Only token hashes are stored. A one-time invite, explicit approval on the sharing phone, and server-side authorization remain mandatory.
 
-Do not claim live pairing, remote telemetry, or persistent background monitoring until the client, server, rules, and emulator suite work together.
+The client and Worker code implement the pairing and telemetry flows, but the Worker is not deployed and remote end-to-end pairing is not yet available. Do not claim guaranteed or uninterrupted background monitoring; Android may stop or defer the foreground service.
 
 ## Required implementation sequence
 
@@ -36,8 +36,8 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 3. Complete browser owner-token initialization and device-token persistence; current prototype uses IndexedDB, not Android Keystore.
 4. Verify invitation creation, redemption, dual approval, and dashboard controls against a deployed test Worker. Never put invitation secrets in URLs, logs, analytics, or referrers.
 5. Verify multi-device listing, freshness labels, pause/revoke, and retained-media download/deletion against D1/R2.
-6. Complete Android Keystore-backed device-token storage and test the telemetry publisher.
-7. Add native Android lifecycle integration only where Android permits it. Camera/microphone remain owner-initiated and visible.
+6. Move all device-token operations behind the native Android Keystore boundary; the current service encrypts its own token copy, while the JavaScript client still keeps a browser-storage copy.
+7. Verify native Android foreground-service start, stop, pause, resume, process death, notification behavior, and OS restrictions on physical devices. Camera/microphone remain owner-initiated and visible.
 8. Run Node tests and D1/Worker integration tests locally.
 9. Deploy only after CORS, token lifecycle, revocation, quota exhaustion, and physical Android tests pass. Keep the Firebase prototype undeployed.
 
@@ -70,6 +70,6 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - [x] On-device and dashboard-owner approval UI.
 - [x] Multi-device dashboard backed by owner-token API calls.
 - [x] Client telemetry publisher and scoped Worker API; end-to-end service verification remains pending.
-- [ ] Native Android lifecycle/foreground-service implementation.
+- [x] Native Android foreground-service implementation with visible notification and stop action; physical-device lifecycle verification remains pending.
 - [x] Client media upload, retained media gallery, download, and explicit deletion.
 - [ ] Final CI run green on the latest feature-branch commit.
