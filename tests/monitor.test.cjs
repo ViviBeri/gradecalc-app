@@ -42,6 +42,8 @@ test('media upload requires an explicit API call and media file', () => {
   assert.match(apiClient, /async function uploadMedia\(file\)/);
   assert.match(apiClient, /\/v1\/media/);
   assert.match(dashboard, /create-invite/);
+  assert.match(dashboard, /Requested sharing:/);
+  assert.match(dashboard, /function scopeLabel/);
   assert.match(dashboard, /Delete permanently/);
 });
 
