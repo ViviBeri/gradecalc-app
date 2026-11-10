@@ -28,7 +28,7 @@ test('Android device credentials are encrypted with the Android Keystore', () =>
 });
 
 test('native telemetry sends only explicitly approved scopes', () => {
-  assert.match(service, /scopesJson/);
+  assert.match(service, /GradeCalcSecureStore\.get\(this, "scopes"\)/);
   assert.match(service, /"battery"\.equals\(scope\)/);
   assert.match(service, /"device"\.equals\(scope\)/);
   assert.match(service, /"permissionStatus"\.equals\(scope\)/);
