@@ -1,10 +1,10 @@
 'use strict';
 
 (function () {
-  var watchId = null;
-  var locationActive = false;
   var tabButton;
   var panel;
+  var battery = null;
+  var batteryListener = null;
   var deviceNameKey = 'gradecalc_device_name';
 
   function element(tag, className, text) {
@@ -14,87 +14,39 @@
     return node;
   }
 
-  function setStatus(message, isError) {
-    var status = document.getElementById('device-location-status');
-    if (!status) return;
-    status.textContent = message;
-    status.style.color = isError ? 'var(--red)' : 'var(--muted)';
+  function stopBatteryPreview() {
+    if (battery && batteryListener) {
+      battery.removeEventListener('levelchange', batteryListener);
+      battery.removeEventListener('chargingchange', batteryListener);
+    }
+    battery = null;
+    batteryListener = null;
   }
 
-  function stopSharing() {
-    locationActive = false;
-    if (watchId !== null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchId);
-    }
-    watchId = null;
-    var start = document.getElementById('device-start-location');
-    var stop = document.getElementById('device-stop-location');
-    if (start) start.disabled = false;
-    if (stop) stop.disabled = true;
-    var state = document.getElementById('device-sharing-state');
-    if (state) state.textContent = 'Location access is off';
-    setStatus('Location access has stopped. No location was uploaded or saved.', false);
-    var details = document.getElementById('device-location-details');
-    if (details) details.textContent = 'Your location will appear here only while you actively share it.';
-    var map = document.getElementById('device-open-map');
-    if (map) map.hidden = true;
+  function updateBattery() {
+    var status = document.getElementById('device-battery-status');
+    if (!status || !battery) return;
+    status.textContent = Math.round(battery.level * 100) + '% · ' +
+      (battery.charging ? 'Charging' : 'Not charging');
   }
 
-  function showPosition(position) {
-    if (!locationActive) return;
-    var lat = position.coords.latitude;
-    var lon = position.coords.longitude;
-    var accuracy = Math.round(position.coords.accuracy);
-    var details = document.getElementById('device-location-details');
-    var state = document.getElementById('device-sharing-state');
-    var map = document.getElementById('device-open-map');
-    if (details) {
-      details.textContent = 'Latitude ' + lat.toFixed(5) + ' · Longitude ' + lon.toFixed(5) +
-        ' · Accuracy about ' + accuracy + ' m · Updated ' + new Date(position.timestamp).toLocaleTimeString();
-    }
-    if (state) state.textContent = 'Location access active on this device';
-    if (map) {
-      map.href = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(lat) +
-        '&mlon=' + encodeURIComponent(lon) + '#map=17/' + encodeURIComponent(lat) + '/' + encodeURIComponent(lon);
-      map.hidden = false;
-    }
-    setStatus('Location is visible on this device only. Stop access whenever you like.', false);
-  }
-
-  function startSharing() {
-    if (locationActive) return;
-    if (!window.isSecureContext) {
-      setStatus('Location requires a secure HTTPS connection. Open the installed app or its HTTPS website.', true);
+  function startBatteryPreview() {
+    if (!navigator.getBattery) {
+      var unavailable = document.getElementById('device-battery-status');
+      if (unavailable) unavailable.textContent = 'Not available in this browser';
       return;
     }
-    if (!navigator.geolocation) {
-      setStatus('This browser does not support location access.', true);
-      return;
-    }
-    var start = document.getElementById('device-start-location');
-    var stop = document.getElementById('device-stop-location');
-    if (start) start.disabled = true;
-    setStatus('Waiting for your device location permission…', false);
-    locationActive = true;
-    try {
-      watchId = navigator.geolocation.watchPosition(showPosition, function (error) {
-        if (!locationActive) return;
-        stopSharing();
-        var messages = {
-          1: 'Location permission was denied. You can enable it in your device settings.',
-          2: 'Your device could not determine its location. Check GPS and try again.',
-          3: 'Location request timed out. Try again in an area with a clearer GPS signal.'
-        };
-        setStatus(messages[error.code] || 'Unable to access location. Please try again.', true);
-      }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
-    } catch (error) {
-      stopSharing();
-      setStatus('Your device could not start location access. Check browser permissions and try again.', true);
-      return;
-    }
-    if (stop) stop.disabled = false;
-    var state = document.getElementById('device-sharing-state');
-    if (state) state.textContent = 'Waiting for your device location…';
+    navigator.getBattery().then(function (result) {
+      stopBatteryPreview();
+      battery = result;
+      batteryListener = updateBattery;
+      battery.addEventListener('levelchange', batteryListener);
+      battery.addEventListener('chargingchange', batteryListener);
+      updateBattery();
+    }).catch(function () {
+      var status = document.getElementById('device-battery-status');
+      if (status) status.textContent = 'Battery status unavailable';
+    });
   }
 
   function build() {
@@ -122,17 +74,18 @@
     var card = element('div', 'card');
     card.appendChild(element('div', 'card-title', 'Your devices'));
     card.appendChild(element('p', 'target-intro',
-      'Preview this device’s location only when you choose. Nothing is shared with another person.'));
+      'Manage the phones and browsers connected to your private dashboard.'));
+
     var deviceRow = element('div', '');
     deviceRow.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:14px';
     var glyph = element('div', '');
     glyph.textContent = '▣';
     glyph.style.cssText = 'font-size:25px;color:var(--accent);width:38px;text-align:center';
     var identity = element('div', '');
-    var deviceTitle = element('div', '', 'My device');
+    var deviceTitle = element('div', '', 'This device');
     deviceTitle.id = 'device-display-name';
     identity.appendChild(deviceTitle);
-    identity.appendChild(element('div', 'target-intro', 'Current browser or installed app'));
+    identity.appendChild(element('div', 'target-intro', 'Local browser preview'));
     deviceRow.appendChild(glyph);
     deviceRow.appendChild(identity);
     card.appendChild(deviceRow);
@@ -146,16 +99,17 @@
     nameInput.autocomplete = 'off';
     nameInput.setAttribute('aria-label', 'Device name on this device');
     try {
-      nameInput.value = localStorage.getItem(deviceNameKey) || 'My device';
+      nameInput.value = localStorage.getItem(deviceNameKey) || 'This device';
     } catch (error) {
-      nameInput.value = 'My device';
+      nameInput.value = 'This device';
     }
     deviceTitle.textContent = nameInput.value;
+
     var saveName = element('button', 'btn-secondary', 'Save device name');
     saveName.type = 'button';
     saveName.id = 'device-save-name';
     saveName.style.cssText = 'width:100%;margin-top:8px';
-    var nameStatus = element('p', 'projection-share-status', 'This name is stored only in this browser.');
+    var nameStatus = element('p', 'projection-share-status', 'The name is stored locally on this device.');
     nameStatus.id = 'device-name-status';
     saveName.addEventListener('click', function () {
       var value = nameInput.value.trim();
@@ -175,58 +129,40 @@
     card.appendChild(nameInput);
     card.appendChild(saveName);
     card.appendChild(nameStatus);
-    card.appendChild(element('p', 'target-intro',
-      'Account sync and remote device pairing are not enabled yet. This local label does not register or pair a remote device.'));
 
-    var state = element('div', 'target-status', 'Location sharing is off');
-    state.id = 'device-sharing-state';
-    card.appendChild(state);
+    var batteryCard = element('div', 'card');
+    batteryCard.appendChild(element('div', 'card-title', 'Battery'));
+    var batteryStatus = element('p', 'target-intro', 'Checking battery status…');
+    batteryStatus.id = 'device-battery-status';
+    batteryCard.appendChild(batteryStatus);
 
-    var actions = element('div', 'target-actions');
-    var start = element('button', 'btn-primary', 'Preview my location');
-    start.type = 'button';
-    start.id = 'device-start-location';
-    start.addEventListener('click', startSharing);
-    var stop = element('button', 'btn-secondary', 'Stop sharing');
-    stop.type = 'button';
-    stop.id = 'device-stop-location';
-    stop.disabled = true;
-    stop.addEventListener('click', stopSharing);
-    actions.appendChild(start);
-    actions.appendChild(stop);
-    card.appendChild(actions);
-
-    var detailsCard = element('div', 'card');
-    detailsCard.appendChild(element('div', 'card-title', 'Current location'));
-    var details = element('p', 'target-intro',
-      'Your location will appear here only while you actively share it.');
-    details.id = 'device-location-details';
-    details.style.overflowWrap = 'anywhere';
-    detailsCard.appendChild(details);
-    var map = element('a', 'btn-secondary', 'View on map');
-    map.id = 'device-open-map';
-    map.href = '#';
-    map.target = '_blank';
-    map.rel = 'noopener noreferrer';
-    map.hidden = true;
-    map.style.cssText = 'display:block;text-align:center;text-decoration:none;padding:12px;margin-top:10px';
-    detailsCard.appendChild(map);
+    var pairingCard = element('div', 'card');
+    pairingCard.appendChild(element('div', 'card-title', 'Add another device'));
+    pairingCard.appendChild(element('p', 'target-intro',
+      'Secure multi-device enrollment is being prepared. No phone is added until the private dashboard and one-time enrollment flow are connected.'));
+    var addDevice = element('button', 'btn-secondary', 'Add device');
+    addDevice.type = 'button';
+    addDevice.id = 'device-add-device';
+    addDevice.disabled = true;
+    pairingCard.appendChild(addDevice);
+    var pairingStatus = element('p', 'projection-share-status',
+      'Pairing is not active yet. This screen does not register or monitor another device.');
+    pairingStatus.id = 'device-pairing-status';
+    pairingStatus.setAttribute('role', 'status');
+    pairingStatus.setAttribute('aria-live', 'polite');
+    pairingCard.appendChild(pairingStatus);
 
     var privacy = element('div', 'card');
     privacy.appendChild(element('div', 'card-title', 'Privacy'));
     privacy.appendChild(element('p', 'target-intro',
-      'In this first version, location stays on this device. It is not sent to a server, shared with another person, or saved as history. Your browser may show its own location indicator while access is active.'));
-    var status = element('p', 'projection-share-status',
-      'Location permission has not been requested.');
-    status.id = 'device-location-status';
-    status.setAttribute('role', 'status');
-    status.setAttribute('aria-live', 'polite');
-    privacy.appendChild(status);
+      'Location and network details are not collected. Camera and microphone are never activated by this screen. Any future media capture must be started visibly on the device itself.'));
 
     panel.appendChild(card);
-    panel.appendChild(detailsCard);
+    panel.appendChild(batteryCard);
+    panel.appendChild(pairingCard);
     panel.appendChild(privacy);
     body.appendChild(panel);
+    startBatteryPreview();
   }
 
   if (document.readyState === 'loading') {
@@ -235,9 +171,10 @@
     build();
   }
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) stopSharing();
+    if (document.hidden) stopBatteryPreview();
+    else if (!battery) startBatteryPreview();
   });
-  window.addEventListener('pagehide', stopSharing);
-  window.addEventListener('beforeunload', stopSharing);
-  window.GradeCalcDeviceFeatures = { stopSharing: stopSharing };
+  window.addEventListener('pagehide', stopBatteryPreview);
+  window.addEventListener('beforeunload', stopBatteryPreview);
+  window.GradeCalcDeviceFeatures = { stopBatteryPreview: stopBatteryPreview };
 })();
