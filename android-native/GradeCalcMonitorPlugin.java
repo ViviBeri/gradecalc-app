@@ -22,9 +22,16 @@ import com.getcapacitor.annotation.PermissionCallback;
 public final class GradeCalcMonitorPlugin extends Plugin {
     @PluginMethod
     public void startMonitoring(PluginCall call) {
-        if (Build.VERSION.SDK_INT >= 33 && getPermissionState("notifications") != PermissionState.GRANTED) {
-            requestPermissionForAlias("notifications", call, "startAfterNotificationPermission");
-            return;
+        if (Build.VERSION.SDK_INT >= 33) {
+            PermissionState state = getPermissionState("notifications");
+            if (state == PermissionState.PROMPT) {
+                requestPermissionForAlias("notifications", call, "startAfterNotificationPermission");
+                return;
+            }
+            if (state != PermissionState.GRANTED) {
+                call.reject("Notification permission was denied. Enable it in Android Settings to keep device sharing visible.");
+                return;
+            }
         }
         startService(call);
     }
