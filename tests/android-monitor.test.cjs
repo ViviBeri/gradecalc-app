@@ -24,7 +24,7 @@ test('Android device credentials are encrypted with the Android Keystore', () =>
   assert.match(secureStore, /AndroidKeyStore/);
   assert.match(secureStore, /AES\/GCM\/NoPadding/);
   assert.match(secureStore, /GCMParameterSpec/);
-  assert.equal((secureStore.match(/cipher\.updateAAD\(name\.getBytes\(StandardCharsets\.UTF_8\)\)\);/g) || []).length, 2);
+  assert.equal((secureStore.match(/cipher\\.updateAAD\\(name\\.getBytes\\(StandardCharsets\\.UTF_8\\)\\);/g) || []).length, 2);
   assert.doesNotMatch(secureStore, /MODE_WORLD_READABLE|MODE_WORLD_WRITEABLE/);
 });
 
