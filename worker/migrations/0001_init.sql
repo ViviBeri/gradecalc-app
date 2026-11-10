@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS devices (
   scopes_json TEXT NOT NULL,
   status TEXT NOT NULL CHECK(status IN ('pending', 'active', 'paused', 'revoked')),
   created_at INTEGER NOT NULL,
-  approved_at INTEGER,
+  device_approved_at INTEGER,
+  owner_approved_at INTEGER,
   last_seen_at INTEGER
 );
 
