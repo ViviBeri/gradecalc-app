@@ -76,7 +76,9 @@ function harness() {
     window: { addEventListener: (name, callback) => { windowListeners[name] = callback; } },
     MediaRecorder: FakeMediaRecorder,
     URL: { createObjectURL: () => { created += 1; return 'blob:audio'; }, revokeObjectURL: url => revoked.push(url) },
-    Blob, console
+    Blob, console,
+    setTimeout: () => 1,
+    clearTimeout: () => {}
   };
   function index(node) {
     if (node.id) ids[node.id] = node;
@@ -96,6 +98,9 @@ function harness() {
   const h = harness();
   assert.ok(h.ids['media-camera-start'], 'camera controls are created');
   assert.ok(h.ids['media-mic-start'], 'microphone controls are created');
+  assert.ok(h.ids['media-gallery-share'], 'gallery has a separate explicit upload action');
+  assert.ok(h.ids['media-camera-share'], 'camera has a separate explicit upload action');
+  assert.ok(h.ids['media-mic-share'], 'audio has a separate explicit upload action');
   assert.equal(h.requested.length, 0, 'permissions are not requested on module load');
 
   h.ids['media-camera-start'].click();
