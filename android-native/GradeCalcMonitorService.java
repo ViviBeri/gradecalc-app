@@ -132,7 +132,7 @@ public final class GradeCalcMonitorService extends Service {
             }
             int response = connection.getResponseCode();
             connection.disconnect();
-            if (response == 401 || response == 403) stopMonitoring();
+            if (response == 401 || response == 403) handler.post(this::stopMonitoring);
         } catch (Exception ignored) {
             // A later foreground-service cycle retries transient connectivity failures.
         }
@@ -146,7 +146,7 @@ public final class GradeCalcMonitorService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_upload)
             .setContentTitle("GradeCalc device sharing is active")
-            .setContentText("Battery status is shared with your private dashboard.")
+            .setContentText("Approved device status is shared with your private dashboard.")
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .addAction(android.R.drawable.ic_media_pause, "Stop sharing", stopPending)
