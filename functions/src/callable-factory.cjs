@@ -22,10 +22,8 @@ function buildCallables({ db, onCallImpl = onCall, HttpsErrorClass = HttpsError 
 
 function authenticatedUid(request) {
   const uid = request.auth && request.auth.uid;
-  const provider = request.auth && request.auth.token &&
-    request.auth.token.firebase && request.auth.token.firebase.sign_in_provider;
-  if (!uid || provider === 'anonymous') {
-    throw new HttpsError('unauthenticated', 'Sign-in is required.');
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'A Firebase Auth session is required.');
   }
   return uid;
 }
