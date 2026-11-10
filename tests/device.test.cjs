@@ -92,7 +92,6 @@ async function run() {
   assert.equal(h.ids['device-display-name'].textContent, 'Study phone');
   assert.equal(h.ids['device-battery-status'].textContent, '76% · Charging');
   assert.equal(h.ids['device-consent-setup'].hidden, false, 'first use shows the consent setup');
-  assert.equal(h.ids['device-enroll-form'].hidden, true, 'enrollment stays locked until consent is recorded');
   h.ids['device-local-name'].value = 'Beri phone';
   h.ids['device-save-name'].click();
   assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone');
@@ -104,6 +103,13 @@ async function run() {
   h.ids['device-local-name'].value = 'x'.repeat(61);
   h.ids['device-save-name'].click();
   assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
+
+  const consentBlocked = createHarness({ api: {
+    getSettings: async () => ({ apiUrl: '', deviceToken: '', deviceScopes: [] })
+  } });
+  await consentBlocked.window.GradeCalcDeviceFeatures.refreshDeviceState();
+  assert.equal(consentBlocked.ids['device-consent-setup'].hidden, false, 'setup remains visible before consent');
+  assert.equal(consentBlocked.ids['device-enroll-form'].hidden, true, 'enrollment stays locked until consent is recorded');
 
   const storageFailure = createHarness({ storageWriteFails: true, storage: { gradecalc_device_setup_consent_v1: 'accepted' } });
   storageFailure.ids['device-local-name'].value = 'Backup phone';
