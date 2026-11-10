@@ -17,7 +17,7 @@ There is one private dashboard owner per Worker deployment.
 - A deployment-only SETUP_SECRET protects the one-time dashboard bootstrap.
 - The browser generates a random 256-bit owner token. The Worker stores only its SHA-256 hash in D1.
 - Each device receives a random 256-bit device token after redeeming a one-time invitation. The Worker stores only its SHA-256 hash.
-- Owner and device tokens are bearer credentials. Store them locally; never place them in URLs, analytics, logs, or referrers.
+- Owner and device tokens are bearer credentials. The current browser client stores them in origin-local IndexedDB; never place them in URLs, analytics, logs, or referrers. IndexedDB is not hardware-backed Android Keystore storage, so replace device-token persistence with a native Keystore-backed adapter and complete an XSS/CSP review before production.
 - No email, phone number, OTP, or conventional user account is required.
 - Loss of the owner token currently has no recovery flow. Do not claim account recovery until a secure rotation/recovery mechanism exists.
 
