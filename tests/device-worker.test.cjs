@@ -9,6 +9,29 @@ test.before(async () => {
   worker = await import('../worker/src/index.mjs');
 });
 
+test('JSON request parsing enforces the body limit while streaming', async () => {
+  const valid = new Request('https://worker.example/v1/setup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ok: true })
+  });
+  assert.deepEqual(await worker.readJson(valid), { ok: true });
+
+  const oversizedStream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(10 * 1024));
+      controller.enqueue(new Uint8Array(10 * 1024));
+      controller.close();
+    }
+  });
+  const oversized = new Request('https://worker.example/v1/enroll', {
+    method: 'POST',
+    body: oversizedStream,
+    duplex: 'half'
+  });
+  await assert.rejects(worker.readJson(oversized), /Request body too large/);
+});
+
 test('D1 schema enforces a single owner and two-sided device approval', () => {
   const schema = fs.readFileSync('worker/migrations/0001_init.sql', 'utf8');
   assert.match(schema, /singleton INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK\(singleton = 1\)/);
