@@ -289,6 +289,19 @@ async function handle(request, env) {
     return json({ deviceId: ownerApprovalId, status: refreshed.status }, 200, headers);
   }
 
+  const ownerStopId = pathId(path, '/v1/devices/', '/stop');
+  if (request.method === 'POST' && ownerStopId) {
+    const owner = await ownerFromRequest(request, env);
+    if (!owner) return json({ error: 'UNAUTHORIZED' }, 401, headers);
+    await env.DB.batch([
+      env.DB.prepare("UPDATE devices SET status = 'paused' WHERE id = ? AND owner_id = ? AND status = 'active'").bind(ownerStopId, owner.id),
+      env.DB.prepare('DELETE FROM telemetry WHERE device_id = ? AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND owner_id = ?)').bind(ownerStopId, ownerStopId, owner.id)
+    ]);
+    const state = await env.DB.prepare('SELECT status FROM devices WHERE id = ? AND owner_id = ?').bind(ownerStopId, owner.id).first();
+    if (!state) return json({ error: 'DEVICE_NOT_FOUND' }, 404, headers);
+    return json({ deviceId: ownerStopId, status: state.status }, 200, headers);
+  }
+
   const revokeId = pathId(path, '/v1/devices/');
   if (request.method === 'DELETE' && revokeId) {
     const owner = await ownerFromRequest(request, env);
