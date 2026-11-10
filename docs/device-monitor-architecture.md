@@ -7,7 +7,7 @@
 - Battery percentage and charging state where Android/browser APIs expose them.
 - Coarse device platform and app version; no hardware fingerprinting.
 - Camera and microphone permission status only in the dashboard.
-- Camera capture, short audio recording, and gallery sharing are separate owner-initiated actions. They require visible on-device controls, Android permission prompts, and OS privacy indicators.
+- Camera capture, short audio recording, and gallery sharing are separate owner-initiated actions. They require visible on-device controls, Android permission prompts, and OS privacy indicators. Uploading requires a separate explicit Share action and the media scope.
 - No covert capture, hidden service, permission bypass, or remote activation of camera/microphone.
 - No account registration, phone number, email verification, or OTP. Firebase anonymous authentication is the proposed per-installation identity.
 - Device enrollment uses a short-lived one-time secret plus explicit owner approval. Installation and permission grants alone never authorize a new device.
@@ -19,7 +19,7 @@
 
 `js/device.js` adds a local Devices tab with a local device label and battery preview. The Add device action remains disabled until authenticated enrollment and owner confirmation are implemented.
 
-`js/media.js` contains visible, user-initiated camera and microphone preview/recording controls. Those controls are not remote and do not upload media. Media streams stop when the page is hidden or the feature is closed.
+`js/media.js` contains visible, user-initiated camera, microphone, and gallery previews. Media stays local and is not uploaded yet. The Worker has a separate R2 upload/list/download/delete API prototype, gated by the media scope; client integration is still pending. Media streams stop when the page is hidden or the feature is closed.
 
 ## Backend status
 
@@ -52,7 +52,7 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - Revocation and Stop must immediately block subsequent reads/writes.
 - Telemetry timestamps and expiry are server-controlled.
 - Firestore TTL is cleanup only, never authorization.
-- Keep media out of telemetry documents. Use a separate, explicitly consented upload design with retention and deletion controls before enabling gallery/media sharing.
+- Keep media out of telemetry documents. Use the separate R2 media API only after the client adds an explicit Share action, private token storage, retention controls, and viewer deletion.
 - Android force-stop prevents background execution until the user launches the app again. Do not promise operation through force-stop, OEM battery restrictions, or denied permissions.
 
 ## Acceptance checklist
