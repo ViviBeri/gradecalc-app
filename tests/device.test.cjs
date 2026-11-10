@@ -101,7 +101,9 @@ async function run() {
   storageFailure.ids['device-local-name'].value = 'Backup phone';
   storageFailure.ids['device-save-name'].click();
   assert.match(storageFailure.ids['device-name-status'].textContent, /could not save/);
-  assert.ok(storageFailure.ids['device-add-device'].disabled, 'remote pairing stays disabled until secure enrollment is connected');
+  assert.ok(storageFailure.ids['device-enroll-form'], 'device enrollment form is available');
+  assert.ok(storageFailure.ids['device-enroll-button'], 'enrollment requires a one-time dashboard invitation');
+  assert.match(storageFailure.ids['device-pairing-status'].textContent, /Remote connection is unavailable/);
 
   const noBattery = createHarness({ noBattery: true });
   await Promise.resolve();
@@ -118,7 +120,7 @@ async function run() {
   const deviceSource = fs.readFileSync('js/device.js', 'utf8');
   assert.doesNotMatch(deviceSource, /geolocation|latitude|longitude|openstreetmap/i);
   assert.doesNotMatch(deviceSource, /navigator\.connection|effectiveType|SSID|BSSID/i);
-  console.log('Device feature tests passed (local device label, battery preview, pairing guard, and privacy exclusions).');
+  console.log('Device feature tests passed (local device label, battery preview, enrollment controls, and privacy exclusions).');
 }
 
 run().catch(error => {
