@@ -30,27 +30,27 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 - [ ] Verify on physical Android devices.
 
 ### Phase 2 — Private dashboard and identity
-- [ ] Configure Firebase client SDK without exposing privileged credentials.
+- [ ] Configure the Cloudflare Worker URL, setup secret, D1 database, and private R2 bucket.
 - [ ] Use persistent local owner/device tokens with secure storage.
-- [ ] Register device metadata under the installation's anonymous UID.
-- [ ] Keep Firestore rules deny-by-default until the full emulator suite passes.
-- [ ] Verify Spark plan compatibility before selecting any deployable backend component.
+- [ ] Register device metadata using random owner/device bearer tokens; persist tokens securely.
+- [x] Keep Firestore rules deny-by-default; the Worker is the selected remote backend.
+- [ ] Verify Worker, D1, and R2 free-tier quotas before deployment.
 
 ### Phase 3 — Secure multi-device enrollment
-- [x] Backend transaction core for one-time, high-entropy invitations.
+- [x] Worker API foundation for one-time, high-entropy invitations.
 - [x] Server-side hash-only secret storage.
-- [x] Short expiry, one-time redemption, rate limits, and owner approval transaction.
-- [x] Scoped grant and revocation transaction foundations.
+- [x] Short expiry, one-time redemption, invite creation limits, and two-sided approval.
+- [x] Scoped device access, revocation, pause/resume, and media API foundations.
 - [ ] Device-side invitation UI.
-- [ ] Viewer redemption UI.
-- [ ] Owner approval UI on the physical sharing phone.
+- [ ] Device enrollment UI and one-time code redemption.
+- [ ] On-device approval and separate dashboard-owner approval UI.
 - [ ] Persistent dashboard session and device list.
 - [ ] Per-device revoke and Stop controls.
 
 ### Phase 4 — Live telemetry
 - [x] Strict allowlist for battery, device, permission status, and app heartbeat.
 - [x] Location/network payloads rejected by backend validation.
-- [ ] Client publisher and viewer reader.
+- [ ] Device telemetry publisher and owner dashboard reader.
 - [ ] Server-side timestamps and freshness labels in the dashboard.
 - [ ] Reconnect handling and bounded retries.
 - [ ] Verify behavior after app restart, network loss, Android Doze, and force-stop.
@@ -65,8 +65,8 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 
 ## Security model
 
-Anonymous authentication is a stable installation identity, not proof of ownership. The sharing phone must visibly approve the viewer and requested scopes. Pairing secrets must never be placed in URLs, logs, analytics, browser history, or referrers. Store only hashes server-side. Use App Check and authenticated callable operations where available. All viewer reads are scoped to one owner, one device, one session, and approved fields. Viewer writes are denied.
+Owner and device bearer tokens identify the private dashboard and enrolled installations; only token hashes are stored server-side. A one-time invite is not sufficient by itself: both the phone and dashboard owner must approve the pending device. Pairing secrets must never be placed in URLs, logs, analytics, browser history, or referrers. Device reads and writes are limited to that device token; dashboard operations require the owner token. Media uploads require the media scope and a separate visible Share action. Firestore remains deny-by-default.
 
 ## Rollout constraints
 
-The current backend uses second-generation Firebase callable functions. Confirm the selected Firebase plan supports the required runtime before deployment; do not silently upgrade or enable billing. No production deployment, credential creation, or billing changes are part of ordinary code implementation. Keep local GradeCalc functionality usable if remote features are unavailable.
+The deployment target is Cloudflare Workers, D1, and R2 on their published Free tiers. Firebase Cloud Functions are retained only as a local prototype because deployment requires Blaze billing. Never enable a paid plan. No production deployment, credential creation, or billing changes are part of ordinary code implementation. Keep local GradeCalc functionality usable if remote features are unavailable.
