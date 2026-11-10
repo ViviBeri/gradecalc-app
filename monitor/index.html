@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark light">
-<title>GradeCalc Device Monitor</title>
+<title>GradeCalc Device Dashboard</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color-scheme:dark;background:#0b1420;color:#edf5ff}
 *{box-sizing:border-box}body{margin:0;padding:24px;max-width:1050px;margin-inline:auto}
@@ -18,52 +18,78 @@ button.secondary{background:#34465a;color:#fff}button:disabled{opacity:.5;cursor
 .card{background:#172537;border:1px solid #30435a;border-radius:15px;padding:18px;min-width:0}
 .value{font-size:1.1rem;overflow-wrap:anywhere}.muted{color:#b5c6d8;font-size:.88rem}
 .notice{padding:13px 16px;border-left:3px solid #79dfb0;background:#172537;border-radius:6px}
-#map{display:none;margin-top:10px}.status{font-weight:650;color:#79dfb0}
+.status{font-weight:650;color:#79dfb0}
 </style>
 </head>
 <body>
-<header><div><p class="sub">GradeCalc · Companion dashboard</p><h1>Device Monitor</h1></div><a href="../index.html">Back to GradeCalc</a></header>
-<p class="notice">Local preview only. This page reads this browser's device APIs after you press Start. No data is uploaded, saved, or shared with another device. Remote monitoring and pairing are not yet enabled.</p>
-<div class="actions"><button id="start" type="button">Start local monitoring</button><button id="stop" class="secondary" type="button" disabled>Stop and clear</button></div>
-<p role="status" aria-live="polite" id="status" class="status">Off — no device information requested.</p>
+<header><div><p class="sub">GradeCalc · Private companion</p><h1>Device Dashboard</h1></div><a href="../index.html">Back to GradeCalc</a></header>
+<p class="notice">Dashboard preview. Remote enrollment and synchronization are not active yet. This page does not connect to, collect data from, or control another phone.</p>
+<div class="actions"><button id="refresh" type="button">Refresh this browser</button><button id="add-device" class="secondary" type="button" disabled>Add device</button></div>
+<p role="status" aria-live="polite" id="status" class="status">Remote device connection is not configured.</p>
 <main class="grid">
-<section class="card"><h2>Location</h2><div id="location" class="value">Not shared</div><p class="muted" id="location-meta">Requires device Location Services and permission.</p><a id="map" target="_blank" rel="noopener noreferrer">Open map</a></section>
-<section class="card"><h2>Battery</h2><div id="battery" class="value">Not checked</div><p class="muted">Battery details may be restricted by your browser.</p></section>
-<section class="card"><h2>Network</h2><div id="network" class="value">Not checked</div><p class="muted">Only browser-exposed connection details; no network identifiers.</p></section>
-<section class="card"><h2>Device</h2><div id="device" class="value">Not checked</div><p class="muted">Browser-reported platform; precise model may be unavailable.</p></section>
-<section class="card"><h2>Camera</h2><div id="camera" class="value">Not checked</div><p class="muted">Permission status only. No camera stream is opened.</p></section>
-<section class="card"><h2>Microphone</h2><div id="microphone" class="value">Not checked</div><p class="muted">Permission status only. No recording is started.</p></section>
-<section class="card"><h2>App status</h2><div id="app" class="value">Off</div><p class="muted">This page's local activity only, not remote online status.</p></section>
+<section class="card"><h2>Connected devices</h2><div id="devices" class="value">No remote devices connected</div><p class="muted">Devices will appear here after secure one-time enrollment is implemented.</p></section>
+<section class="card"><h2>This browser</h2><div id="device" class="value">Not checked</div><p class="muted">Only this browser's platform information.</p></section>
+<section class="card"><h2>Battery</h2><div id="battery" class="value">Not checked</div><p class="muted">Available only when the browser exposes battery status.</p></section>
+<section class="card"><h2>Camera permission</h2><div id="camera" class="value">Not checked</div><p class="muted">Permission status only. Camera is not opened.</p></section>
+<section class="card"><h2>Microphone permission</h2><div id="microphone" class="value">Not checked</div><p class="muted">Permission status only. Microphone is not opened.</p></section>
+<section class="card"><h2>Privacy</h2><div class="value">Location and network data are excluded</div><p class="muted">No media capture, upload, or remote control occurs from this dashboard preview.</p></section>
 </main>
 <script>
 'use strict';
-(function(){
-  var active=false,watch=null,session=0,battery=null,batteryListener=null;
-  var ids=['location','location-meta','battery','network','device','camera','microphone','app'];
-  function set(id,value){document.getElementById(id).textContent=value;}
-  function reset(){ids.forEach(function(id){set(id,id==='location'?'Not shared':id==='location-meta'?'Requires device Location Services and permission.':id==='app'?'Off':'Not checked');});document.getElementById('map').style.display='none';document.getElementById('map').removeAttribute('href');}
-  function stop(){active=false;session++;if(watch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(watch);watch=null;if(battery&&batteryListener){battery.removeEventListener('levelchange',batteryListener);battery.removeEventListener('chargingchange',batteryListener);}battery=null;batteryListener=null;reset();document.getElementById('start').disabled=false;document.getElementById('stop').disabled=true;set('status','Off — monitoring stopped and local preview cleared.');}
-  function updateConnection(){if(!active)return;var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;set('network',navigator.onLine?'Online'+(c&&c.effectiveType?' · '+c.effectiveType:''):'Offline');}
-  function permission(name,id,token){if(!navigator.permissions||!navigator.permissions.query){set(id,'Permission status unavailable');return;}navigator.permissions.query({name:name}).then(function(result){if(active&&session===token)set(id,result.state);}).catch(function(){if(active&&session===token)set(id,'Permission status unavailable');});}
-  function start(){
-    if(active)return;active=true;var token=++session;document.getElementById('start').disabled=true;document.getElementById('stop').disabled=false;
-    set('status','Local monitoring active — no information is uploaded.');
-    set('app','Active on this device');
-    set('device',navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'Platform unavailable');
-    updateConnection();
-    permission('camera','camera',token);permission('microphone','microphone',token);
-    if(navigator.getBattery){navigator.getBattery().then(function(b){if(!active||session!==token)return;battery=b;batteryListener=function(){if(active&&session===token)set('battery',Math.round(b.level*100)+'% · '+(b.charging?'Charging':'Not charging'));};b.addEventListener('levelchange',batteryListener);b.addEventListener('chargingchange',batteryListener);batteryListener();}).catch(function(){if(active&&session===token)set('battery','Unavailable');});}
-    else set('battery','Unavailable in this browser');
-    if(!window.isSecureContext||!navigator.geolocation){set('location','Unavailable');set('location-meta','HTTPS and geolocation support are required.');return;}
-    set('location','Waiting for location permission…');
-    try{watch=navigator.geolocation.watchPosition(function(p){if(!active||session!==token)return;var lat=p.coords.latitude,lon=p.coords.longitude;set('location',lat.toFixed(5)+', '+lon.toFixed(5));set('location-meta','Accuracy ±'+Math.round(p.coords.accuracy)+' m · '+new Date(p.timestamp).toLocaleTimeString());var map=document.getElementById('map');map.href='https://www.openstreetmap.org/?mlat='+encodeURIComponent(lat)+'&mlon='+encodeURIComponent(lon)+'#map=16/'+encodeURIComponent(lat)+'/'+encodeURIComponent(lon);map.style.display='inline';},function(e){if(!active||session!==token)return;set('location',e.code===1?'Permission denied':'Location unavailable');set('location-meta','Check system Location Services and browser permission.');},{enableHighAccuracy:true,maximumAge:10000,timeout:20000});}
-    catch(e){set('location','Location unavailable');}
+(function () {
+  var battery = null;
+  var batteryListener = null;
+  function set(id, value) { document.getElementById(id).textContent = value; }
+  function stopBattery() {
+    if (battery && batteryListener) {
+      battery.removeEventListener('levelchange', batteryListener);
+      battery.removeEventListener('chargingchange', batteryListener);
+    }
+    battery = null;
+    batteryListener = null;
   }
-  document.getElementById('start').addEventListener('click',start);
-  document.getElementById('stop').addEventListener('click',stop);
-  window.addEventListener('offline',updateConnection);window.addEventListener('online',updateConnection);
-  document.addEventListener('visibilitychange',function(){if(document.hidden&&active)stop();});
-  window.addEventListener('pagehide',stop);
+  function updateBattery() {
+    if (!battery) return;
+    set('battery', Math.round(battery.level * 100) + '% · ' +
+      (battery.charging ? 'Charging' : 'Not charging'));
+  }
+  function readPermission(name, id) {
+    if (!navigator.permissions || !navigator.permissions.query) {
+      set(id, 'Status unavailable');
+      return;
+    }
+    navigator.permissions.query({ name: name }).then(function (result) {
+      set(id, result.state);
+    }).catch(function () {
+      set(id, 'Status unavailable');
+    });
+  }
+  function refresh() {
+    stopBattery();
+    set('device', navigator.userAgentData && navigator.userAgentData.platform ||
+      navigator.platform || 'Platform unavailable');
+    readPermission('camera', 'camera');
+    readPermission('microphone', 'microphone');
+    if (!navigator.getBattery) {
+      set('battery', 'Not available in this browser');
+      return;
+    }
+    navigator.getBattery().then(function (result) {
+      battery = result;
+      batteryListener = updateBattery;
+      battery.addEventListener('levelchange', batteryListener);
+      battery.addEventListener('chargingchange', batteryListener);
+      updateBattery();
+    }).catch(function () {
+      set('battery', 'Status unavailable');
+    });
+  }
+  document.getElementById('refresh').addEventListener('click', refresh);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopBattery();
+  });
+  window.addEventListener('pagehide', stopBattery);
+  refresh();
 })();
 </script>
 </body>
