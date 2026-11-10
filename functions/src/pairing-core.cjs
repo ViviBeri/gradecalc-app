@@ -54,6 +54,19 @@ function validateTelemetry(snapshot) {
   const allowed = new Set(['battery', 'device', 'permissionStatus', 'appStatus']);
   if (Object.keys(snapshot).some(key => !allowed.has(key))) return false;
 
+  if ('battery' in snapshot) {
+    const v = snapshot.battery;
+    if (!v || typeof v !== 'object' ||
+      !Number.isFinite(v.level) || v.level < 0 || v.level > 1 ||
+      typeof v.charging !== 'boolean' ||
+      Object.keys(v).some(key => !['level', 'charging'].includes(key))) return false;
+  }
+  if ('device' in snapshot) {
+    const v = snapshot.device;
+    if (!v || typeof v !== 'object' || !PLATFORMS.includes(v.platform) ||
+      typeof v.appVersion !== 'string' || v.appVersion.length > 32 ||
+      Object.keys(v).some(key => !['platform', 'appVersion'].includes(key))) return false;
+  }
   if ('permissionStatus' in snapshot) {
     const v = snapshot.permissionStatus;
     if (!v || typeof v !== 'object' ||
