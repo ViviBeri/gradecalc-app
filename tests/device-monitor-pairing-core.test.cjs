@@ -581,7 +581,6 @@ test('viewer telemetry reads require an active matching grant, session, and scop
 });
 
 test('telemetry publishing requires an active owner session and rejects ungranted fields', async () => {
-  const activeSessionKey = require('node:crypto').createHash('sha256').update(['owner-a', 'phone-a'].join(':')).digest('hex');
   const sessionId = 'session-identifier-1234';
   const session = {
     ownerUid: 'owner-a', deviceId: 'phone-a', sessionId,
