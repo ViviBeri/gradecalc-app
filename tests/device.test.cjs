@@ -98,6 +98,7 @@ async function run() {
   const noBattery = createHarness({ noBattery: true });
   await Promise.resolve();
   await Promise.resolve();
+  await Promise.resolve();
   assert.match(noBattery.ids['device-battery-status'].textContent, /Not available/);
 
   const backgrounded = createHarness();
