@@ -12,7 +12,7 @@ test('remote pairing and telemetry remain denied until the trusted client flow i
 test('remote design requires anonymous identity, one-time approval, expiry, and scoped grants', () => {
   const design = fs.readFileSync('docs/device-monitor-architecture.md', 'utf8');
   assert.match(design, /Firebase anonymous authentication/i);
-  assert.match(design, /one-time pairing invitation/i);
+  assert.match(design, /one-time secret/i);
   assert.match(design, /explicit owner approval/i);
   assert.match(design, /immediately/i);
   assert.match(design, /short-lived/i);
