@@ -52,35 +52,33 @@ test('invite expiry, consumption, and revocation are enforced', () => {
 });
 
 test('sharing scopes accept only unique allowlisted values', () => {
-  assert.deepEqual(normalizeScopes(['location', 'battery']), ['location', 'battery']);
+  assert.deepEqual(normalizeScopes(['device', 'battery']), ['device', 'battery']);
   assert.deepEqual(ALLOWED_SCOPES, [
-    'location', 'battery', 'network', 'device', 'permissionStatus', 'appStatus'
+    'battery', 'device', 'permissionStatus', 'appStatus'
   ]);
-  assert.throws(() => normalizeScopes(['location', 'location']), TypeError);
+  assert.throws(() => normalizeScopes(['battery', 'battery']), TypeError);
+  assert.throws(() => normalizeScopes(['location']), TypeError);
+  assert.throws(() => normalizeScopes(['network']), TypeError);
   assert.throws(() => normalizeScopes(['*']), TypeError);
   assert.throws(() => normalizeScopes([]), TypeError);
 });
 
 test('telemetry accepts bounded allowlisted values', () => {
   assert.equal(validateTelemetry({
-    location: { latitude: 11.9, longitude: 79.8, accuracy: 12 },
     battery: { level: 0.75, charging: false },
-    network: { online: true, effectiveType: '4g' },
     device: { platform: 'android', appVersion: '1.0.0' },
     permissionStatus: { camera: 'prompt', microphone: 'denied' },
     appStatus: { active: true }
   }), true);
 });
 
-test('telemetry rejects invalid coordinates, identifiers, and unknown fields', () => {
-  assert.equal(validateTelemetry({ location: { latitude: 91, longitude: 0, accuracy: 1 } }), false);
-  assert.equal(validateTelemetry({ location: { latitude: 0, longitude: 0, accuracy: 1, ip: '127.0.0.1' } }), false);
+test('telemetry rejects removed location and network fields, identifiers, and unknown fields', () => {
+  assert.equal(validateTelemetry({ location: { latitude: 11.9, longitude: 79.8 } }), false);
+  assert.equal(validateTelemetry({ network: { online: true, effectiveType: '4g' } }), false);
   assert.equal(validateTelemetry({ battery: { level: 2, charging: false } }), false);
-  assert.equal(validateTelemetry({ network: { online: true, effectiveType: '4g', ssid: 'private' } }), false);
   assert.equal(validateTelemetry({ device: { platform: 'android', appVersion: '1', serial: 'secret' } }), false);
   assert.equal(validateTelemetry({ permissionStatus: { camera: 'granted', microphone: 'granted', audio: true } }), false);
   assert.equal(validateTelemetry({ appStatus: { active: true, hidden: true } }), false);
-  assert.equal(validateTelemetry({ location: null }), false);
   assert.equal(validateTelemetry({ unexpected: true }), false);
 });
 
@@ -91,7 +89,7 @@ test('invite redemption atomically consumes a valid invite and creates a pending
     secretHash: hashInviteSecret(secret),
     ownerUid: 'owner-a',
     deviceId: 'phone-a',
-    scopes: ['battery', 'location'],
+    scopes: ['battery', 'device'],
     expiresAt: 900000,
     consumedAt: null,
     revokedAt: null
@@ -140,7 +138,7 @@ test('invite redemption atomically consumes a valid invite and creates a pending
     requestId: 'request-a', now: 100000
   });
   assert.equal(result.status, 'pending');
-  assert.deepEqual(result.scopes, ['battery', 'location']);
+  assert.deepEqual(result.scopes, ['battery', 'device']);
   assert.equal(records.get('pairingInvites/invite-a').consumedAt, 100000);
   assert.equal(records.get('pairingRequests/request-a').viewerUid, 'viewer-b');
   assert.equal(records.get('pairingRequests/request-a').status, 'pending');
@@ -371,7 +369,7 @@ test('owner approval rejects expired, revoked-device, and already-approved reque
     const records = new Map([
       ['pairingRequests/request-a', {
         ownerUid: 'owner-a', viewerUid: 'viewer-b', deviceId: 'phone-a',
-        scopes: ['location'], status, expiresAt
+        scopes: ['device'], status, expiresAt
       }],
       ['users/owner-a/devices/phone-a', { revoked }]
     ]);
@@ -579,7 +577,7 @@ test('viewer telemetry reads require an active matching grant, session, and scop
   assert.equal(canReadTelemetry({ ...args, grant: { ...grant, status: 'revoked' } }), false);
   assert.equal(canReadTelemetry({ ...args, session: { ...session, status: 'stopped' } }), false);
   assert.equal(canReadTelemetry({ ...args, session: { ...session, expiresAt: 100000 } }), false);
-  assert.equal(canReadTelemetry({ ...args, session: { ...session, scopes: ['location'] } }), false);
+  assert.equal(canReadTelemetry({ ...args, session: { ...session, scopes: ['device'] } }), false);
 });
 
 test('telemetry publishing requires an active owner session and rejects ungranted fields', async () => {
@@ -873,7 +871,7 @@ test('callable backend keeps privileged operations authenticated and App Check p
   assert.ok(source.includes('enforceAppCheck: true'));
   assert.ok(source.includes('consumeAppCheckToken: true'));
   assert.ok(source.includes('request.auth.uid'));
-  assert.ok(source.includes("provider === 'anonymous'"));
+  assert.ok(!source.includes("provider === 'anonymous'"));
   assert.ok(source.includes('db.runTransaction(async transaction'));
   assert.ok(source.includes("db.collection('users').doc(grant.ownerUid)"));
   assert.ok(source.includes("deviceSnapshot.data().revoked !== false"));
