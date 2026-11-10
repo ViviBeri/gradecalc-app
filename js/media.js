@@ -7,6 +7,10 @@
   var recordedChunks = [];
   var audioUrl = null;
   var galleryUrl = null;
+  var galleryFile = null;
+  var capturedPhotoBlob = null;
+  var recordedAudioBlob = null;
+  var recordingTimer = null;
   var panel;
   var cameraRequest = 0;
   var micRequest = 0;
@@ -26,6 +30,19 @@
     node.style.color = isError ? 'var(--red)' : 'var(--muted)';
   }
 
+  async function shareMediaFile(file, statusId, successMessage) {
+    if (!file || !window.GradeCalcDeviceApi) {
+      status(statusId, 'Private media sharing is not configured on this device yet.', true);
+      return;
+    }
+    try {
+      await window.GradeCalcDeviceApi.uploadMedia(file);
+      status(statusId, successMessage + ' It remains in the private dashboard until you delete it there.', false);
+    } catch (error) {
+      status(statusId, error.message || 'Media upload failed.', true);
+    }
+  }
+
   function clearGalleryPhoto() {
     var preview = document.getElementById('media-gallery-preview');
     if (preview) {
@@ -36,6 +53,9 @@
       URL.revokeObjectURL(galleryUrl);
     }
     galleryUrl = null;
+    galleryFile = null;
+    var share = document.getElementById('media-gallery-share');
+    if (share) share.hidden = true;
     var input = document.getElementById('media-gallery-input');
     if (input) input.value = '';
     status('media-gallery-status', 'No gallery photo selected.', false);
@@ -56,7 +76,10 @@
       return;
     }
     if (galleryUrl) URL.revokeObjectURL(galleryUrl);
+    galleryFile = file;
     galleryUrl = URL.createObjectURL(file);
+    var share = document.getElementById('media-gallery-share');
+    if (share) share.hidden = false;
     var preview = document.getElementById('media-gallery-preview');
     if (preview) {
       preview.src = galleryUrl;
@@ -140,11 +163,20 @@
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     output.src = canvas.toDataURL('image/jpeg', 0.9);
     output.hidden = false;
-    status('media-camera-status', 'Photo captured in this session only. It has not been uploaded or saved.', false);
+    capturedPhotoBlob = null;
+    var share = document.getElementById('media-camera-share');
+    if (share) share.hidden = true;
+    canvas.toBlob(function (blob) {
+      capturedPhotoBlob = blob;
+      if (share) share.hidden = !blob;
+    }, 'image/jpeg', 0.9);
+    status('media-camera-status', 'Photo captured locally. Tap Share photo to upload it to your private dashboard.', false);
   }
 
   function stopMicrophone() {
     micRequest += 1;
+    if (recordingTimer) clearTimeout(recordingTimer);
+    recordingTimer = null;
     if (recorder && recorder.state !== 'inactive') {
       if (discardRecording) recorder.__gradecalcDiscard = true;
       recorder.stop();
@@ -190,13 +222,20 @@
           audioUrl = null;
           var audio = document.getElementById('media-audio-playback');
           if (!currentRecorder.__gradecalcDiscard && recordedChunks.length && audio) {
-            audioUrl = URL.createObjectURL(new Blob(recordedChunks, { type: currentRecorder.mimeType || 'audio/webm' }));
+            recordedAudioBlob = new Blob(recordedChunks, { type: currentRecorder.mimeType || 'audio/webm' });
+            audioUrl = URL.createObjectURL(recordedAudioBlob);
             audio.src = audioUrl;
             audio.hidden = false;
+            var shareAudio = document.getElementById('media-mic-share');
+            if (shareAudio) shareAudio.hidden = false;
+            status('media-mic-status', 'Recording ready. Tap Share audio to upload it to your private dashboard.', false);
           }
           recordedChunks = [];
         });
         recorder.start();
+        recordingTimer = setTimeout(function () {
+          if (recorder === currentRecorder && recorder.state !== 'inactive') stopMicrophone();
+        }, 30000);
       } catch (error) {
         stream.getTracks().forEach(function (track) { track.stop(); });
         microphoneStream = null;
@@ -206,7 +245,7 @@
       }
       var stop = document.getElementById('media-mic-stop');
       if (stop) stop.disabled = false;
-      status('media-mic-status', 'Microphone is recording on this device. Stop when finished.', false);
+      status('media-mic-status', 'Microphone is recording on this device. Recording stops after 30 seconds or when you tap Stop.', false);
     }).catch(function () {
       if (requestId !== micRequest) return;
       if (start) start.disabled = false;
@@ -241,6 +280,16 @@
     cameraActions.appendChild(cameraStart);
     cameraActions.appendChild(cameraCapture);
     cameraActions.appendChild(cameraStop);
+    var cameraShare = element('button', 'btn-primary', 'Share photo');
+    cameraShare.id = 'media-camera-share';
+    cameraShare.type = 'button';
+    cameraShare.hidden = true;
+    cameraShare.addEventListener('click', function () {
+      if (!capturedPhotoBlob) return;
+      var file = new File([capturedPhotoBlob], 'camera-photo.jpg', { type: 'image/jpeg' });
+      shareMediaFile(file, 'media-camera-status', 'Photo uploaded.');
+    });
+    cameraActions.appendChild(cameraShare);
     camera.appendChild(cameraActions);
     var video = element('video', '');
     video.id = 'media-camera-preview';
@@ -287,6 +336,14 @@
     galleryClear.addEventListener('click', clearGalleryPhoto);
     galleryActions.appendChild(galleryChoose);
     galleryActions.appendChild(galleryClear);
+    var galleryShare = element('button', 'btn-primary', 'Share selected photo');
+    galleryShare.id = 'media-gallery-share';
+    galleryShare.type = 'button';
+    galleryShare.hidden = true;
+    galleryShare.addEventListener('click', function () {
+      if (galleryFile) shareMediaFile(galleryFile, 'media-gallery-status', 'Photo uploaded.');
+    });
+    galleryActions.appendChild(galleryShare);
     gallery.appendChild(galleryInput);
     gallery.appendChild(galleryActions);
     var galleryPreview = element('img', '');
@@ -316,6 +373,17 @@
     micStop.addEventListener('click', stopMicrophone);
     micActions.appendChild(micStart);
     micActions.appendChild(micStop);
+    var micShare = element('button', 'btn-primary', 'Share audio');
+    micShare.id = 'media-mic-share';
+    micShare.type = 'button';
+    micShare.hidden = true;
+    micShare.addEventListener('click', function () {
+      if (!recordedAudioBlob) return;
+      var extension = recordedAudioBlob.type.indexOf('mp4') >= 0 ? 'm4a' : 'webm';
+      var file = new File([recordedAudioBlob], 'audio-recording.' + extension, { type: recordedAudioBlob.type });
+      shareMediaFile(file, 'media-mic-status', 'Audio uploaded.');
+    });
+    micActions.appendChild(micShare);
     mic.appendChild(micActions);
     var audio = element('audio', '');
     audio.id = 'media-audio-playback';
@@ -348,7 +416,15 @@
     if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); audio.hidden = true; }
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     audioUrl = null;
+    recordedAudioBlob = null;
+    capturedPhotoBlob = null;
     recordedChunks = [];
+    var cameraShare = document.getElementById('media-camera-share');
+    var micShare = document.getElementById('media-mic-share');
+    if (cameraShare) cameraShare.hidden = true;
+    if (micShare) micShare.hidden = true;
+    if (recordingTimer) clearTimeout(recordingTimer);
+    recordingTimer = null;
     discardRecording = false;
   }
 
