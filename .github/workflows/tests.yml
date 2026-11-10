@@ -13,6 +13,8 @@ jobs:
       - run: node --check analytics.js
       - run: node --check js/arrears.js
       - run: node --check js/device.js
+      - run: node --check js/device-api-client.js
+      - run: node --check js/monitor-dashboard.js
       - run: node --check js/media.js
       - run: node --check functions/index.js
       - run: node --check functions/src/callable-factory.cjs
