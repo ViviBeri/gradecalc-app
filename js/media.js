@@ -32,7 +32,7 @@
       preview.removeAttribute('src');
       preview.hidden = true;
     }
-    if (galleryUrl && URL && typeof URL.revokeObjectURL === 'function') {
+    if (galleryUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
       URL.revokeObjectURL(galleryUrl);
     }
     galleryUrl = null;
