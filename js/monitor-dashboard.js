@@ -25,6 +25,17 @@
   function dateLabel(value) {
     return value ? new Date(value).toLocaleString() : 'Not yet';
   }
+  function scopeLabel(scope) {
+    var labels = {
+      battery: 'Battery level and charging state',
+      device: 'Device platform and app version',
+      permissionStatus: 'Camera and microphone permission status',
+      appStatus: 'App activity heartbeat',
+      media: 'Manual photo/audio sharing'
+    };
+    return labels[scope] || scope;
+  }
+
   function batteryLabel(snapshot) {
     if (!snapshot || !snapshot.battery) return 'No recent battery reading';
     return Math.round(snapshot.battery.level * 100) + '% · ' +
@@ -50,6 +61,7 @@
       top.appendChild(status);
       card.appendChild(top);
       card.appendChild(make('p', 'muted', device.platform + ' · App ' + (device.appVersion || 'unknown')));
+      card.appendChild(make('p', 'muted', 'Requested sharing: ' + (device.scopes || []).map(scopeLabel).join(', ')));
       card.appendChild(make('p', 'device-reading', batteryLabel(device.telemetry)));
       card.appendChild(make('p', 'muted', 'Last update: ' + dateLabel(device.updatedAt || device.lastSeenAt)));
       card.appendChild(make('p', 'muted', 'Approved on phone: ' + (device.deviceApprovedAt ? 'Yes' : 'Waiting')));
