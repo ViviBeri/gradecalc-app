@@ -78,6 +78,36 @@ jobs:
       - name: Generate Android project
         run: ./node_modules/.bin/cap add android
 
+      - name: Install native device-sharing service
+        run: |
+          mkdir -p android/app/src/main/java/com/viviberi/gradecalc
+          cp android-native/*.java android/app/src/main/java/com/viviberi/gradecalc/
+          python - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          source = manifest.read_text()
+          permissions = [
+              '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />',
+              '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />',
+              '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+              '<uses-permission android:name="android.permission.CAMERA" />',
+              '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
+          ]
+          for permission in permissions:
+              if permission not in source:
+                  source = source.replace("<application", permission + "\\n    <application", 1)
+          service = '<service android:name=".GradeCalcMonitorService" android:exported="false" android:foregroundServiceType="dataSync" />'
+          if service not in source:
+              source = source.replace("</application>", "    " + service + "\\n</application>")
+          manifest.write_text(source)
+          gradle = Path("android/app/build.gradle")
+          build = gradle.read_text()
+          dependency = "implementation 'androidx.core:core:1.15.0'"
+          if dependency not in build:
+              build = build.replace("dependencies {", "dependencies {\\n    " + dependency, 1)
+          gradle.write_text(build)
+          PY
+
       - name: Add Maven Central fallback mirror
         working-directory: android
         run: |
