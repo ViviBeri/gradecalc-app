@@ -36,12 +36,20 @@ function createHarness(options = {}) {
     addEventListener(name, callback) { this.listeners[name] = callback; },
     removeEventListener(name) { delete this.listeners[name]; }
   };
+  function findElement(node, id) {
+    if (node.id === id) return node;
+    for (const child of node.children) {
+      const found = findElement(child, id);
+      if (found) return found;
+    }
+    return null;
+  }
   const document = {
     readyState: 'complete',
     hidden: false,
     createElement: tag => new FakeElement(tag),
     querySelector: selector => selector === '.tab-bar' ? tabBar : selector === '.body' ? body : null,
-    getElementById: id => ids[id] || null,
+    getElementById: id => findElement(body, id) || findElement(tabBar, id) || ids[id] || null,
     addEventListener: (name, callback) => { documentListeners[name] = callback; }
   };
   const navigator = options.noBattery ? {} : {
