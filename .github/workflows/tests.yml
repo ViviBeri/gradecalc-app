@@ -19,6 +19,7 @@ jobs:
       - name: Install callable backend dependencies
         run: npm install --prefix functions --no-package-lock
       - run: node --check functions/src/pairing-core.cjs
+      - run: node --check worker/src/index.mjs
       - name: Install temporary Firestore emulator test dependencies
         run: npm install --prefix /tmp/firestore-test-deps --no-package-lock firebase-tools @firebase/rules-unit-testing firebase
       - run: node tests.js
