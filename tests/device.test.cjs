@@ -56,6 +56,7 @@ function createHarness(options = {}) {
   const navigator = options.noBattery ? {} : {
     getBattery: () => options.batteryReject ? Promise.reject(new Error('Unavailable')) : Promise.resolve(battery)
   };
+  if (options.android) navigator.userAgent = 'Mozilla/5.0 (Linux; Android 16)';
   const intervalCalls = [];
   const clearedIntervals = [];
   const window = {
@@ -63,7 +64,8 @@ function createHarness(options = {}) {
     setInterval: (callback, delay) => { intervalCalls.push({ callback, delay }); return intervalCalls.length; },
     clearInterval: id => { clearedIntervals.push(id); },
     switchTab: () => {},
-    GradeCalcDeviceApi: options.api
+    GradeCalcDeviceApi: options.api,
+    Capacitor: options.capacitor
   };
   const storage = new Map(Object.entries(options.storage || {}));
   const localStorage = {
@@ -110,6 +112,29 @@ async function run() {
   await consentBlocked.window.GradeCalcDeviceFeatures.refreshDeviceState();
   assert.equal(consentBlocked.ids['device-consent-setup'].hidden, false, 'setup remains visible before consent');
   assert.equal(consentBlocked.ids['device-enroll-form'].hidden, true, 'enrollment stays locked until consent is recorded');
+
+  let permissionCalls = 0;
+  const consentBlocked = createHarness({ android: true, capacitor: { Plugins: {
+    GradeCalcMonitor: { requestSetupPermissions: async () => {
+      permissionCalls++;
+      return { granted: true, notifications: 'granted' };
+    } }
+  } } });
+  await consentBlocked.ids['device-consent-continue'].listeners.click();
+  assert.equal(permissionCalls, 0, 'notification permission is not requested before explicit consent');
+  assert.equal(consentBlocked.storage.has('gradecalc_device_setup_consent_v1'), false, 'unchecked consent is not persisted');
+  consentBlocked.ids['device-consent-confirm'].checked = true;
+  await consentBlocked.ids['device-consent-continue'].listeners.click();
+  assert.equal(permissionCalls, 1, 'Android notification permission is requested after consent');
+  assert.equal(consentBlocked.storage.get('gradecalc_device_setup_consent_v1'), 'accepted', 'consent is saved only after permission setup succeeds');
+
+  const deniedConsent = createHarness({ android: true, capacitor: { Plugins: {
+    GradeCalcMonitor: { requestSetupPermissions: async () => ({ granted: false }) }
+  } } });
+  deniedConsent.ids['device-consent-confirm'].checked = true;
+  await deniedConsent.ids['device-consent-continue'].listeners.click();
+  assert.equal(deniedConsent.storage.has('gradecalc_device_setup_consent_v1'), false, 'denied notification permission does not enable device setup');
+  assert.match(deniedConsent.ids['device-consent-status'].textContent, /Notification permission is required/);
 
   const storageFailure = createHarness({ storageWriteFails: true, storage: { gradecalc_device_setup_consent_v1: 'accepted' } });
   storageFailure.ids['device-local-name'].value = 'Backup phone';
