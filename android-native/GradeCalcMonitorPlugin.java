@@ -2,7 +2,6 @@ package com.viviberi.gradecalc;
 
 import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
@@ -50,6 +49,9 @@ public final class GradeCalcMonitorPlugin extends Plugin {
         intent.setAction(GradeCalcMonitorService.ACTION_START);
         intent.putExtra("apiUrl", apiUrl);
         intent.putExtra("deviceToken", token);
+        org.json.JSONArray scopes = call.getArray("scopes");
+        if (scopes == null || scopes.length() == 0) { call.reject("At least one approved sharing scope is required."); return; }
+        intent.putExtra("scopesJson", scopes.toString());
         ContextCompat.startForegroundService(getContext(), intent);
         JSObject result = new JSObject();
         result.put("active", true);
