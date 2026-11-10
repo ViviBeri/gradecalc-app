@@ -154,8 +154,7 @@ function harness(options = {}) {
   assert.equal(gallery.ids['media-gallery-preview'].src, 'blob:audio');
   assert.match(gallery.ids['media-gallery-status'].textContent, /not been uploaded or saved/);
   gallery.ids['media-gallery-share'].click();
-  await Promise.resolve();
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(uploaded[0], galleryInput.files[0], 'gallery upload occurs only after explicit Share action');
   assert.match(gallery.ids['media-gallery-status'].textContent, /Photo uploaded/);
   gallery.ids['media-gallery-clear'].click();
