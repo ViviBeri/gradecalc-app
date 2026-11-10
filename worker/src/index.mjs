@@ -311,24 +311,40 @@ async function handle(request, env) {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'audio/webm', 'audio/mp4', 'audio/ogg'];
     const maxBytes = contentType.startsWith('image/') ? MAX_IMAGE_BYTES : MAX_AUDIO_BYTES;
     const declaredLength = Number(request.headers.get('content-length') || 0);
-    if (!allowedTypes.includes(contentType) || !Number.isSafeInteger(declaredLength) || declaredLength < 1 || declaredLength > maxBytes) {
+    if (!allowedTypes.includes(contentType) || (declaredLength && declaredLength > maxBytes) || !request.body) {
       return json({ error: 'INVALID_MEDIA' }, 400, headers);
     }
-    const data = await request.arrayBuffer();
-    if (!data.byteLength || data.byteLength !== declaredLength || data.byteLength > maxBytes) return json({ error: 'INVALID_MEDIA' }, 400, headers);
     const mediaId = randomToken(16);
     const objectKey = device.owner_id + '/' + device.id + '/' + mediaId;
     const filename = (request.headers.get('x-file-name') || 'shared-media').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 100);
-    await env.MEDIA.put(objectKey, data, { httpMetadata: { contentType } });
+    let byteSize = 0;
+    const boundedBody = request.body.pipeThrough(new TransformStream({
+      transform(chunk, controller) {
+        byteSize += chunk.byteLength;
+        if (byteSize > maxBytes) throw new TypeError('Media file exceeds its size limit');
+        controller.enqueue(chunk);
+      }
+    }));
+    try {
+      await env.MEDIA.put(objectKey, boundedBody, { httpMetadata: { contentType } });
+    } catch (error) {
+      await env.MEDIA.delete(objectKey);
+      if (error instanceof TypeError) return json({ error: 'INVALID_MEDIA' }, 400, headers);
+      throw error;
+    }
+    if (!byteSize) {
+      await env.MEDIA.delete(objectKey);
+      return json({ error: 'INVALID_MEDIA' }, 400, headers);
+    }
     try {
       await env.DB.prepare(
         'INSERT INTO media_objects (id, owner_id, device_id, object_key, filename, content_type, byte_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(mediaId, device.owner_id, device.id, objectKey, filename, contentType, data.byteLength, now).run();
+      ).bind(mediaId, device.owner_id, device.id, objectKey, filename, contentType, byteSize, now).run();
     } catch {
       await env.MEDIA.delete(objectKey);
       return json({ error: 'MEDIA_SAVE_FAILED' }, 503, headers);
     }
-    return json({ mediaId, filename, contentType, bytes: data.byteLength, createdAt: now }, 201, headers);
+    return json({ mediaId, filename, contentType, bytes: byteSize, createdAt: now }, 201, headers);
   }
 
   if (request.method === 'GET' && path === '/v1/media') {
