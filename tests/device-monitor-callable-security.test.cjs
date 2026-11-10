@@ -11,7 +11,7 @@ const entrypoint = fs.readFileSync(path.join(__dirname, '../functions/index.js')
 test('callable factory enforces App Check and derives identity from verified authentication', () => {
   assert.match(source, /onCallImpl\(\{\s*enforceAppCheck:\s*true,\s*consumeAppCheckToken:\s*true\s*\}/);
   assert.match(source, /const uid = request\.auth && request\.auth\.uid/);
-  assert.match(source, /provider === 'anonymous'/);
+  assert.doesNotMatch(source, /provider === 'anonymous'/);
   assert.match(source, /handler\(request, uid\)/);
   assert.doesNotMatch(source, /request\.data\.(?:uid|ownerUid|viewerUid)/);
 });
