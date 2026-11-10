@@ -93,9 +93,33 @@ function pathId(path, prefix, suffix = '') {
 async function readJson(request) {
   const declared = Number(request.headers.get('content-length') || 0);
   if (declared > MAX_JSON_BYTES) throw new TypeError('Request body too large');
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).length > MAX_JSON_BYTES) throw new TypeError('Request body too large');
-  try { return JSON.parse(raw); } catch { throw new TypeError('Invalid JSON'); }
+  if (!request.body) throw new TypeError('Invalid JSON');
+
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) break;
+      total += result.value.byteLength;
+      if (total > MAX_JSON_BYTES) {
+        await reader.cancel();
+        throw new TypeError('Request body too large');
+      }
+      chunks.push(result.value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try { return JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new TypeError('Invalid JSON'); }
 }
 
 function bearer(request) {
@@ -427,7 +451,7 @@ async function handle(request, env) {
   return json({ error: 'NOT_FOUND' }, 404, headers);
 }
 
-export { ALLOWED_SCOPES, constantTimeEqual, normalizeScopes, pathId, randomToken, sha256Hex, validateSnapshot };
+export { ALLOWED_SCOPES, constantTimeEqual, normalizeScopes, pathId, randomToken, readJson, sha256Hex, validateSnapshot };
 export default {
   async fetch(request, env) {
     try {
