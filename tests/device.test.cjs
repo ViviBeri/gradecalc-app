@@ -91,6 +91,8 @@ async function run() {
   assert.equal(h.ids['device-local-name'].value, 'Study phone');
   assert.equal(h.ids['device-display-name'].textContent, 'Study phone');
   assert.equal(h.ids['device-battery-status'].textContent, '76% · Charging');
+  assert.equal(h.ids['device-consent-setup'].hidden, false, 'first use shows the consent setup');
+  assert.equal(h.ids['device-enroll-form'].hidden, true, 'enrollment stays locked until consent is recorded');
   h.ids['device-local-name'].value = 'Beri phone';
   h.ids['device-save-name'].click();
   assert.equal(h.storage.get('gradecalc_device_name'), 'Beri phone');
@@ -103,7 +105,7 @@ async function run() {
   h.ids['device-save-name'].click();
   assert.match(h.ids['device-name-status'].textContent, /between 1 and 60/);
 
-  const storageFailure = createHarness({ storageWriteFails: true });
+  const storageFailure = createHarness({ storageWriteFails: true, storage: { gradecalc_device_setup_consent_v1: 'accepted' } });
   storageFailure.ids['device-local-name'].value = 'Backup phone';
   storageFailure.ids['device-save-name'].click();
   assert.match(storageFailure.ids['device-name-status'].textContent, /could not save/);
@@ -111,7 +113,7 @@ async function run() {
   assert.ok(storageFailure.ids['device-enroll-button'], 'enrollment requires a one-time dashboard invitation');
   assert.match(storageFailure.ids['device-pairing-status'].textContent, /Remote connection is unavailable/);
 
-  const pending = createHarness({ api: {
+  const pending = createHarness({ storage: { gradecalc_device_setup_consent_v1: 'accepted' }, api: {
     getSettings: async () => ({ apiUrl: 'https://worker.example', deviceToken: 'a'.repeat(43), deviceScopes: ['battery'] }),
     getDeviceStatus: async () => ({ status: 'pending', deviceApprovedAt: null })
   } });
