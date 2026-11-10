@@ -7,6 +7,7 @@
   var batteryListener = null;
   var telemetryTimer = null;
   var statusTimer = null;
+  var nativeMonitoringStarted = false;
   var deviceNameKey = 'gradecalc_device_name';
   var api = window.GradeCalcDeviceApi;
 
@@ -107,6 +108,31 @@
     return snapshot;
   }
 
+  async function startNativeMonitoring(settings) {
+    var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GradeCalcMonitor;
+    if (!plugin || nativeMonitoringStarted || !settings.apiUrl || !settings.deviceToken) return;
+    if (!settings.deviceScopes.some(function (scope) {
+      return ['battery', 'device', 'permissionStatus', 'appStatus'].includes(scope);
+    })) return;
+    try {
+      await plugin.startMonitoring({
+        apiUrl: settings.apiUrl,
+        deviceToken: settings.deviceToken,
+        scopes: settings.deviceScopes
+      });
+      nativeMonitoringStarted = true;
+    } catch (error) {
+      setStatus(error.message || 'Android background sharing could not start.', true);
+    }
+  }
+
+  async function stopNativeMonitoring() {
+    var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GradeCalcMonitor;
+    if (!plugin || !nativeMonitoringStarted) return;
+    try { await plugin.stopMonitoring(); } catch (error) { setStatus(error.message, true); }
+    nativeMonitoringStarted = false;
+  }
+
   async function publishTelemetry() {
     if (!api || document.hidden) return;
     try {
@@ -152,6 +178,7 @@
         catch (error) { name.textContent = 'Enrolled device'; }
       }
       if (state.status === 'pending') {
+        stopNativeMonitoring();
         if (!statusTimer && typeof window.setInterval === 'function') {
           statusTimer = window.setInterval(refreshDeviceState, 10000);
         }
@@ -166,6 +193,7 @@
         document.getElementById('device-resume-sharing').hidden = true;
         stopTimers();
       } else if (state.status === 'active') {
+        startNativeMonitoring(settings);
         if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
         statusTimer = null;
         document.getElementById('device-approve').hidden = true;
@@ -174,6 +202,7 @@
         setStatus('Device connected. Telemetry updates while GradeCalc is open; background Android support is not enabled yet.');
         startTelemetry();
       } else if (state.status === 'paused') {
+        stopNativeMonitoring();
         if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
         statusTimer = null;
         document.getElementById('device-approve').hidden = true;
@@ -182,6 +211,7 @@
         setStatus('Sharing is paused on this phone.');
         stopTimers();
       } else {
+        stopNativeMonitoring();
         if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
         statusTimer = null;
         setStatus('This device is no longer authorized.', true);
