@@ -47,3 +47,17 @@ CREATE TABLE IF NOT EXISTS telemetry (
 
 CREATE INDEX IF NOT EXISTS idx_telemetry_expiry
   ON telemetry(expires_at);
+
+CREATE TABLE IF NOT EXISTS media_objects (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL REFERENCES owners(id),
+  device_id TEXT NOT NULL REFERENCES devices(id),
+  object_key TEXT NOT NULL UNIQUE,
+  filename TEXT NOT NULL CHECK(length(filename) BETWEEN 1 AND 100),
+  content_type TEXT NOT NULL CHECK(content_type IN ('image/jpeg', 'image/png', 'image/webp', 'audio/webm', 'audio/mp4', 'audio/ogg')),
+  byte_size INTEGER NOT NULL CHECK(byte_size BETWEEN 1 AND 20971520),
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_owner_created
+  ON media_objects(owner_id, created_at);
