@@ -2,10 +2,20 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 
 let worker;
 test.before(async () => {
   worker = await import('../worker/src/index.mjs');
+});
+
+test('D1 schema enforces a single owner and two-sided device approval', () => {
+  const schema = fs.readFileSync('worker/migrations/0001_init.sql', 'utf8');
+  assert.match(schema, /singleton INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK\(singleton = 1\)/);
+  assert.match(schema, /device_approved_at INTEGER/);
+  assert.match(schema, /owner_approved_at INTEGER/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS media_objects/);
+  assert.match(schema, /object_key TEXT NOT NULL UNIQUE/);
 });
 
 test('device scopes exclude location and network', () => {
