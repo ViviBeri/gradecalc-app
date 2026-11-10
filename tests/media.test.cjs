@@ -26,7 +26,7 @@ class FakeElement {
   play() { return Promise.resolve(); }
 }
 
-function harness() {
+function harness(options = {}) {
   const ids = {};
   const body = new FakeElement('div');
   const documentListeners = {};
@@ -73,7 +73,10 @@ function harness() {
   }
   const context = {
     document, navigator,
-    window: { addEventListener: (name, callback) => { windowListeners[name] = callback; } },
+    window: {
+      addEventListener: (name, callback) => { windowListeners[name] = callback; },
+      GradeCalcDeviceApi: options.api
+    },
     MediaRecorder: FakeMediaRecorder,
     URL: { createObjectURL: () => { created += 1; return 'blob:audio'; }, revokeObjectURL: url => revoked.push(url) },
     Blob, console,
@@ -141,13 +144,19 @@ function harness() {
   assert.equal(delayedMic.stopped.length, 1, 'late microphone permission response releases the stream');
   assert.equal(delayedMic.ids['media-mic-stop'].disabled, true, 'late microphone permission cannot start recording');
 
-  const gallery = harness();
+  const uploaded = [];
+  const gallery = harness({ api: { uploadMedia: async file => { uploaded.push(file); } } });
   const galleryInput = gallery.ids['media-gallery-input'];
   galleryInput.files = [{ type: 'image/jpeg', size: 1024 }];
   galleryInput.listeners.change({ target: galleryInput });
   assert.equal(gallery.ids['media-gallery-preview'].hidden, false, 'selected gallery photo is previewed');
   assert.equal(gallery.ids['media-gallery-preview'].src, 'blob:audio');
   assert.match(gallery.ids['media-gallery-status'].textContent, /not been uploaded or saved/);
+  gallery.ids['media-gallery-share'].click();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(uploaded[0], galleryInput.files[0], 'gallery upload occurs only after explicit Share action');
+  assert.match(gallery.ids['media-gallery-status'].textContent, /Photo uploaded/);
   gallery.ids['media-gallery-clear'].click();
   assert.equal(gallery.ids['media-gallery-preview'].hidden, true, 'gallery preview clears on request');
   assert.equal(gallery.ids['media-gallery-preview'].src, '');
