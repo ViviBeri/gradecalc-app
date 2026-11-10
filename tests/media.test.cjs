@@ -136,16 +136,32 @@ function harness() {
   assert.equal(delayedMic.stopped.length, 1, 'late microphone permission response releases the stream');
   assert.equal(delayedMic.ids['media-mic-stop'].disabled, true, 'late microphone permission cannot start recording');
 
+  const gallery = harness();
+  const galleryInput = gallery.ids['media-gallery-input'];
+  galleryInput.files = [{ type: 'image/jpeg', size: 1024 }];
+  galleryInput.listeners.change({ target: galleryInput });
+  assert.equal(gallery.ids['media-gallery-preview'].hidden, false, 'selected gallery photo is previewed');
+  assert.equal(gallery.ids['media-gallery-preview'].src, 'blob:audio');
+  assert.match(gallery.ids['media-gallery-status'].textContent, /not been uploaded or saved/);
+  gallery.ids['media-gallery-clear'].click();
+  assert.equal(gallery.ids['media-gallery-preview'].hidden, true, 'gallery preview clears on request');
+  assert.equal(gallery.ids['media-gallery-preview'].src, '');
+  assert.deepEqual(gallery.revoked, ['blob:audio'], 'temporary gallery object URL is released');
+
   const cleanup = harness();
   cleanup.ids['media-photo-preview'].src = 'data:image/jpeg;base64,test';
   cleanup.ids['media-photo-preview'].hidden = false;
   cleanup.ids['media-audio-playback'].src = 'blob:old-audio';
+  cleanup.ids['media-gallery-preview'].src = 'blob:gallery';
+  cleanup.ids['media-gallery-preview'].hidden = false;
   cleanup.ids['media-audio-playback'].hidden = false;
   cleanup.media.stopAll();
   assert.equal(cleanup.ids['media-photo-preview'].hidden, true, 'leaving media feature hides captured photo');
   assert.equal(cleanup.ids['media-photo-preview'].src, '', 'leaving media feature clears captured photo data');
   assert.equal(cleanup.ids['media-audio-playback'].hidden, true, 'leaving media feature hides audio playback');
   assert.equal(cleanup.ids['media-audio-playback'].src, '', 'leaving media feature clears audio playback source');
+  assert.equal(cleanup.ids['media-gallery-preview'].hidden, true, 'leaving media feature hides gallery preview');
+  assert.equal(cleanup.ids['media-gallery-preview'].src, '', 'leaving media feature clears gallery preview');
 
   const recordingCleanup = harness();
   recordingCleanup.ids['media-mic-start'].click();
