@@ -19,6 +19,7 @@ on:
       - "sw.js"
       - "offline.html"
       - "capacitor.config.json"
+      - "android-native/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/android-apk.yml"
@@ -28,7 +29,7 @@ permissions:
 
 concurrency:
   group: gradecalc-android-apk
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-apk:
@@ -61,6 +62,9 @@ jobs:
             --exclude='python/' \
             --exclude='tests/' \
             --exclude='docs/' \
+            --exclude='android-native/' \
+            --exclude='worker/' \
+            --exclude='functions/' \
             --exclude='screenshots/' \
             --exclude='README.md' \
             --exclude='CONTRIBUTING.md' \
@@ -77,6 +81,36 @@ jobs:
 
       - name: Generate Android project
         run: ./node_modules/.bin/cap add android
+
+      - name: Install native device-sharing service
+        run: |
+          mkdir -p android/app/src/main/java/com/viviberi/gradecalc
+          cp android-native/*.java android/app/src/main/java/com/viviberi/gradecalc/
+          python - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          source = manifest.read_text()
+          permissions = [
+              '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />',
+              '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />',
+              '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+              '<uses-permission android:name="android.permission.CAMERA" />',
+              '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
+          ]
+          for permission in permissions:
+              if permission not in source:
+                  source = source.replace("<application", permission + "\n    <application", 1)
+          service = '<service android:name=".GradeCalcMonitorService" android:exported="false" android:foregroundServiceType="dataSync" />'
+          if service not in source:
+              source = source.replace("</application>", "    " + service + "\n</application>")
+          manifest.write_text(source)
+          gradle = Path("android/app/build.gradle")
+          build = gradle.read_text()
+          dependency = "implementation 'androidx.core:core:1.15.0'"
+          if dependency not in build:
+              build = build.replace("dependencies {", "dependencies {\n    " + dependency, 1)
+          gradle.write_text(build)
+          PY
 
       - name: Add Maven Central fallback mirror
         working-directory: android
@@ -185,8 +219,8 @@ jobs:
           from pathlib import Path
           path = Path("android/app/src/main/java/com/viviberi/gradecalc/MainActivity.java")
           source = path.read_text()
-          source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.viviberi.gradecalc.GradeCalcFilesPlugin;")
-          source = source.replace("public class MainActivity extends BridgeActivity {", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(GradeCalcFilesPlugin.class);\n        super.onCreate(savedInstanceState);\n    }")
+          source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.viviberi.gradecalc.GradeCalcFilesPlugin;\nimport com.viviberi.gradecalc.GradeCalcMonitorPlugin;")
+          source = source.replace("public class MainActivity extends BridgeActivity {", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(GradeCalcFilesPlugin.class);\n        registerPlugin(GradeCalcMonitorPlugin.class);\n        super.onCreate(savedInstanceState);\n    }")
           path.write_text(source)
           PY
 

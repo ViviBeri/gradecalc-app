@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>GradeCalc Device Dashboard</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color-scheme:dark;background:#0b1420;color:#edf5ff}
+*{box-sizing:border-box}body{margin:0;padding:24px;max-width:1100px;margin-inline:auto}
+header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(1.5rem,4vw,2.3rem);margin:8px 0}h2{font-size:1rem;margin:0 0 12px}h3{font-size:1rem;margin:0}
+a{color:#9bd5ff}p{color:#b5c6d8;line-height:1.6}.sub{margin-top:0}
+button{border:0;border-radius:10px;padding:11px 15px;font:inherit;font-weight:650;cursor:pointer;background:#79dfb0;color:#08251a}
+button.secondary{background:#34465a;color:#fff}button.danger{background:#6b303a;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
+input{width:100%;padding:11px;border:1px solid #42576e;border-radius:9px;background:#0e1a29;color:#fff;font:inherit;margin:6px 0 14px}
+label{display:block;color:#c6d6e6;font-size:.9rem}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:14px}
+.card,.remote-device-card,.media-item{background:#172537;border:1px solid #30435a;border-radius:15px;padding:18px;min-width:0;margin-bottom:14px}
+.value,.device-reading{font-size:1.1rem;overflow-wrap:anywhere}.muted{color:#b5c6d8;font-size:.88rem}
+.notice{padding:13px 16px;border-left:3px solid #79dfb0;background:#172537;border-radius:6px}
+.status{font-weight:650;color:#79dfb0}.status[data-state=error]{color:#ff9c9c}
+.device-state{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;border-radius:20px;padding:4px 9px;background:#34465a}
+.device-state[data-state=active]{background:#1d5946;color:#b5ffe1}.device-state[data-state=pending]{background:#604d23;color:#ffe3a1}
+.remote-device-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.device-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.scope-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0}
+.scope-list label{display:flex;gap:8px;align-items:center}.scope-list input{width:auto;margin:0}
+.invite-code{font-size:1.2rem;letter-spacing:.08em;overflow-wrap:anywhere;padding:12px;background:#0b1420;border-radius:9px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><div><p class="sub">GradeCalc · Private companion</p><h1>Device Dashboard</h1></div><a href="../index.html">Back to GradeCalc</a></header>
+<p class="notice">Private dashboard. A phone joins only after a one-time invitation, on-device approval, and separate dashboard approval. Location and network details are not collected.</p>
+<p role="status" aria-live="polite" id="dashboard-status" class="status">Checking private dashboard setup…</p>
+
+<section class="card" id="setup-panel" hidden>
+  <h2>Initialize this private dashboard</h2>
+  <p class="muted">Deploy the Worker and configure its exact allowed origins first. The setup secret is used once and is not stored in this browser.</p>
+  <form id="setup-form">
+    <label for="api-url">Cloudflare Worker URL</label>
+    <input id="api-url" type="url" placeholder="https://your-worker.workers.dev" required>
+    <label for="setup-secret">One-time setup secret</label>
+    <input id="setup-secret" type="password" minlength="32" autocomplete="off" required>
+    <div class="actions">
+      <button type="submit" id="setup-button">Initialize private dashboard</button>
+      <button type="button" class="secondary" id="save-api-url">Save Worker URL only</button>
+    </div>
+  </form>
+  <p class="muted">The owner token is stored in this browser's IndexedDB. Clearing browser data loses access; there is no recovery flow yet. Do not share this browser profile.</p>
+</section>
+
+<section id="dashboard-panel" hidden>
+  <section class="card">
+    <h2>Dashboard owner</h2>
+    <p class="muted">Owner ID: <span id="owner-id"></span></p>
+    <p class="muted">API: <span id="api-url-label"></span></p>
+  </section>
+
+  <section class="card">
+    <h2>Add a phone</h2>
+    <p class="muted">Choose exactly what this phone may share. Media permission allows only separate owner-initiated uploads after the phone owner taps Share.</p>
+    <div class="scope-list">
+      <label><input type="checkbox" data-device-scope value="battery" checked> Battery</label>
+      <label><input type="checkbox" data-device-scope value="device" checked> Device version</label>
+      <label><input type="checkbox" data-device-scope value="permissionStatus"> Camera/mic permission status</label>
+      <label><input type="checkbox" data-device-scope value="appStatus"> App heartbeat</label>
+      <label><input type="checkbox" data-device-scope value="media"> Photo/audio sharing</label>
+    </div>
+    <button type="button" id="create-invite">Create five-minute invitation</button>
+    <div id="invite-result" hidden>
+      <p class="invite-code" id="invite-code"></p>
+      <p class="muted" id="invite-expires"></p>
+      <button type="button" class="secondary" id="copy-invite">Copy invitation code</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Enrolled devices</h2>
+    <p class="muted">Pending devices require approval on the phone and here. Only active devices can publish telemetry or upload media.</p>
+    <div id="remote-devices"><p class="muted">Loading devices…</p></div>
+  </section>
+
+  <section class="card">
+    <h2>Shared media</h2>
+    <p class="muted">Media remains in private storage until you explicitly delete it. Revoking a phone does not delete its existing media.</p>
+    <div id="remote-media"><p class="muted">Loading media…</p></div>
+  </section>
+</section>
+
+<section class="grid">
+  <section class="card"><h2>This browser</h2><div id="device" class="value">Not checked</div><p class="muted">Local platform information only.</p></section>
+  <section class="card"><h2>Battery</h2><div id="battery" class="value">Not checked</div><p class="muted">Available only when the browser exposes battery status.</p></section>
+  <section class="card"><h2>Camera permission</h2><div id="camera" class="value">Not checked</div><p class="muted">Permission status only. Camera is not opened.</p></section>
+  <section class="card"><h2>Microphone permission</h2><div id="microphone" class="value">Not checked</div><p class="muted">Permission status only. Microphone is not opened.</p></section>
+  <section class="card"><h2>Privacy</h2><div class="value">No location or network data</div><p class="muted">This dashboard never activates the local camera or microphone.</p></section>
+</section>
+<script src="../js/device-api-client.js" defer></script>
+<script src="../js/monitor-dashboard.js" defer></script>
+<script>
+'use strict';
+(function () {
+  var battery = null;
+  var batteryListener = null;
+  function set(id, value) { document.getElementById(id).textContent = value; }
+  function stopBattery() {
+    if (battery && batteryListener) {
+      battery.removeEventListener('levelchange', batteryListener);
+      battery.removeEventListener('chargingchange', batteryListener);
+    }
+    battery = null;
+    batteryListener = null;
+  }
+  function updateBattery() {
+    if (!battery) return;
+    set('battery', Math.round(battery.level * 100) + '% · ' +
+      (battery.charging ? 'Charging' : 'Not charging'));
+  }
+  function readPermission(name, id) {
+    if (!navigator.permissions || !navigator.permissions.query) {
+      set(id, 'Status unavailable');
+      return;
+    }
+    navigator.permissions.query({ name: name }).then(function (result) {
+      set(id, result.state);
+    }).catch(function () { set(id, 'Status unavailable'); });
+  }
+  function refresh() {
+    stopBattery();
+    set('device', navigator.userAgentData && navigator.userAgentData.platform ||
+      navigator.platform || 'Platform unavailable');
+    readPermission('camera', 'camera');
+    readPermission('microphone', 'microphone');
+    if (!navigator.getBattery) {
+      set('battery', 'Not available in this browser');
+      return;
+    }
+    navigator.getBattery().then(function (result) {
+      battery = result;
+      batteryListener = updateBattery;
+      battery.addEventListener('levelchange', batteryListener);
+      battery.addEventListener('chargingchange', batteryListener);
+      updateBattery();
+    }).catch(function () { set('battery', 'Status unavailable'); });
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopBattery();
+    else refresh();
+  });
+  window.addEventListener('pagehide', stopBattery);
+  refresh();
+})();
+</script>
+</body>
+</html>

@@ -511,6 +511,7 @@ function svgRing(value, size) {
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
+  if (tab !== 'devices' && window.GradeCalcMedia) window.GradeCalcMedia.stopAll();
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false')});
   btn.classList.add('active');
   btn.setAttribute('aria-selected','true');
@@ -1180,5 +1181,8 @@ if (typeof globalThis !== 'undefined') {
 </script>
 <script type="module" src="js/target.js"></script>
 <script src="js/arrears.js"></script>
+<script src="js/device-api-client.js"></script>
+<script src="js/device.js"></script>
+<script src="js/media.js"></script>
 </body>
 </html>

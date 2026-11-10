@@ -1,0 +1,16 @@
+name = "gradecalc-device-api"
+main = "src/index.mjs"
+compatibility_date = "2026-11-10"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gradecalc-device-api"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "gradecalc-device-media"
