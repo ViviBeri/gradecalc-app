@@ -55,9 +55,14 @@ function createHarness(options = {}) {
   const navigator = options.noBattery ? {} : {
     getBattery: () => options.batteryReject ? Promise.reject(new Error('Unavailable')) : Promise.resolve(battery)
   };
+  const intervalCalls = [];
+  const clearedIntervals = [];
   const window = {
     addEventListener: (name, callback) => { windowListeners[name] = callback; },
-    switchTab: () => {}
+    setInterval: (callback, delay) => { intervalCalls.push({ callback, delay }); return intervalCalls.length; },
+    clearInterval: id => { clearedIntervals.push(id); },
+    switchTab: () => {},
+    GradeCalcDeviceApi: options.api
   };
   const storage = new Map(Object.entries(options.storage || {}));
   const localStorage = {
@@ -75,7 +80,7 @@ function createHarness(options = {}) {
   }
   body.children.forEach(indexTree);
   tabBar.children.forEach(indexTree);
-  return { ids, tabBar, body, battery, document, documentListeners, windowListeners, storage };
+  return { ids, tabBar, body, battery, document, documentListeners, windowListeners, storage, window, intervalCalls, clearedIntervals };
 }
 
 async function run() {
@@ -104,6 +109,15 @@ async function run() {
   assert.ok(storageFailure.ids['device-enroll-form'], 'device enrollment form is available');
   assert.ok(storageFailure.ids['device-enroll-button'], 'enrollment requires a one-time dashboard invitation');
   assert.match(storageFailure.ids['device-pairing-status'].textContent, /Remote connection is unavailable/);
+
+  const pending = createHarness({ api: {
+    getSettings: async () => ({ apiUrl: 'https://worker.example', deviceToken: 'a'.repeat(43), deviceScopes: ['battery'] }),
+    getDeviceStatus: async () => ({ status: 'pending', deviceApprovedAt: null })
+  } });
+  await pending.window.GradeCalcDeviceFeatures.refreshDeviceState();
+  assert.equal(pending.intervalCalls.length, 1, 'pending enrollment keeps polling for dashboard approval');
+  assert.equal(pending.intervalCalls[0].delay, 10000);
+  assert.equal(pending.clearedIntervals.length, 0, 'pending polling is not cleared with telemetry timers');
 
   const noBattery = createHarness({ noBattery: true });
   await Promise.resolve();
