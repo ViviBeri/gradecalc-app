@@ -155,6 +155,10 @@
     return request('/v1/devices/' + encodeURIComponent(deviceId), { method: 'DELETE' }, 'owner');
   }
 
+  async function pauseDevice(deviceId) {
+    return request('/v1/devices/' + encodeURIComponent(deviceId) + '/stop', { method: 'POST' }, 'owner');
+  }
+
   async function listMedia() {
     return request('/v1/media', {}, 'owner');
   }
@@ -244,6 +248,7 @@
     listDevices: listDevices,
     approveDashboardDevice: approveDashboardDevice,
     revokeDevice: revokeDevice,
+    pauseDevice: pauseDevice,
     listMedia: listMedia,
     downloadMedia: downloadMedia,
     deleteMedia: deleteMedia,
