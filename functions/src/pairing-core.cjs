@@ -10,7 +10,8 @@ const ALLOWED_SCOPES = Object.freeze([
   'battery',
   'device',
   'permissionStatus',
-  'appStatus'
+  'appStatus',
+  'media'
 ]);
 const PLATFORMS = Object.freeze(['web', 'android', 'ios', 'unknown']);
 const PERMISSION_STATES = Object.freeze(['granted', 'denied', 'prompt', 'unavailable']);
