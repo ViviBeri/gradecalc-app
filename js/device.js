@@ -31,13 +31,17 @@
     statusTimer = null;
   }
 
-  function stopBatteryPreview() {
+  function stopBatteryListeners() {
     if (battery && batteryListener) {
       battery.removeEventListener('levelchange', batteryListener);
       battery.removeEventListener('chargingchange', batteryListener);
     }
     battery = null;
     batteryListener = null;
+  }
+
+  function stopBatteryPreview() {
+    stopBatteryListeners();
     stopTimers();
   }
 
@@ -55,7 +59,7 @@
       return;
     }
     navigator.getBattery().then(function (result) {
-      stopBatteryPreview();
+      stopBatteryListeners();
       battery = result;
       batteryListener = updateBattery;
       battery.addEventListener('levelchange', batteryListener);
@@ -143,8 +147,14 @@
     try {
       var state = await api.getDeviceStatus();
       var name = document.getElementById('device-display-name');
-      if (name) name.textContent = settings.deviceId || 'Enrolled device';
+      if (name) {
+        try { name.textContent = localStorage.getItem(deviceNameKey) || 'Enrolled device'; }
+        catch (error) { name.textContent = 'Enrolled device'; }
+      }
       if (state.status === 'pending') {
+        if (!statusTimer && typeof window.setInterval === 'function') {
+          statusTimer = window.setInterval(refreshDeviceState, 10000);
+        }
         if (!state.deviceApprovedAt) {
           document.getElementById('device-approve').hidden = false;
           setStatus('Review the requested sharing scopes and approve this phone here. Dashboard approval is also required.');
@@ -156,18 +166,24 @@
         document.getElementById('device-resume-sharing').hidden = true;
         stopTimers();
       } else if (state.status === 'active') {
+        if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
+        statusTimer = null;
         document.getElementById('device-approve').hidden = true;
         document.getElementById('device-stop-sharing').hidden = false;
         document.getElementById('device-resume-sharing').hidden = true;
         setStatus('Device connected. Telemetry updates while GradeCalc is open; background Android support is not enabled yet.');
         startTelemetry();
       } else if (state.status === 'paused') {
+        if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
+        statusTimer = null;
         document.getElementById('device-approve').hidden = true;
         document.getElementById('device-stop-sharing').hidden = true;
         document.getElementById('device-resume-sharing').hidden = false;
         setStatus('Sharing is paused on this phone.');
         stopTimers();
       } else {
+        if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
+        statusTimer = null;
         setStatus('This device is no longer authorized.', true);
         stopTimers();
       }
