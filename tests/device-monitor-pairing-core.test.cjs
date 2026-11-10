@@ -54,7 +54,7 @@ test('invite expiry, consumption, and revocation are enforced', () => {
 test('sharing scopes accept only unique allowlisted values', () => {
   assert.deepEqual(normalizeScopes(['device', 'battery']), ['device', 'battery']);
   assert.deepEqual(ALLOWED_SCOPES, [
-    'battery', 'device', 'permissionStatus', 'appStatus'
+    'battery', 'device', 'permissionStatus', 'appStatus', 'media'
   ]);
   assert.throws(() => normalizeScopes(['battery', 'battery']), TypeError);
   assert.throws(() => normalizeScopes(['location']), TypeError);
