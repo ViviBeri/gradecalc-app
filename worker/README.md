@@ -58,8 +58,8 @@ Set ALLOWED_ORIGINS as a plain Worker variable in wrangler.toml or the Cloudflar
 - Device enrollment remains pending until both the phone owner and dashboard owner approve it.
 - Telemetry is restricted to battery, coarse platform/app version, permission status, and app heartbeat.
 - No Firestore rules or Firebase Functions are used by this Worker.
-- This Worker is not production-ready until D1 integration tests, CORS configuration, token persistence, owner dashboard UI, and physical Android lifecycle tests pass.
+- This Worker is not production-ready until D1/R2 integration tests, CORS configuration, Android Keystore-backed token storage, physical Android lifecycle tests, and end-to-end client verification pass.
 
 ## Important limitations
 
-The dashboard and Android app now include clients for these endpoints, but the Worker URL, D1 database, and R2 bucket are not configured or deployed. End-to-end enrollment, telemetry, and media flows remain unverified. The Firebase Functions prototype under functions/ is retained for local security tests only; Firebase Cloud Functions deployment requires the Blaze billing plan and is not the zero-cost deployment path.
+The dashboard and Android app now include clients for these endpoints, but the Worker URL, D1 database, and R2 bucket are not configured or deployed. End-to-end enrollment, telemetry, and media flows remain unverified. Device and owner tokens currently use IndexedDB; this is not hardware-backed Android Keystore storage. The Firebase Functions prototype under functions/ is retained for local security tests only; Firebase Cloud Functions deployment requires the Blaze billing plan and is not the zero-cost deployment path.
