@@ -150,7 +150,7 @@ async function handle(request, env) {
     if (existing) return json({ error: 'ALREADY_INITIALIZED' }, 409, headers);
     const ownerId = randomToken(16);
     await env.DB.prepare(
-      'INSERT INTO owners (id, token_hash, created_at) VALUES (?, ?, ?)'
+      'INSERT INTO owners (id, token_hash, created_at, singleton) VALUES (?, ?, ?, 1)'
     ).bind(ownerId, await sha256Hex(body.ownerToken), now).run();
     return json({ ownerId, initialized: true }, 201, headers);
   }
