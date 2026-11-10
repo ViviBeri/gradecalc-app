@@ -231,7 +231,13 @@ async function handle(request, env) {
   if (request.method === 'GET' && path === '/v1/device/status') {
     const device = await deviceFromRequest(request, env);
     if (!device) return json({ error: 'UNAUTHORIZED' }, 401, headers);
-    return json({ deviceId: device.id, status: device.status }, 200, headers);
+    const state = await env.DB.prepare(
+      'SELECT device_approved_at AS deviceApprovedAt, owner_approved_at AS ownerApprovedAt FROM devices WHERE id = ? LIMIT 1'
+    ).bind(device.id).first();
+    return json({
+      deviceId: device.id, status: device.status,
+      deviceApprovedAt: state.deviceApprovedAt, ownerApprovedAt: state.ownerApprovedAt
+    }, 200, headers);
   }
 
   if (request.method === 'POST' && path === '/v1/telemetry') {
