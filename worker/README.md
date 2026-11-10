@@ -62,4 +62,4 @@ Set ALLOWED_ORIGINS as a plain Worker variable in wrangler.toml or the Cloudflar
 
 ## Important limitations
 
-The Worker is a backend foundation only. The dashboard and Android app do not yet call these endpoints. The Firebase Functions prototype under functions/ is retained for local security tests only; Firebase Cloud Functions deployment requires the Blaze billing plan and is not the zero-cost deployment path.
+The dashboard and Android app now include clients for these endpoints, but the Worker URL, D1 database, and R2 bucket are not configured or deployed. End-to-end enrollment, telemetry, and media flows remain unverified. The Firebase Functions prototype under functions/ is retained for local security tests only; Firebase Cloud Functions deployment requires the Blaze billing plan and is not the zero-cost deployment path.
