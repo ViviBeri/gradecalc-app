@@ -35,13 +35,13 @@ No operation may return pairing secrets after creation. Anonymous Auth is not an
 - Active session lock: deterministic owner/device key, current session ID, and expiry. Create it transactionally with session creation; reject a second unexpired active session; release it only when the matching session stops. Expired or stopped sessions may have their stale lock replaced.
 - Telemetry: owner UID, device ID, session ID, updatedAt, expiresAt, and allowlisted values only.
 
-Allowed scopes are individual values: `battery`, `device`, `permissionStatus`, and `appStatus`. Location and network scopes are deliberately excluded. The owner must approve each requested scope. No wildcard scope.
+Allowed scopes are individual values: `battery`, `device`, `permissionStatus`, `appStatus`, and `media`. Location and network scopes are deliberately excluded. The owner must approve each requested scope. No wildcard scope.
 
 Telemetry validation:
 - Battery: finite level [0, 1], boolean charging.
 - Device: coarse platform enum and app version string with strict length; no hardware identifiers or fingerprint.
 - Permission status: camera/microphone enum only; never media streams, images, or audio.
-- App status: active sharing session heartbeat only.
+- App status: active sharing session heartbeat only.\n- Media: separate owner-initiated uploads to private object storage; media is never accepted in telemetry.
 
 ## Authorization rules
 
