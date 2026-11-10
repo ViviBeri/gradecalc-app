@@ -24,7 +24,7 @@ All calls require a verified Firebase Auth ID token, including Firebase anonymou
 | `publishDeviceTelemetry` | Owner device | Verify active sharing session and device ownership; validate strict allowlist and bounds; attach server timestamp and expiry; reject stale session IDs and arbitrary fields. |
 | `readDeviceTelemetry` | Viewer | Require an active, unexpired grant bound to the exact owner, viewer, device, session, and requested scope; return only that scope and only fresh telemetry. |
 
-No operation may return pairing secrets after creation. Anonymous Auth is not an authorization shortcut: possession of a valid one-time invite and explicit owner approval are still required. Never log raw codes, precise location payloads, auth tokens, or media. Pairing codes must not be placed in URLs, analytics, crash reports, browser history, or referrers.
+No operation may return pairing secrets after creation. Anonymous Auth is not an authorization shortcut: possession of a valid one-time invite and explicit owner approval are still required. Never log raw codes, telemetry payloads, auth tokens, or media. Pairing codes must not be placed in URLs, analytics, crash reports, browser history, or referrers.
 
 ## Data contract
 
