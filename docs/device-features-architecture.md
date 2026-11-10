@@ -11,8 +11,8 @@
 - Battery percentage, charging state, coarse device platform, app version, permission state, and app heartbeat only.
 - Camera, microphone, and gallery media are separate owner-initiated actions with visible controls, OS prompts, and privacy indicators.
 - No hidden monitoring, stealth capture, permission bypass, or remote activation of camera/microphone.
-- No conventional account registration, phone number, email verification, or OTP. Use per-installation anonymous authentication if the selected free backend supports it.
-- A device must not join merely because it is installed or has permissions. Enrollment requires a short-lived one-time secret and explicit owner approval on the sharing phone.
+- No conventional account registration, phone number, email verification, or OTP. Use random owner/device bearer tokens with server-side hashes; do not require user accounts or OTP.
+- A device must not join merely because it is installed or has permissions. Enrollment requires a short-lived one-time secret and explicit approval on the phone and separate dashboard-owner approval.
 
 ## Current app
 
@@ -31,7 +31,7 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 
 ### Phase 2 — Private dashboard and identity
 - [ ] Configure Firebase client SDK without exposing privileged credentials.
-- [ ] Use Firebase anonymous authentication with persistent local auth state.
+- [ ] Use persistent local owner/device tokens with secure storage.
 - [ ] Register device metadata under the installation's anonymous UID.
 - [ ] Keep Firestore rules deny-by-default until the full emulator suite passes.
 - [ ] Verify Spark plan compatibility before selecting any deployable backend component.
@@ -60,7 +60,7 @@ GradeCalc is an offline-first static PWA packaged for Android with Capacitor. Th
 - [ ] Use foreground service notification where required.
 - [ ] Respect force-stop, OS permission revocation, battery optimization, and OEM restrictions.
 - [ ] Keep camera and microphone owner-initiated and visibly active.
-- [ ] Design separate authenticated media upload with encryption, retention, download, and viewer deletion before implementing it.
+- [ ] Integrate private R2 media upload/download/delete with a separate media scope and explicit on-device Share action.
 - [ ] Do not place images or audio in telemetry documents.
 
 ## Security model
