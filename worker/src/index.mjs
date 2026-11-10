@@ -199,16 +199,17 @@ async function handle(request, env) {
     }
     const deviceId = randomToken(16);
     const deviceToken = randomToken(32);
+    const redemptionId = randomToken(16);
     const scopes = normalizeScopes(JSON.parse(invite.scopes_json));
     try {
       await env.DB.batch([
         env.DB.prepare(
-          'UPDATE invites SET redeemed_at = ? WHERE id = ? AND redeemed_at IS NULL AND expires_at > ?'
-        ).bind(now, invite.id, now),
+          'UPDATE invites SET redeemed_at = ?, redemption_id = ? WHERE id = ? AND redeemed_at IS NULL AND expires_at > ?'
+        ).bind(now, redemptionId, invite.id, now),
         env.DB.prepare(
-          'INSERT INTO devices (id, owner_id, invite_id, name, platform, app_version, token_hash, scopes_json, status, created_at) SELECT ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', ? WHERE EXISTS (SELECT 1 FROM invites WHERE id = ? AND redeemed_at = ?)'
+          'INSERT INTO devices (id, owner_id, invite_id, name, platform, app_version, token_hash, scopes_json, status, created_at) SELECT ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', ? WHERE EXISTS (SELECT 1 FROM invites WHERE id = ? AND redeemed_at = ? AND redemption_id = ?)'
         ).bind(deviceId, invite.owner_id, invite.id, body.deviceName.trim(), body.platform,
-          body.appVersion, await sha256Hex(deviceToken), JSON.stringify(scopes), now, invite.id, now)
+          body.appVersion, await sha256Hex(deviceToken), JSON.stringify(scopes), now, invite.id, now, redemptionId)
       ]);
     } catch {
       return json({ error: 'INVITE_UNAVAILABLE' }, 400, headers);
