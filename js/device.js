@@ -277,7 +277,7 @@
     setupCard.id = 'device-consent-setup';
     setupCard.appendChild(element('div', 'card-title', 'Device sharing setup and permissions'));
     setupCard.appendChild(element('p', 'target-intro',
-      'Android does not allow apps to grant runtime permissions during APK installation. On your first setup, GradeCalc will ask for notification permission so active sharing can remain visible.'));
+      'Android does not allow apps to grant runtime permissions during APK installation. If your Android version requires it, GradeCalc will request notification permission during your first device-sharing setup so active sharing can remain visible.'));
     setupCard.appendChild(element('p', 'target-intro',
       'Battery, device version, and approved app-status details are shared only after this phone and your private dashboard both approve the connection. No location or network details are collected.'));
     setupCard.appendChild(element('p', 'target-intro',
@@ -290,9 +290,9 @@
     consentCheck.required = true;
     consentCheck.style.cssText = 'width:18px;height:18px;flex:0 0 auto;margin-top:1px';
     consentLabel.appendChild(consentCheck);
-    consentLabel.appendChild(document.createTextNode('I have reviewed the permissions and agree to enable the device companion setup on this phone.'));
+    consentLabel.appendChild(element('span', '', 'I have reviewed the permissions and agree to enable the device companion setup on this phone.'));
     setupCard.appendChild(consentLabel);
-    var setupButton = element('button', 'btn-primary', 'Continue and allow notifications');
+    var setupButton = element('button', 'btn-primary', 'Continue with device sharing setup');
     setupButton.type = 'button';
     setupButton.id = 'device-consent-continue';
     setupButton.style.cssText = 'width:100%';

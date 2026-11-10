@@ -29,7 +29,7 @@ test('first-run setup requires informed consent and Android notification permiss
   assert.match(deviceUi, /requestSetupPermissions\(\)/);
   assert.match(deviceUi, /hasDeviceSetupConsent\(\)/);
   assert.match(deviceUi, /Camera and microphone permissions are not requested now/);
-  assert.match(deviceUi, /Continue and allow notifications/);
+  assert.match(deviceUi, /Continue with device sharing setup/);
 });
 
 test('Android device credentials are encrypted with the Android Keystore', () => {
