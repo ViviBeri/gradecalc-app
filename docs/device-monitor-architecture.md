@@ -1,80 +1,76 @@
-# GradeCalc Device Monitor — secure remote design
+# GradeCalc Device Monitor — implementation status
+
+## Product scope
+
+- Multi-device dashboard with a dedicated Devices tab.
+- No location collection, location history, maps, network details, IP addresses, SSIDs, or carrier identifiers.
+- Battery percentage and charging state where Android/browser APIs expose them.
+- Coarse device platform and app version; no hardware fingerprinting.
+- Camera and microphone permission status only in the dashboard.
+- Camera capture, short audio recording, and gallery sharing are separate owner-initiated actions. They require visible on-device controls, Android permission prompts, and OS privacy indicators.
+- No covert capture, hidden service, permission bypass, or remote activation of camera/microphone.
+- No account registration, phone number, email verification, or OTP. Firebase anonymous authentication is the proposed per-installation identity.
+- Device enrollment uses a short-lived one-time secret plus explicit owner approval. Installation and permission grants alone never authorize a new device.
+- Existing calculator calculations and local academic data remain isolated from the companion module.
 
 ## Current implementation boundary
 
-`monitor/index.html` is a same-device, browser-only preview. It requests local device information only after the user presses **Start local monitoring**. It does not transmit telemetry, persist readings, open camera or microphone streams, or create a remote session.
+`monitor/index.html` is a local browser preview. It displays only the current browser's platform, battery (when supported), and camera/microphone permission states. It does not connect to another device, upload telemetry, persist readings, or activate sensors.
 
-The current Firestore rules intentionally deny all location and pairing documents. Do not loosen those rules until authentication, pairing, revocation, validation, and emulator tests are implemented together.
+`js/device.js` adds a local Devices tab with a local device label and battery preview. The Add device action remains disabled until authenticated enrollment and owner confirmation are implemented.
 
-## Backend implementation contract
+`js/media.js` contains visible, user-initiated camera and microphone preview/recording controls. Those controls are not remote and do not upload media. Media streams stop when the page is hidden or the feature is closed.
 
-See [the trusted backend contract](device-monitor-backend-contract.md) for callable operations, data validation, authorization boundaries, abuse controls, emulator cases, and rollout gates. It is a design document only; no backend is deployed.
+## Backend status
 
-## User-approved product scope
+The trusted pairing backend and callable operations are scaffolding only. Firebase Functions are not deployed, Firebase project configuration is not present, App Check is not configured in the client, and Firestore remains deny-by-default. The backend requires Firebase Authentication and App Check.
 
-The device owner selected:
-- All supported details: location, battery, network, device/platform, camera permission status, microphone permission status, and app activity.
-- Manual sharing: the device owner must explicitly enable sharing on the device.
-- A separate browser dashboard for the authorized viewer.
+Anonymous Firebase Auth can provide a stable per-installation UID without a conventional account, but it does not prove device ownership. A one-time invite, explicit approval on the sharing phone, and server-side authorization are still mandatory.
 
-This scope does not authorize hidden capture or background collection. Camera and microphone are permission-status indicators only in the monitor; capture/recording remains a separate, visible, user-initiated action in GradeCalc.
+Do not claim live pairing, remote telemetry, or persistent background monitoring until the client, server, rules, and emulator suite work together.
 
-## Proposed data flow
+## Required implementation sequence
 
-1. The device owner signs in with Firebase Authentication.
-2. The device owner explicitly starts a sharing session and sees a persistent active state and Stop control.
-3. The owner creates a one-time pairing invitation. The invitation is high entropy, short-lived, single-use, stored as a cryptographic hash, and bound to the owner's UID and device ID.
-4. The viewer signs in separately and redeems the invitation once. The owner confirms the viewer identity on the device before access is granted.
-5. The server records a narrow owner-to-viewer grant. The viewer can read only the selected device's current permitted telemetry.
-6. Stopping sharing or revoking a viewer invalidates the grant immediately. Expired telemetry is removed by Firestore TTL when configured; authorization always checks the expiry timestamp and never relies on TTL for access control.
+1. Add Firebase web configuration through a safe public config file or environment-specific build input; never commit Admin credentials.
+2. Initialize Firebase Auth with local persistence and anonymous sign-in for the browser dashboard and each installed device.
+3. Register device metadata under the authenticated anonymous UID.
+4. Build invitation creation and redemption screens. Show the secret once and transfer it without URL query parameters, analytics, or logs.
+5. Show pending viewer identity and exact requested scopes on the sharing phone. Require an explicit on-device confirmation before creating a grant.
+6. Add the multi-device dashboard, freshness labels, per-device revoke, and Stop sharing controls.
+7. Publish only allowlisted battery/device/permission/app-status telemetry over authenticated callables.
+8. Add native Android integration for background battery/app heartbeat only where Android permits it. Camera/microphone remain owner-initiated and visible.
+9. Run Node tests and Firestore emulator tests. Keep Firestore rules deny-by-default until all security tests pass.
+10. Verify the Firebase plan and App Check availability. Never enable billing or deploy production services without explicit authorization.
 
-A URL by itself is never an authorization credential. Do not put raw pairing secrets in query strings, analytics, logs, or referrers.
+## Security and lifecycle
 
-## Proposed Firestore model (not active)
-
-- `users/{ownerUid}/devices/{deviceId}`: owner-only device label, platform, created time, revoked state.
-- `pairingInvites/{inviteId}`: server-created hashed secret, owner UID, device ID, expiry, single-use state. Client writes are denied.
-- `deviceGrants/{grantId}`: owner UID, viewer UID, device ID, scopes, created time, revoked state. Server creates after explicit owner confirmation.
-- `deviceTelemetry/{ownerUid}_{deviceId}`: latest allowlisted snapshot, sharing-session ID, updated time, expiry time. No arbitrary fields or media payloads.
-
-Only the authenticated owner may start or stop their device's sharing session. A viewer may read a device snapshot only when an active grant matches their UID, device, and requested scope. Viewer writes are denied.
-
-## Telemetry allowlist and minimization
-
-- Location: latitude, longitude, and accuracy only while the owner enables location sharing. The server controls telemetry update and expiry timestamps. No IP-based location fallback.
-- Battery: level and charging state when supported.
-- Network: online/offline and coarse effective connection type only. Never SSID, BSSID, IP address, or carrier identifiers.
-- Device: coarse platform and app version. Avoid persistent hardware fingerprints.
-- Camera/microphone: permission state only; never images, audio, or live streams.
-- App: explicit sharing-session heartbeat and last update time, not covert background tracking.
-
-Do not transmit a location reading when system Location Services are off or permission is denied. Show unavailable/stale status instead.
-
-## Security and lifecycle requirements before enabling remote access
-
-- Firebase Authentication required for owner and viewer.
-- Pairing invitations generated and redeemed by trusted server code; one use, short expiry, rate limits, and brute-force protection.
-- Owner confirmation on the originating device before a viewer grant is activated.
-- Strict Firestore schema validation, field allowlists, UID checks, scope checks, and server timestamps.
-- Revocation and session stop must prevent subsequent reads/writes immediately.
-- Telemetry expiry/TTL and data deletion behavior tested.
-- No anonymous/public read access, shared static tokens, or client-authoritative owner IDs.
-- Emulator tests for unauthenticated, wrong-owner, wrong-viewer, expired invitation, replay, revoked grant, invalid fields, and valid scoped read.
-- Do not deploy Firebase rules or create production credentials as part of this feature branch without explicit approval.
+- Never trust client-supplied owner/viewer UIDs.
+- Never store raw invitation secrets; store only a hash.
+- Pairing secrets expire after five minutes and are single-use.
+- Limit redemption attempts and return indistinguishable errors for invalid/expired/reused secrets.
+- Owner approval must occur on the physical device being shared; an authenticated dashboard session alone is not proof of physical approval.
+- Viewer reads require an active, unexpired grant for the exact device and scope.
+- Revocation and Stop must immediately block subsequent reads/writes.
+- Telemetry timestamps and expiry are server-controlled.
+- Firestore TTL is cleanup only, never authorization.
+- Keep media out of telemetry documents. Use a separate, explicitly consented upload design with retention and deletion controls before enabling gallery/media sharing.
+- Android force-stop prevents background execution until the user launches the app again. Do not promise operation through force-stop, OEM battery restrictions, or denied permissions.
 
 ## Acceptance checklist
 
-- [x] Local dashboard requires an explicit Start action.
-- [x] Stop clears local readings and stops geolocation watch.
-- [x] Page background/exit stops local monitoring.
-- [x] Camera and microphone are permission status only.
-- [x] No telemetry network transport exists in the local dashboard.
-- [x] Existing Firestore rules deny pairing and telemetry paths.
-- [ ] Authenticated owner sign-in and session management.
-- [x] Emulator coverage confirms pairing invitations, device grants, and telemetry remain denied to owners, viewers, and anonymous clients until trusted server flows exist.
-- [x] Trusted backend implements one-time pairing invitations, redemption, and owner confirmation; emulator lifecycle coverage verifies the transaction flow.
-- [ ] Owner-facing pairing UI and physical-device confirmation flow.
-- [ ] Scoped viewer dashboard with immediate revocation (callable authorization is tested; viewer UI is not implemented).
-- [x] Backend enforces session and telemetry expiry; Admin SDK emulator tests cover scoped callable reads, stale telemetry, revoked grants/devices, stopped and expired sessions.
-- [x] Emulator test covers concurrent approval attempts and prevents duplicate active owner/viewer/device grants.
-- [ ] Physical Android permission and lifecycle verification.
+- [x] Calculator remains separate from the companion module.
+- [x] Location and network data removed from the Devices tab and browser dashboard.
+- [x] Backend scope allowlist excludes location and network.
+- [x] Local device label and battery preview.
+- [x] Dashboard preview shows device and permission status without activating camera/microphone.
+- [x] Camera/microphone controls are owner-initiated and stop on page hide.
+- [x] Firestore remains deny-by-default.
+- [x] Pairing transaction core and authorization tests exist.
+- [ ] Firebase client configuration and anonymous-auth persistence.
+- [ ] Device registry integration and enrollment UI.
+- [ ] On-device owner confirmation UI.
+- [ ] Multi-device dashboard backed by authenticated data.
+- [ ] Live telemetry publishing and scoped reads.
+- [ ] Native Android lifecycle/foreground-service implementation.
+- [ ] Remote media upload, retention, and deletion.
+- [ ] CI green on the feature branch.
