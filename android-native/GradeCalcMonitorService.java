@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 public final class GradeCalcMonitorService extends Service {
     static final String ACTION_START = "com.viviberi.gradecalc.MONITOR_START";
     static final String ACTION_STOP = "com.viviberi.gradecalc.MONITOR_STOP";
+    static final String ACTION_STOP_LOCAL = "com.viviberi.gradecalc.MONITOR_STOP_LOCAL";
     private static final String CHANNEL_ID = "gradecalc_device_sharing";
     private static final int NOTIFICATION_ID = 7401;
     private static final long UPDATE_INTERVAL_MS = 60_000L;
@@ -48,6 +49,10 @@ public final class GradeCalcMonitorService extends Service {
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            pauseRemoteAndStop();
+            return START_NOT_STICKY;
+        }
+        if (intent != null && ACTION_STOP_LOCAL.equals(intent.getAction())) {
             stopMonitoring();
             return START_NOT_STICKY;
         }
@@ -139,7 +144,7 @@ public final class GradeCalcMonitorService extends Service {
         PendingIntent stopPending = PendingIntent.getService(this, 7402, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(getApplicationInfo().icon)
+            .setSmallIcon(android.R.drawable.stat_sys_upload)
             .setContentTitle("GradeCalc device sharing is active")
             .setContentText("Battery status is shared with your private dashboard.")
             .setOngoing(true)
@@ -158,11 +163,33 @@ public final class GradeCalcMonitorService extends Service {
         }
     }
 
+    private void pauseRemoteAndStop() {
+        executor.execute(() -> {
+            try {
+                String apiUrl = GradeCalcSecureStore.get(this, "apiUrl");
+                String token = GradeCalcSecureStore.get(this, "deviceToken");
+                if (apiUrl != null && token != null) {
+                    HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl.replaceAll("/+$", "") + "/v1/device/stop").openConnection();
+                    connection.setRequestMethod("POST");
+                    connection.setConnectTimeout(8_000);
+                    connection.setReadTimeout(8_000);
+                    connection.setRequestProperty("Authorization", "Bearer " + token);
+                    connection.getResponseCode();
+                    connection.disconnect();
+                }
+            } catch (Exception ignored) {
+                // Local stop still takes effect when the device is offline.
+            }
+            handler.post(this::stopMonitoring);
+        });
+    }
+
     private void stopMonitoring() {
         stopped = true;
         handler.removeCallbacks(updateTask);
         GradeCalcSecureStore.clear(this);
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_REMOVE);
+        else stopForeground(true);
         stopSelf();
     }
 
