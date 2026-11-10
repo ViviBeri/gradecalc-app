@@ -41,7 +41,7 @@ test('owner and device credentials use IndexedDB rather than localStorage', () =
 test('media upload requires an explicit API call and media file', () => {
   assert.match(apiClient, /async function uploadMedia\(file\)/);
   assert.match(apiClient, /\/v1\/media/);
-  assert.match(dashboard, /Create five-minute invitation/);
+  assert.match(dashboard, /create-invite/);
   assert.match(dashboard, /Delete permanently/);
 });
 
