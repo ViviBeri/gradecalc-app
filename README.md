@@ -7,7 +7,7 @@ A mobile-friendly, installable Progressive Web App for students to calculate sem
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ViviBeri/gradecalc-app/main/readme-journey.svg" alt="Animated GradeCalc journey from subject entry to grade calculation, semester tracking and analytics" width="100%" />
+  <img src="./readme-journey.svg" alt="GradeCalc journey from subject entry to grade calculation, semester tracking and analytics" width="100%" />
 </p>
 
 <p align="center"><sub>Calculation journey shown above. CGPA currently uses the unweighted average of entered semester SGPAs; see the calculation notes below.</sub></p>
