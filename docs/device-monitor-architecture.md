@@ -15,11 +15,11 @@
 
 ## Current implementation boundary
 
-`monitor/index.html` is a local browser preview. It displays only the current browser's platform, battery (when supported), and camera/microphone permission states. It does not connect to another device, upload telemetry, persist readings, or activate sensors.
+`monitor/index.html` contains private dashboard initialization, one-time invitation creation, dual approval, multi-device listing, pause/revoke controls, and retained-media download/deletion. It displays only the current browser's platform, battery (when supported), and camera/microphone permission states locally; it never opens local sensors.
 
-`js/device.js` adds a local Devices tab with a local device label and battery preview. The Add device action remains disabled until authenticated enrollment and owner confirmation are implemented.
+`js/device.js` adds a Devices tab with local device naming, battery preview, one-time invitation redemption, on-device approval, sharing pause/resume, and battery/device/permission telemetry while the app is open. Native Android background service support is not implemented.
 
-`js/media.js` contains visible, user-initiated camera, microphone, and gallery previews. Media stays local and is not uploaded yet. The Worker has a separate R2 upload/list/download/delete API prototype, gated by the media scope and dual enrollment approval; client integration is still pending. Media streams stop when the page is hidden or the feature is closed.
+`js/media.js` contains visible, user-initiated camera, microphone, and gallery selection controls with separate Share actions. The API client uploads only after the owner taps Share and the device has the media scope. Media streams stop when the page is hidden or the feature is closed.
 
 ## Backend status
 
@@ -66,10 +66,10 @@ Do not claim live pairing, remote telemetry, or persistent background monitoring
 - [x] Firestore remains deny-by-default.
 - [x] Worker API validation, one-time invite, dual-approval, and revocation foundations exist.
 - [ ] Cloudflare Worker URL, setup secret, D1, and R2 deployment configuration.
-- [ ] Owner/device token persistence and enrollment UI.
-- [ ] On-device and dashboard-owner approval UI.
-- [ ] Multi-device dashboard backed by authenticated data.
+- [x] Owner/device token persistence and enrollment UI (IndexedDB; hardware-backed Android storage still pending).
+- [x] On-device and dashboard-owner approval UI.
+- [x] Multi-device dashboard backed by owner-token API calls.
 - [ ] Live telemetry publishing and scoped reads.
 - [ ] Native Android lifecycle/foreground-service implementation.
-- [ ] Client media upload, retained media gallery, download, and explicit deletion.
+- [x] Client media upload, retained media gallery, download, and explicit deletion.
 - [ ] CI green on the feature branch.
