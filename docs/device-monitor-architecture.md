@@ -9,8 +9,8 @@
 - Camera and microphone permission status only in the dashboard.
 - Camera capture, short audio recording, and gallery sharing are separate owner-initiated actions. They require visible on-device controls, Android permission prompts, and OS privacy indicators. Uploading requires a separate explicit Share action and the media scope.
 - No covert capture, hidden service, permission bypass, or remote activation of camera/microphone.
-- No account registration, phone number, email verification, or OTP. Firebase anonymous authentication is the proposed per-installation identity.
-- Device enrollment uses a short-lived one-time secret plus explicit owner approval. Installation and permission grants alone never authorize a new device.
+- No account registration, phone number, email verification, or OTP. The Cloudflare Worker uses random owner/device bearer tokens; only token hashes are stored server-side.
+- Device enrollment uses a short-lived one-time secret, explicit on-device approval, and separate dashboard-owner approval. Installation and permission grants alone never authorize a new device.
 - Existing calculator calculations and local academic data remain isolated from the companion module.
 
 ## Current implementation boundary
@@ -19,7 +19,7 @@
 
 `js/device.js` adds a local Devices tab with a local device label and battery preview. The Add device action remains disabled until authenticated enrollment and owner confirmation are implemented.
 
-`js/media.js` contains visible, user-initiated camera, microphone, and gallery previews. Media stays local and is not uploaded yet. The Worker has a separate R2 upload/list/download/delete API prototype, gated by the media scope; client integration is still pending. Media streams stop when the page is hidden or the feature is closed.
+`js/media.js` contains visible, user-initiated camera, microphone, and gallery previews. Media stays local and is not uploaded yet. The Worker has a separate R2 upload/list/download/delete API prototype, gated by the media scope and dual enrollment approval; client integration is still pending. Media streams stop when the page is hidden or the feature is closed.
 
 ## Backend status
 
