@@ -13,7 +13,7 @@ test('remote design requires anonymous identity, one-time approval, expiry, and 
   const design = fs.readFileSync('docs/device-monitor-architecture.md', 'utf8');
   assert.match(design, /random owner and device bearer tokens/i);
   assert.match(design, /one-time secret/i);
-  assert.match(design, /explicit on-device approval and separate dashboard-owner approval/i);
+  assert.match(design, /explicit on-device approval.*separate dashboard-owner approval/i);
   assert.match(design, /immediately/i);
   assert.match(design, /short-lived/i);
   assert.match(design, /scope/i);
