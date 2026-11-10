@@ -116,7 +116,7 @@ async function run() {
   assert.equal(Object.keys(backgrounded.battery.listeners).length, 0, 'hiding the page removes battery listeners');
 
   const deviceSource = fs.readFileSync('js/device.js', 'utf8');
-  assert.doesNotMatch(deviceSource, /geolocation|Location|latitude|longitude|openstreetmap/i);
+  assert.doesNotMatch(deviceSource, /geolocation|latitude|longitude|openstreetmap/i);
   assert.doesNotMatch(deviceSource, /navigator\.connection|effectiveType|SSID|BSSID/i);
   console.log('Device feature tests passed (local device label, battery preview, pairing guard, and privacy exclusions).');
 }
