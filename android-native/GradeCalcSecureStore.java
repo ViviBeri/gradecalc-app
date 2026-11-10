@@ -38,6 +38,7 @@ final class GradeCalcSecureStore {
     static void put(Context context, String name, String value) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.ENCRYPT_MODE, key());
+        cipher.updateAAD(name.getBytes(StandardCharsets.UTF_8));
         byte[] encrypted = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
         byte[] iv = cipher.getIV();
         byte[] combined = new byte[iv.length + encrypted.length];
@@ -57,6 +58,7 @@ final class GradeCalcSecureStore {
         System.arraycopy(combined, 12, encrypted, 0, encrypted.length);
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, iv));
+        cipher.updateAAD(name.getBytes(StandardCharsets.UTF_8));
         return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
     }
 
