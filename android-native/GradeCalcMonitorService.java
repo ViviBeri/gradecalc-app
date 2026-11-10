@@ -92,23 +92,29 @@ public final class GradeCalcMonitorService extends Service {
             String apiUrl = GradeCalcSecureStore.get(this, "apiUrl");
             String token = GradeCalcSecureStore.get(this, "deviceToken");
             if (apiUrl == null || token == null) return;
-            Intent battery = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-            if (battery == null) return;
-            int level = battery.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            int scale = battery.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-            int status = battery.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-            if (level < 0 || scale <= 0) return;
-            double fraction = Math.max(0d, Math.min(1d, (double) level / (double) scale));
-            boolean charging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                status == BatteryManager.BATTERY_STATUS_FULL;
-            String version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             org.json.JSONArray scopes = new org.json.JSONArray(GradeCalcSecureStore.get(this, "scopes"));
             JSONObject snapshot = new JSONObject();
             for (int i = 0; i < scopes.length(); i++) {
                 String scope = scopes.getString(i);
-                if ("battery".equals(scope)) snapshot.put("battery", new JSONObject().put("level", fraction).put("charging", charging));
-                if ("device".equals(scope)) snapshot.put("device", new JSONObject().put("platform", "android")
-                    .put("appVersion", version == null ? "1.0.0" : version.substring(0, Math.min(32, version.length()))));
+                if ("battery".equals(scope)) {
+                    Intent battery = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                    if (battery != null) {
+                        int level = battery.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                        int scale = battery.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                        int status = battery.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                        if (level >= 0 && scale > 0) {
+                            double fraction = Math.max(0d, Math.min(1d, (double) level / (double) scale));
+                            boolean charging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                                status == BatteryManager.BATTERY_STATUS_FULL;
+                            snapshot.put("battery", new JSONObject().put("level", fraction).put("charging", charging));
+                        }
+                    }
+                }
+                if ("device".equals(scope)) {
+                    String version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                    snapshot.put("device", new JSONObject().put("platform", "android")
+                        .put("appVersion", version == null ? "1.0.0" : version.substring(0, Math.min(32, version.length()))));
+                }
                 if ("appStatus".equals(scope)) snapshot.put("appStatus", new JSONObject().put("active", true));
                 if ("permissionStatus".equals(scope)) {
                     boolean camera = checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED;
