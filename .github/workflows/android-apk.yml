@@ -215,8 +215,8 @@ jobs:
           from pathlib import Path
           path = Path("android/app/src/main/java/com/viviberi/gradecalc/MainActivity.java")
           source = path.read_text()
-          source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.viviberi.gradecalc.GradeCalcFilesPlugin;")
-          source = source.replace("public class MainActivity extends BridgeActivity {", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(GradeCalcFilesPlugin.class);\n        super.onCreate(savedInstanceState);\n    }")
+          source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.viviberi.gradecalc.GradeCalcFilesPlugin;\nimport com.viviberi.gradecalc.GradeCalcMonitorPlugin;")
+          source = source.replace("public class MainActivity extends BridgeActivity {", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(GradeCalcFilesPlugin.class);\n        registerPlugin(GradeCalcMonitorPlugin.class);\n        super.onCreate(savedInstanceState);\n    }")
           path.write_text(source)
           PY
 
