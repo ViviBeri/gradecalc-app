@@ -5,13 +5,30 @@
   var panel;
   var battery = null;
   var batteryListener = null;
+  var telemetryTimer = null;
+  var statusTimer = null;
   var deviceNameKey = 'gradecalc_device_name';
+  var api = window.GradeCalcDeviceApi;
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
-    if (text) node.textContent = text;
+    if (text !== undefined) node.textContent = text;
     return node;
+  }
+
+  function setStatus(message, isError) {
+    var node = document.getElementById('device-pairing-status');
+    if (!node) return;
+    node.textContent = message;
+    node.dataset.state = isError ? 'error' : 'ok';
+  }
+
+  function stopTimers() {
+    if (telemetryTimer && typeof window.clearInterval === 'function') window.clearInterval(telemetryTimer);
+    if (statusTimer && typeof window.clearInterval === 'function') window.clearInterval(statusTimer);
+    telemetryTimer = null;
+    statusTimer = null;
   }
 
   function stopBatteryPreview() {
@@ -21,6 +38,7 @@
     }
     battery = null;
     batteryListener = null;
+    stopTimers();
   }
 
   function updateBattery() {
@@ -49,6 +67,115 @@
     });
   }
 
+  function platformValue() {
+    var platform = navigator.userAgentData && navigator.userAgentData.platform || navigator.platform || '';
+    if (/android/i.test(platform) || /android/i.test(navigator.userAgent || '')) return 'android';
+    if (/iphone|ipad|ios/i.test(platform) || /iphone|ipad/i.test(navigator.userAgent || '')) return 'ios';
+    if (platform) return 'web';
+    return 'unknown';
+  }
+
+  function permissionValue(name) {
+    if (!navigator.permissions || !navigator.permissions.query) return Promise.resolve('unavailable');
+    return navigator.permissions.query({ name: name }).then(function (result) {
+      return result.state;
+    }).catch(function () { return 'unavailable'; });
+  }
+
+  async function buildTelemetry(scopes) {
+    var snapshot = {};
+    if (scopes.includes('battery') && battery) {
+      snapshot.battery = { level: battery.level, charging: battery.charging };
+    }
+    if (scopes.includes('device')) {
+      snapshot.device = {
+        platform: platformValue(),
+        appVersion: String(window.GRADE_CALC_APP_VERSION || '1.0.0').slice(0, 32)
+      };
+    }
+    if (scopes.includes('permissionStatus')) {
+      var permissions = await Promise.all([
+        permissionValue('camera'), permissionValue('microphone')
+      ]);
+      snapshot.permissionStatus = { camera: permissions[0], microphone: permissions[1] };
+    }
+    if (scopes.includes('appStatus')) snapshot.appStatus = { active: true };
+    return snapshot;
+  }
+
+  async function publishTelemetry() {
+    if (!api || document.hidden) return;
+    try {
+      var settings = await api.getSettings();
+      if (!settings.deviceToken || !settings.deviceScopes.length) return;
+      var state = await api.getDeviceStatus();
+      if (state.status !== 'active') return;
+      var snapshot = await buildTelemetry(settings.deviceScopes);
+      if (Object.keys(snapshot).length) await api.publishTelemetry(snapshot);
+    } catch (error) {
+      setStatus(error.message, true);
+    }
+  }
+
+  function startTelemetry() {
+    if (telemetryTimer || typeof window.setInterval !== 'function') return;
+    publishTelemetry();
+    telemetryTimer = window.setInterval(publishTelemetry, 30000);
+  }
+
+  async function refreshDeviceState() {
+    if (!api) return;
+    var settings;
+    try { settings = await api.getSettings(); } catch (error) {
+      setStatus(error.message, true);
+      return;
+    }
+    var form = document.getElementById('device-enroll-form');
+    var controls = document.getElementById('device-sharing-controls');
+    if (!settings.deviceToken) {
+      if (form) form.hidden = false;
+      if (controls) controls.hidden = true;
+      setStatus('Enter the Worker URL and one-time invitation from your private dashboard.');
+      return;
+    }
+    if (form) form.hidden = true;
+    if (controls) controls.hidden = false;
+    try {
+      var state = await api.getDeviceStatus();
+      var name = document.getElementById('device-display-name');
+      if (name) name.textContent = settings.deviceId || 'Enrolled device';
+      if (state.status === 'pending') {
+        if (!state.deviceApprovedAt) {
+          document.getElementById('device-approve').hidden = false;
+          setStatus('Review the requested sharing scopes and approve this phone here. Dashboard approval is also required.');
+        } else {
+          document.getElementById('device-approve').hidden = true;
+          setStatus('Phone approval recorded. Waiting for the dashboard owner to approve this device.');
+        }
+        document.getElementById('device-stop-sharing').hidden = true;
+        document.getElementById('device-resume-sharing').hidden = true;
+        stopTimers();
+      } else if (state.status === 'active') {
+        document.getElementById('device-approve').hidden = true;
+        document.getElementById('device-stop-sharing').hidden = false;
+        document.getElementById('device-resume-sharing').hidden = true;
+        setStatus('Device connected. Telemetry updates while GradeCalc is open; background Android support is not enabled yet.');
+        startTelemetry();
+      } else if (state.status === 'paused') {
+        document.getElementById('device-approve').hidden = true;
+        document.getElementById('device-stop-sharing').hidden = true;
+        document.getElementById('device-resume-sharing').hidden = false;
+        setStatus('Sharing is paused on this phone.');
+        stopTimers();
+      } else {
+        setStatus('This device is no longer authorized.', true);
+        stopTimers();
+      }
+    } catch (error) {
+      setStatus(error.message, true);
+    }
+  }
+
   function build() {
     var tabBar = document.querySelector('.tab-bar');
     var body = document.querySelector('.body');
@@ -71,11 +198,8 @@
     panel.setAttribute('aria-labelledby', 'tab-devices');
     panel.tabIndex = 0;
 
-    var card = element('div', 'card');
-    card.appendChild(element('div', 'card-title', 'Your devices'));
-    card.appendChild(element('p', 'target-intro',
-      'Manage the phones and browsers connected to your private dashboard.'));
-
+    var deviceCard = element('div', 'card');
+    deviceCard.appendChild(element('div', 'card-title', 'This device'));
     var deviceRow = element('div', '');
     deviceRow.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:14px';
     var glyph = element('div', '');
@@ -85,10 +209,10 @@
     var deviceTitle = element('div', '', 'This device');
     deviceTitle.id = 'device-display-name';
     identity.appendChild(deviceTitle);
-    identity.appendChild(element('div', 'target-intro', 'Local browser preview'));
+    identity.appendChild(element('div', 'target-intro', 'Private device companion'));
     deviceRow.appendChild(glyph);
     deviceRow.appendChild(identity);
-    card.appendChild(deviceRow);
+    deviceCard.appendChild(deviceRow);
 
     var nameLabel = element('label', 'target-intro', 'Name this device');
     nameLabel.htmlFor = 'device-local-name';
@@ -97,12 +221,9 @@
     nameInput.type = 'text';
     nameInput.maxLength = 60;
     nameInput.autocomplete = 'off';
-    nameInput.setAttribute('aria-label', 'Device name on this device');
-    try {
-      nameInput.value = localStorage.getItem(deviceNameKey) || 'This device';
-    } catch (error) {
-      nameInput.value = 'This device';
-    }
+    nameInput.setAttribute('aria-label', 'Device name');
+    try { nameInput.value = localStorage.getItem(deviceNameKey) || 'This device'; }
+    catch (error) { nameInput.value = 'This device'; }
     deviceTitle.textContent = nameInput.value;
 
     var saveName = element('button', 'btn-secondary', 'Save device name');
@@ -125,10 +246,10 @@
         nameStatus.textContent = 'This browser could not save the device name.';
       }
     });
-    card.appendChild(nameLabel);
-    card.appendChild(nameInput);
-    card.appendChild(saveName);
-    card.appendChild(nameStatus);
+    deviceCard.appendChild(nameLabel);
+    deviceCard.appendChild(nameInput);
+    deviceCard.appendChild(saveName);
+    deviceCard.appendChild(nameStatus);
 
     var batteryCard = element('div', 'card');
     batteryCard.appendChild(element('div', 'card-title', 'Battery'));
@@ -136,33 +257,130 @@
     batteryStatus.id = 'device-battery-status';
     batteryCard.appendChild(batteryStatus);
 
-    var pairingCard = element('div', 'card');
-    pairingCard.appendChild(element('div', 'card-title', 'Add another device'));
-    pairingCard.appendChild(element('p', 'target-intro',
-      'Secure multi-device enrollment is being prepared. No phone is added until the private dashboard and one-time enrollment flow are connected.'));
-    var addDevice = element('button', 'btn-secondary', 'Add device');
-    addDevice.type = 'button';
-    addDevice.id = 'device-add-device';
-    addDevice.disabled = true;
-    pairingCard.appendChild(addDevice);
+    var enrollmentCard = element('div', 'card');
+    enrollmentCard.appendChild(element('div', 'card-title', 'Connect to your private dashboard'));
+    enrollmentCard.appendChild(element('p', 'target-intro',
+      'Paste the Worker URL and one-time invitation code. The phone and dashboard must both approve this enrollment.'));
+    var enrollForm = element('form', '');
+    enrollForm.id = 'device-enroll-form';
+    var apiLabel = element('label', 'target-intro', 'Worker URL');
+    apiLabel.htmlFor = 'device-api-url';
+    var apiInput = element('input', 'input');
+    apiInput.id = 'device-api-url';
+    apiInput.type = 'url';
+    apiInput.placeholder = 'https://your-worker.workers.dev';
+    apiInput.required = true;
+    var codeLabel = element('label', 'target-intro', 'One-time invitation code');
+    codeLabel.htmlFor = 'device-invite-code';
+    var codeInput = element('input', 'input');
+    codeInput.id = 'device-invite-code';
+    codeInput.autocomplete = 'off';
+    codeInput.required = true;
+    var enrollButton = element('button', 'btn-primary', 'Enroll this phone');
+    enrollButton.id = 'device-enroll-button';
+    enrollButton.type = 'submit';
+    enrollForm.appendChild(apiLabel);
+    enrollForm.appendChild(apiInput);
+    enrollForm.appendChild(codeLabel);
+    enrollForm.appendChild(codeInput);
+    enrollForm.appendChild(enrollButton);
+    enrollForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      if (!api) {
+        setStatus('Device API client is not loaded.', true);
+        return;
+      }
+      enrollButton.disabled = true;
+      try {
+        var result = await api.enrollDevice(
+          apiInput.value, codeInput.value, nameInput.value.trim() || 'This device',
+          platformValue(), String(window.GRADE_CALC_APP_VERSION || '1.0.0')
+        );
+        codeInput.value = '';
+        setStatus('Invitation redeemed. Approve this phone below, then approve it from the dashboard.');
+        await refreshDeviceState();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        enrollButton.disabled = false;
+      }
+    });
+    enrollmentCard.appendChild(enrollForm);
+
+    var sharingControls = element('div', '');
+    sharingControls.id = 'device-sharing-controls';
+    sharingControls.hidden = true;
+    var approve = element('button', 'btn-primary', 'Approve this phone');
+    approve.id = 'device-approve';
+    approve.type = 'button';
+    approve.hidden = true;
+    approve.addEventListener('click', async function () {
+      approve.disabled = true;
+      try {
+        await api.approveOnDevice();
+        setStatus('Phone approval recorded. Waiting for dashboard approval.');
+        await refreshDeviceState();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        approve.disabled = false;
+      }
+    });
+    var stop = element('button', 'btn-secondary', 'Stop sharing');
+    stop.id = 'device-stop-sharing';
+    stop.type = 'button';
+    stop.hidden = true;
+    stop.addEventListener('click', async function () {
+      stop.disabled = true;
+      try {
+        await api.stopSharing();
+        stopTimers();
+        await refreshDeviceState();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        stop.disabled = false;
+      }
+    });
+    var resume = element('button', 'btn-primary', 'Resume sharing');
+    resume.id = 'device-resume-sharing';
+    resume.type = 'button';
+    resume.hidden = true;
+    resume.addEventListener('click', async function () {
+      resume.disabled = true;
+      try {
+        await api.resumeSharing();
+        await refreshDeviceState();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        resume.disabled = false;
+      }
+    });
+    sharingControls.appendChild(approve);
+    sharingControls.appendChild(stop);
+    sharingControls.appendChild(resume);
+    enrollmentCard.appendChild(sharingControls);
+
     var pairingStatus = element('p', 'projection-share-status',
-      'Pairing is not active yet. This screen does not register or monitor another device.');
+      'Remote connection is unavailable until the private Worker is deployed and configured.');
     pairingStatus.id = 'device-pairing-status';
     pairingStatus.setAttribute('role', 'status');
     pairingStatus.setAttribute('aria-live', 'polite');
-    pairingCard.appendChild(pairingStatus);
+    enrollmentCard.appendChild(pairingStatus);
 
     var privacy = element('div', 'card');
     privacy.appendChild(element('div', 'card-title', 'Privacy'));
     privacy.appendChild(element('p', 'target-intro',
-      'Location and network details are not collected. Camera and microphone are never activated by this screen. Any future media capture must be started visibly on the device itself.'));
+      'No location or network data is collected. Camera and microphone are never activated by this screen. Any photo or audio upload must follow a visible capture and separate Share action. Telemetry currently updates only while the app is open.'));
 
-    panel.appendChild(card);
+    panel.appendChild(deviceCard);
     panel.appendChild(batteryCard);
-    panel.appendChild(pairingCard);
+    panel.appendChild(enrollmentCard);
     panel.appendChild(privacy);
     body.appendChild(panel);
     startBatteryPreview();
+    refreshDeviceState();
   }
 
   if (document.readyState === 'loading') {
@@ -172,9 +390,12 @@
   }
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) stopBatteryPreview();
-    else if (!battery) startBatteryPreview();
+    else {
+      startBatteryPreview();
+      refreshDeviceState();
+    }
   });
   window.addEventListener('pagehide', stopBatteryPreview);
   window.addEventListener('beforeunload', stopBatteryPreview);
-  window.GradeCalcDeviceFeatures = { stopBatteryPreview: stopBatteryPreview };
+  window.GradeCalcDeviceFeatures = { stopBatteryPreview: stopBatteryPreview, refreshDeviceState: refreshDeviceState };
 })();
