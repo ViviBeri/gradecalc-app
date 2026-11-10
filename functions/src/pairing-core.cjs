@@ -7,15 +7,12 @@ const PENDING_REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
 const GRANT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_GRANTS_PER_SESSION = 20;
 const ALLOWED_SCOPES = Object.freeze([
-  'location',
   'battery',
-  'network',
   'device',
   'permissionStatus',
   'appStatus'
 ]);
 const PLATFORMS = Object.freeze(['web', 'android', 'ios', 'unknown']);
-const NETWORK_TYPES = Object.freeze(['slow-2g', '2g', '3g', '4g', 'unknown']);
 const PERMISSION_STATES = Object.freeze(['granted', 'denied', 'prompt', 'unavailable']);
 
 function createInviteSecret() {
@@ -54,36 +51,9 @@ function normalizeScopes(scopes) {
 
 function validateTelemetry(snapshot) {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return false;
-  const allowed = new Set([
-    'location', 'battery', 'network', 'device', 'permissionStatus', 'appStatus'
-  ]);
+  const allowed = new Set(['battery', 'device', 'permissionStatus', 'appStatus']);
   if (Object.keys(snapshot).some(key => !allowed.has(key))) return false;
 
-  if ('location' in snapshot) {
-    const v = snapshot.location;
-    if (!v || typeof v !== 'object' ||
-      !Number.isFinite(v.latitude) || v.latitude < -90 || v.latitude > 90 ||
-      !Number.isFinite(v.longitude) || v.longitude < -180 || v.longitude > 180 ||
-      !Number.isFinite(v.accuracy) || v.accuracy < 0 || Object.keys(v).some(key => !['latitude', 'longitude', 'accuracy'].includes(key))) return false;
-  }
-  if ('battery' in snapshot) {
-    const v = snapshot.battery;
-    if (!v || typeof v !== 'object' ||
-      !Number.isFinite(v.level) || v.level < 0 || v.level > 1 ||
-      typeof v.charging !== 'boolean' || Object.keys(v).some(key => !['level', 'charging'].includes(key))) return false;
-  }
-  if ('network' in snapshot) {
-    const v = snapshot.network;
-    if (!v || typeof v !== 'object' || typeof v.online !== 'boolean' ||
-      !NETWORK_TYPES.includes(v.effectiveType) ||
-      Object.keys(v).some(key => !['online', 'effectiveType'].includes(key))) return false;
-  }
-  if ('device' in snapshot) {
-    const v = snapshot.device;
-    if (!v || typeof v !== 'object' || !PLATFORMS.includes(v.platform) ||
-      typeof v.appVersion !== 'string' || v.appVersion.length > 32 ||
-      Object.keys(v).some(key => !['platform', 'appVersion'].includes(key))) return false;
-  }
   if ('permissionStatus' in snapshot) {
     const v = snapshot.permissionStatus;
     if (!v || typeof v !== 'object' ||
