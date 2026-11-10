@@ -1,98 +1,112 @@
-# Device Monitor — trusted backend contract
+# Device Monitor — Cloudflare backend contract
 
-Status: design only. No functions are deployed, no credentials are configured, and Firestore remote access remains denied.
+Status: prototype only. No Cloudflare Worker, D1 database, or R2 bucket is deployed. The browser dashboard and Android app do not yet call these endpoints.
 
-## Runtime boundary
+## Runtime and cost boundary
 
-Use Firebase Authentication for owner and viewer identities. Use Firebase anonymous authentication so the dashboard and enrolled phones do not need user accounts, email addresses, phone numbers, or OTPs. Persist the browser's anonymous session across reloads where supported. Use second-generation Firebase callable HTTPS functions for privileged pairing operations, with App Check enforcement where supported. Functions use the Admin SDK; clients never write pairing invitations or grants directly. The local monitor remains functional without an account and never uploads unless the owner explicitly starts a separate remote-sharing session.
+- Target: Cloudflare Workers Free + D1 Free + R2 Standard free allowances.
+- No Firebase Cloud Functions deployment: Cloud Functions require Firebase Blaze billing and violate the zero-budget constraint.
+- Worker API must fail closed when D1, R2, authentication, or CORS configuration is unavailable.
+- Free-tier quotas are enforced. Exceeding them can pause requests until reset; never upgrade or enable billing automatically.
+- Keep the GradeCalc calculator fully usable offline and when the companion backend is unavailable.
 
-Do not require a paid service for the local monitor. Before selecting a remote deployment plan, verify current Firebase plan limits and whether the required Functions runtime is available on the project's plan. Do not silently enable billing.
+## Identity model
 
-## Callable operations
+There is one private dashboard owner per Worker deployment.
 
-All calls require a verified Firebase Auth ID token, including Firebase anonymous sessions. Anonymous authentication supplies a stable per-installation identity, not proof of ownership; pairing secrets, explicit owner approval, App Check, and server-side authorization remain mandatory. Reject requests without a verified auth context. Validate App Check tokens on every callable. Derive owner/viewer UIDs only from verified auth context; never accept a UID supplied by the client as authority.
+- A deployment-only SETUP_SECRET protects the one-time dashboard bootstrap.
+- The browser generates a random 256-bit owner token. The Worker stores only its SHA-256 hash in D1.
+- Each device receives a random 256-bit device token after redeeming a one-time invitation. The Worker stores only its SHA-256 hash.
+- Owner and device tokens are bearer credentials. Store them locally; never place them in URLs, analytics, logs, or referrers.
+- No email, phone number, OTP, or conventional user account is required.
+- Loss of the owner token currently has no recovery flow. Do not claim account recovery until a secure rotation/recovery mechanism exists.
 
-| Operation | Caller | Required behaviour |
+## Enrollment flow
+
+1. The owner dashboard creates a random 256-bit invitation code with a five-minute expiry and an explicit scope list.
+2. Only the code hash is stored in D1. The raw code is returned once to the dashboard.
+3. The new phone redeems the code in the POST body. The Worker consumes the invitation transactionally and creates a pending device record.
+4. The phone stores its device token and shows the device name and requested scopes.
+5. The user explicitly approves enrollment on the phone.
+6. The dashboard displays the pending device and its requested scopes. The dashboard owner must separately approve that exact device.
+7. The device becomes active only after both approvals are recorded. Neither installation nor Android permission grants alone authorize a device.
+8. Only active devices can publish telemetry or media.
+
+Invitation codes are single-use and high entropy. A code alone cannot activate a device. The dashboard must not auto-approve a pending device.
+
+## API operations
+
+| Method and path | Identity | Behaviour |
 |---|---|---|
-| `createPairingInvite` | Owner | Verify ownership of active device; create random high-entropy secret; persist only a server-side hash; expire quickly; return raw code once for manual transfer. |
-| `redeemPairingInvite` | Viewer | Accept code in request body (never URL/query); rate-limit attempts; constant-time hash comparison; reject expired, consumed, revoked, or self-pairing codes; create a pending request only. |
-| `confirmPairingRequest` | Owner | Require a fresh owner-authenticated confirmation on the originating device; display viewer identity and requested scopes; create a narrowly scoped grant only after explicit approval. |
-| `revokeDeviceGrant` | Owner | Verify exact device ownership and grant relationship; revoke only the selected viewer grant without stopping other viewers. |
-| `stopDeviceSharing` | Owner | End the active session, revoke every grant bound to that session, release active-grant relationship locks, and delete the latest telemetry. |
-| `startDeviceSharing` | Owner | Verify ownership of an active device; create a short-lived session with explicitly selected scopes. |
-| `bindGrantToSession` | Owner | Bind an approved, active grant to the owner's active session only when device and scope constraints match. |
-| `publishDeviceTelemetry` | Owner device | Verify active sharing session and device ownership; validate strict allowlist and bounds; attach server timestamp and expiry; reject stale session IDs and arbitrary fields. |
-| `readDeviceTelemetry` | Viewer | Require an active, unexpired grant bound to the exact owner, viewer, device, session, and requested scope; return only that scope and only fresh telemetry. |
+| GET /health | Public | Health check only |
+| POST /v1/setup | SETUP_SECRET | One-time owner bootstrap |
+| POST /v1/invites | Owner token | Create five-minute invitation with explicit scopes |
+| POST /v1/enroll | Invitation code | Redeem once; create pending device; return device token once |
+| POST /v1/devices/approve | Device token | Record explicit on-device approval |
+| POST /v1/devices/{id}/approve | Owner token | Record dashboard owner approval for the exact pending device |
+| GET /v1/device/status | Device token | Return pending, active, paused, or revoked state |
+| POST /v1/telemetry | Active device token | Publish allowlisted telemetry with server timestamp and 90-second expiry |
+| GET /v1/devices | Owner token | List devices, approval state, last seen, and fresh telemetry |
+| DELETE /v1/devices/{id} | Owner token | Revoke one device and clear its latest telemetry |
+| POST /v1/device/stop | Active device token | Pause sharing and clear telemetry |
+| POST /v1/device/resume | Paused device token | Resume only after an on-device action |
+| POST /v1/media | Active device token + media scope | Upload one explicitly selected media file |
+| GET /v1/media | Owner token | List retained media |
+| GET /v1/media/{id} | Owner token | Download one retained media object |
+| DELETE /v1/media/{id} | Owner token | Delete the selected media object |
 
-No operation may return pairing secrets after creation. Anonymous Auth is not an authorization shortcut: possession of a valid one-time invite and explicit owner approval are still required. Never log raw codes, telemetry payloads, auth tokens, or media. Pairing codes must not be placed in URLs, analytics, crash reports, browser history, or referrers.
+## Allowed scopes and data
 
-## Data contract
+Allowed scopes are individual values: `battery`, `device`, `permissionStatus`, `appStatus`, and `media`. No wildcard scope.
 
-- Pairing invite: invite ID, secret hash, owner UID, device ID, createdAt, expiresAt, consumedAt, revokedAt, and a server-maintained `failedAttempts` counter.
-- Viewer redemption throttle: a hashed viewer UID plus fixed 15-minute window start and attempt count in `pairingRedemptionLimits`; never store raw invite secrets or viewer identifiers in document IDs.
-- Pending request: request ID, invite ID, viewer UID, viewer display label (untrusted presentation only), requested scopes, createdAt, expiresAt (24 hours after redemption), status.
-- Grant: owner UID, viewer UID, device ID, explicit scopes, createdAt, expiresAt (30 days after approval), revokedAt, active session ID. Enforce one active grant per owner/viewer/device using a transactionally maintained relationship lock.
-- Active session lock: deterministic owner/device key, current session ID, and expiry. Create it transactionally with session creation; reject a second unexpired active session; release it only when the matching session stops. Expired or stopped sessions may have their stale lock replaced.
-- Telemetry: owner UID, device ID, session ID, updatedAt, expiresAt, and allowlisted values only.
+- Battery: finite level from 0 to 1 and charging boolean.
+- Device: coarse platform and app version only; no hardware IDs or fingerprint.
+- Permission status: camera and microphone state only; no media streams.
+- App status: active sharing heartbeat only.
+- Media: separate uploads to private R2 storage after an owner-initiated capture or gallery selection and a separate Share action. Media is never part of telemetry JSON.
 
-Allowed scopes are individual values: `battery`, `device`, `permissionStatus`, `appStatus`, and `media`. Location and network scopes are deliberately excluded. The owner must approve each requested scope. No wildcard scope.
+Location and network data are excluded from every endpoint and schema. Reject unknown telemetry keys, invalid values, unapproved scopes, oversized media, and inactive devices.
 
-Telemetry validation:
-- Battery: finite level [0, 1], boolean charging.
-- Device: coarse platform enum and app version string with strict length; no hardware identifiers or fingerprint.
-- Permission status: camera/microphone enum only; never media streams, images, or audio.
-- App status: active sharing session heartbeat only.\n- Media: separate owner-initiated uploads to private object storage; media is never accepted in telemetry.
+## Media retention
 
-## Authorization rules
+- R2 bucket must remain private; never enable public bucket access.
+- Accept only JPEG, PNG, WebP, WebM audio, MP4 audio, and OGG audio.
+- Maximum upload: 20 MiB for images and 10 MiB for audio.
+- Media uploads require the media scope and an active device token.
+- Capture and recording must start from a visible on-device action. Upload requires a second explicit Share action.
+- Media objects remain stored until the dashboard owner explicitly deletes them.
+- Telemetry expiry and device revoke do not delete retained media.
+- Store object metadata in D1 and bytes in R2. Never store media bytes in D1 telemetry rows.
+- Download and delete require the dashboard owner token. No public object URLs.
 
-- Owner writes are accepted only for their own device and current active session.
-- Viewer reads require a matching active grant for the exact owner UID, viewer UID, device ID, active session, and requested scope. The session's bounded `grantIds` list must also contain the grant being used for the read.
-- Viewer writes are always denied.
-- Revocation and Stop must block subsequent reads/writes immediately, not merely hide the dashboard UI.
-- Clients cannot create, redeem, confirm, or modify grants through direct Firestore writes.
-- Server-side `updatedAt` and `expiresAt` values are authoritative. Client-supplied timestamps are not part of the accepted telemetry schema.
-- Use strict field allowlists and reject unknown keys.
-- Retain only the latest snapshot unless product requirements explicitly justify a short history window.
+## Authorization and abuse controls
 
-## Abuse controls and lifecycle
+- Hash owner, device, and invite secrets with SHA-256 before storing them.
+- Compare secrets without early-exit string comparison.
+- Never trust owner IDs or device IDs supplied as authorization.
+- Invitations expire after five minutes and are single-use.
+- Limit owner invite creation to ten per hour.
+- D1 enforces a singleton dashboard owner per Worker deployment.
+- Both device-side and dashboard-side approval are required before activation.
+- Viewer/dashboard operations are owner-scoped; devices cannot list other devices or read other devices' media.
+- Revocation immediately blocks subsequent telemetry and media uploads.
+- Device tokens cannot approve another device or access owner endpoints.
+- CORS must use an exact allowlist of the GitHub Pages origin and required Capacitor origin. Never use wildcard origins.
+- Do not log bearer tokens, raw invitation codes, or media contents.
 
-- Short invite expiry (initial proposal: 5 minutes); single-use redemption.
-- Generate 32 bytes of cryptographically secure random invite material and store only its SHA-256 hash; the high-entropy secret must never be stored in plaintext.
-- Allow at most 5 failed attempts per invitation and 10 redemption attempts per authenticated viewer in each fixed 15-minute window. Enforce both counters in the same Firestore transaction as redemption to prevent concurrent bypass.
-- Increment viewer attempt counts for every redemption request, including missing or invalid invitations. Increment invite failure counts for failed validation where the invite document exists.
-- Return the same `PAIRING_UNAVAILABLE` error for invalid, expired, consumed, revoked, self-pairing, and throttled invitations. Never expose remaining attempts or counter values to clients.
-- Keep rate-limit documents short-lived using Firestore TTL as cleanup only; authorization checks use the stored window start and count, not TTL.
-- Prevent owner self-pairing and duplicate active grants. Pending requests have a 24-hour approval window; approved grants expire 30 days after approval, independently of the five-minute invitation lifetime.
-- Require an explicit owner approval action; pending requests expire automatically. The current backend verifies the owner's authenticated UID but cannot prove that approval originated from the physical device being shared. The future owner UI must display the viewer identity and requested scopes on that device before invoking approval; do not claim device-bound confirmation until an attested device/session mechanism exists.
-- Use server-side expiry checks on every read/write path. Firestore TTL is cleanup, not authorization.
-- Set a short telemetry freshness window and remove expired snapshots. Never treat an old snapshot as live.
-- Revoking one grant removes only that viewer's access. Stopping a session revokes all grants bound to it and clears their relationship locks. Revocation, account deletion, device revocation, session stop, and expiry invalidate associated access.
-- Avoid scheduled cleanup dependencies where TTL can handle deletion; TTL must never be the only security control.
+## Lifecycle and cleanup
 
-## Required emulator test matrix
+- Telemetry freshness is 90 seconds; stale telemetry is not returned as live.
+- A 15-minute scheduled cleanup removes expired telemetry and stale pending invitations/devices.
+- Media is excluded from scheduled cleanup and remains until explicit owner deletion.
+- Device stop pauses sharing and clears telemetry. Resume requires an on-device action.
+- Force-stop prevents Android background execution until the app is launched again. Do not promise operation through force-stop, OEM battery restrictions, or revoked permissions.
 
-1. Unauthenticated callers cannot invoke privileged operations; anonymous Firebase sessions can proceed only through the same App Check, invite, approval, ownership, and scope checks as every other caller.
-2. Owner cannot create an invite for another user's device.
-3. Viewer cannot redeem an expired, consumed, revoked, malformed, or guessed code.
-4. Repeated failed attempts are throttled.
-5. Redeeming an invite creates a pending request, not an active grant.
-6. Owner confirmation is required and only the device owner can confirm.
-7. Owner cannot approve an unexpected viewer or scopes not shown in the pending request.
-8. Viewer can read only the exact granted device and approved fields.
-9. Viewer cannot read another device, another owner's device, or unapproved scopes.
-10. Viewer cannot write telemetry or modify a grant.
-11. Revoked grants and stopped sessions immediately deny reads and writes.
-12. Stopping a session revokes every grant bound to it; revoking one grant preserves other viewers.
-13. A session cannot bind more than 20 viewer grants; overflow attempts leave existing bindings unchanged.
-14. Old session IDs, expired telemetry, unknown fields, oversized values, and any location or network payload are rejected.
-15. Raw invite secrets and sensitive telemetry never appear in logs or URLs.
-16. Location and network scopes cannot be requested, approved, published, or read.
-17. Concurrent owner approvals cannot create duplicate active grants for the same owner/viewer/device.
-18. A device cannot create a second active sharing session; stopping the current session releases its lock.
+## Required validation before deployment
 
-## Rollout gates
-
-- Keep `firestore.rules` deny-by-default until the full emulator matrix passes.
-- Add backend code and emulator tests before changing any production rule.
-- Verify the Firebase project's plan and required service availability before deployment; obtain explicit owner approval before enabling billing or deploying.
-- No production deployment, live pairing, or remote telemetry until the owner reviews the final permission flow and approves the rollout.
+- D1 integration tests for setup race, invitation replay, dual approval, cross-device isolation, revocation, paused devices, telemetry expiry, and owner-only media access.
+- R2 tests for private access, content-type/size limits, failed upload cleanup, download authorization, and deletion.
+- CORS tests for allowed and rejected origins.
+- Android tests for token persistence, explicit approval, media Share action, OS privacy indicators, app restart, Doze, and force-stop.
+- Confirm Worker, D1, and R2 free-tier usage limits. Never enable paid billing.
+- Keep Firestore deny-by-default. The Firebase Functions code is retained only as a local prototype and is not the deployment backend.
