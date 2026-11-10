@@ -44,6 +44,17 @@ test('Android build registers the native plugin and foreground service', () => {
   assert.match(workflow, /registerPlugin\(GradeCalcMonitorPlugin\.class\)/);
 });
 
+test('Android service receives no bearer token or API URL through Intent extras', () => {
+  assert.match(plugin, /GradeCalcSecureStore\.put\(getContext\(\), "deviceToken", token\)/);
+  assert.match(plugin, /GradeCalcSecureStore\.put\(getContext\(\), "apiUrl", apiUrl\)/);
+  assert.match(service, /GradeCalcSecureStore\.get\(this, "deviceToken"\)/);
+  assert.match(service, /GradeCalcSecureStore\.get\(this, "apiUrl"\)/);
+  assert.doesNotMatch(plugin, /putExtra\("(?:deviceToken|apiUrl|scopesJson)"/);
+  assert.doesNotMatch(service, /getStringExtra\("(?:deviceToken|apiUrl|scopesJson)"/);
+  assert.match(plugin, /ALLOWED_SCOPES/);
+  assert.match(plugin, /uri\.getUserInfo\(\) == null/);
+});
+
 test('device setup shows the requested sharing scopes before approval', () => {
   assert.match(deviceUi, /Requested sharing:/);
   assert.match(deviceUi, /Review the sharing scopes shown above/);
