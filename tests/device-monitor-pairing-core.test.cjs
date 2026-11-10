@@ -446,7 +446,8 @@ test('backend contract requires hashed bearer tokens and dual device approval', 
   const fs = require('node:fs');
   const path = require('node:path');
   const contract = fs.readFileSync(path.join(__dirname, '../docs/device-monitor-backend-contract.md'), 'utf8');
-  assert.match(contract, /random owner and device bearer tokens/i);
+  assert.match(contract, /random 256-bit owner token/i);
+  assert.match(contract, /random 256-bit device token/i);
   assert.match(contract, /only its SHA-256 hash/i);
   assert.match(contract, /both approvals are recorded/i);
   assert.match(contract, /Revocation immediately blocks subsequent telemetry and media uploads/i);
