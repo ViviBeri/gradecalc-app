@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Private device metadata only. This does not authorize pairing or telemetry.
+    match /users/{userId}/devices/{deviceId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function validDevice(data) {
+        return data.keys().hasAll(['deviceName', 'platform', 'createdAt', 'revoked'])
+          && data.keys().hasOnly(['deviceName', 'platform', 'createdAt', 'revoked'])
+          && data.deviceName is string
+          && data.deviceName.size() > 0
+          && data.deviceName.size() <= 60
+          && data.platform in ['web', 'android', 'ios', 'unknown']
+          && data.createdAt is timestamp
+          && data.revoked is bool;
+      }
+
+      allow read: if isOwner();
+      allow create: if isOwner()
+        && validDevice(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.revoked == false;
+      allow update: if isOwner()
+        && validDevice(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.platform == resource.data.platform
+        && (!resource.data.revoked || request.resource.data.revoked == true)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceName', 'revoked']);
+      // Device IDs must remain tombstoned after revocation; deleting and recreating
+      // a record could reactivate grants tied to the same device ID.
+      allow delete: if false;
+    }
+
+    // Everything else, including pairing and telemetry data, stays denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
