@@ -6,6 +6,12 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      capacitor-runtime:
+        patterns:
+          - "@capacitor/android"
+          - "@capacitor/core"
+          - "@capacitor/cli"
 
   - package-ecosystem: "pip"
     directory: "/python"
