@@ -7,7 +7,7 @@
     "android:sync": "cap sync android"
   },
   "devDependencies": {
-    "@capacitor/cli": "7.4.3",
+    "@capacitor/cli": "8.6.2",
     "@capacitor/assets": "3.0.5"
   },
   "dependencies": {
