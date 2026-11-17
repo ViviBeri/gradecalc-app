@@ -1,0 +1,17 @@
+name: Health Check
+
+"on":
+  push:
+    branches:
+      - security/codeql-remediation
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm runner availability
+        run: echo "Runner online"
