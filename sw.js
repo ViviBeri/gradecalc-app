@@ -71,12 +71,14 @@ self.addEventListener('fetch', event => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       return fetch(event.request, { signal: controller.signal }).then(response => {
-        if (
-          response.status === 200 &&
-          (event.request.url.startsWith(self.location.origin) ||
-           event.request.url.includes('fonts.googleapis.com') ||
-           event.request.url.includes('fonts.gstatic.com'))
-        ) {
+        const requestUrl = new URL(event.request.url);
+      const isSameOrigin = requestUrl.origin === self.location.origin;
+      const isTrustedFontHost =
+        requestUrl.protocol === 'https:' &&
+        (requestUrl.hostname === 'fonts.googleapis.com' ||
+         requestUrl.hostname === 'fonts.gstatic.com');
+
+      if (response.status === 200 && (isSameOrigin || isTrustedFontHost)) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(() => {});
         }
