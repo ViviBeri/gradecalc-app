@@ -1,15 +1,17 @@
 name: Python calculation tests
 
-on:
+"on":
   push:
     branches:
       - main
       - feature/python-calculation-engine
       - feature/python-pdf-reports
       - feature/python-csv-excel-tools
-      - security/*
+      - security/codeql-remediation
   pull_request:
-  workflow_dispatch:
+    branches:
+      - main
+  workflow_dispatch: {}
 
 permissions:
   contents: read
